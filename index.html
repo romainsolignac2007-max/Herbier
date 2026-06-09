@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Herbier — Apprendre & reconnaître les plantes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- En-tête -->
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-badge">🌿 Herbier</div>
+      <h1>Apprenez à reconnaître<br />et à choyer vos plantes</h1>
+      <p class="hero-sub">Une encyclopédie pour passionnés et jardiniers : identifier chaque espèce et savoir exactement comment en prendre soin.</p>
+
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="search" id="recherche" placeholder="Rechercher une plante (nom, famille, nom latin…)" autocomplete="off" />
+      </div>
+    </div>
+  </header>
+
+  <!-- Filtres -->
+  <section class="filtres" id="filtres">
+    <div class="filtre-groupe" data-filtre="lieu">
+      <span class="filtre-label">Lieu</span>
+      <button class="chip actif" data-valeur="">Tout</button>
+      <button class="chip" data-valeur="Intérieur">Intérieur</button>
+      <button class="chip" data-valeur="Extérieur">Extérieur</button>
+      <button class="chip" data-valeur="Les deux">Les deux</button>
+    </div>
+    <div class="filtre-groupe" data-filtre="soleil">
+      <span class="filtre-label">Lumière</span>
+      <button class="chip actif" data-valeur="">Tout</button>
+      <button class="chip" data-valeur="Plein soleil">☀️ Plein soleil</button>
+      <button class="chip" data-valeur="Mi-ombre">⛅ Mi-ombre</button>
+      <button class="chip" data-valeur="Ombre">🌑 Ombre</button>
+    </div>
+    <div class="filtre-groupe" data-filtre="eau">
+      <span class="filtre-label">Arrosage</span>
+      <button class="chip actif" data-valeur="">Tout</button>
+      <button class="chip" data-valeur="Peu">💧 Peu</button>
+      <button class="chip" data-valeur="Modéré">💧💧 Modéré</button>
+      <button class="chip" data-valeur="Souvent">💧💧💧 Souvent</button>
+    </div>
+  </section>
+
+  <!-- Compteur de résultats -->
+  <p class="compteur" id="compteur"></p>
+
+  <!-- Grille des plantes -->
+  <main class="grille" id="grille"></main>
+
+  <!-- Message si aucun résultat -->
+  <p class="aucun" id="aucun" hidden>Aucune plante ne correspond à votre recherche 🌱</p>
+
+  <!-- Fiche détaillée (fenêtre) -->
+  <div class="overlay" id="overlay" hidden>
+    <div class="fiche" id="fiche" role="dialog" aria-modal="true">
+      <button class="fermer" id="fermer" aria-label="Fermer">✕</button>
+      <div class="fiche-contenu" id="fiche-contenu"></div>
+    </div>
+  </div>
+
+  <footer class="pied">
+    <p>🌿 Herbier — votre encyclopédie des plantes. Ajoutez vos propres espèces dans le fichier <code>plantes.js</code>.</p>
+  </footer>
+
+  <script src="plantes.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
