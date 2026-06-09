@@ -225,7 +225,7 @@ function construireSwipe() {
   c.innerHTML = melanger(PLANTES).map(p => {
     const src = srcImageGrande(p);
     const photo = src
-      ? `<div class="swipe-photo"><img src="${src}" alt="${p.nom}"></div>`
+      ? `<div class="swipe-photo"><img src="${src}" alt="${p.nom}" onerror="this.parentNode.classList.add('swipe-photo-emoji');this.parentNode.textContent='${p.emoji || "🌿"}'"></div>`
       : `<div class="swipe-photo swipe-photo-emoji">${p.emoji || "🌿"}</div>`;
     return `
       <div class="swipe-slide">
@@ -316,7 +316,7 @@ function montrerQuestion() {
   const q = questions[qIndex];
   const prog = Math.round((qIndex / questions.length) * 100);
   const src = q.plante ? srcImageGrande(q.plante) : null;
-  const photo = src ? `<div class="quizz-photo"><img src="${src}" alt="plante"></div>` : "";
+  const photo = src ? `<div class="quizz-photo"><img src="${src}" alt="plante" onerror="this.closest('.quizz-photo').style.display='none'"></div>` : "";
   document.getElementById("quizz").innerHTML = `
     <div class="quizz-barre"><i style="width:${prog}%"></i></div>
     <p class="quizz-compte">Question ${qIndex + 1} / ${questions.length} · ${qScore} pts</p>
