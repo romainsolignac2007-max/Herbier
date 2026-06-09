@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Herbier — Apprendre & reconnaître les plantes</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -11,55 +11,101 @@
 </head>
 <body>
 
-  <!-- En-tête -->
-  <header class="hero">
-    <div class="hero-inner">
-      <div class="hero-badge">🌿 Herbier</div>
-      <h1>Apprenez à reconnaître<br />et à choyer vos plantes</h1>
-      <p class="hero-sub">Une encyclopédie pour passionnés et jardiniers : identifier chaque espèce et savoir exactement comment en prendre soin.</p>
-
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="search" id="recherche" placeholder="Rechercher une plante (nom, famille, nom latin…)" autocomplete="off" />
+  <!-- ================= ACCUEIL ================= -->
+  <section class="vue active" id="vue-accueil">
+    <header class="hero">
+      <div class="hero-inner">
+        <div class="hero-badge">🌿 Herbier</div>
+        <h1>Apprenez à reconnaître<br />et à choyer vos plantes</h1>
+        <p class="hero-sub">Votre encyclopédie pour passionnés et jardiniers : identifier chaque espèce et savoir exactement comment en prendre soin.</p>
       </div>
-    </div>
-  </header>
+    </header>
 
-  <!-- Filtres -->
-  <section class="filtres" id="filtres">
-    <div class="filtre-groupe" data-filtre="lieu">
-      <span class="filtre-label">Lieu</span>
-      <button class="chip actif" data-valeur="">Tout</button>
-      <button class="chip" data-valeur="Intérieur">Intérieur</button>
-      <button class="chip" data-valeur="Extérieur">Extérieur</button>
-      <button class="chip" data-valeur="Les deux">Les deux</button>
-    </div>
-    <div class="filtre-groupe" data-filtre="soleil">
-      <span class="filtre-label">Lumière</span>
-      <button class="chip actif" data-valeur="">Tout</button>
-      <button class="chip" data-valeur="Plein soleil">☀️ Plein soleil</button>
-      <button class="chip" data-valeur="Mi-ombre">⛅ Mi-ombre</button>
-      <button class="chip" data-valeur="Ombre">🌑 Ombre</button>
-    </div>
-    <div class="filtre-groupe" data-filtre="eau">
-      <span class="filtre-label">Arrosage</span>
-      <button class="chip actif" data-valeur="">Tout</button>
-      <button class="chip" data-valeur="Peu">💧 Peu</button>
-      <button class="chip" data-valeur="Modéré">💧💧 Modéré</button>
-      <button class="chip" data-valeur="Souvent">💧💧💧 Souvent</button>
+    <div class="accueil-corps">
+      <div class="accueil-stats" id="accueil-stats"></div>
+
+      <h2 class="section-titre">Que voulez-vous faire ?</h2>
+      <div class="accueil-cartes">
+        <button class="acces" data-aller="vue-recherche">
+          <span class="acces-ico">🔍</span>
+          <span class="acces-txt"><strong>Rechercher</strong>Trouver une plante et sa fiche</span>
+        </button>
+        <button class="acces" data-aller="vue-swipe">
+          <span class="acces-ico">🎬</span>
+          <span class="acces-txt"><strong>Découvrir en swipe</strong>Faire défiler les plantes</span>
+        </button>
+        <button class="acces" data-aller="vue-quizz">
+          <span class="acces-ico">❓</span>
+          <span class="acces-txt"><strong>Jouer au quizz</strong>Testez vos connaissances</span>
+        </button>
+        <button class="acces" data-aller="vue-classement">
+          <span class="acces-ico">🏆</span>
+          <span class="acces-txt"><strong>Classement</strong>Voir les meilleurs scores</span>
+        </button>
+      </div>
+
+      <h2 class="section-titre">À la une</h2>
+      <div class="grille" id="grille-une"></div>
     </div>
   </section>
 
-  <!-- Compteur de résultats -->
-  <p class="compteur" id="compteur"></p>
+  <!-- ================= RECHERCHE ================= -->
+  <section class="vue" id="vue-recherche">
+    <div class="vue-entete">
+      <h2>🔍 Rechercher une plante</h2>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="search" id="recherche" placeholder="Nom, famille, nom latin…" autocomplete="off" />
+      </div>
+    </div>
 
-  <!-- Grille des plantes -->
-  <main class="grille" id="grille"></main>
+    <section class="filtres" id="filtres">
+      <div class="filtre-groupe" data-filtre="lieu">
+        <span class="filtre-label">Lieu</span>
+        <button class="chip actif" data-valeur="">Tout</button>
+        <button class="chip" data-valeur="Intérieur">Intérieur</button>
+        <button class="chip" data-valeur="Extérieur">Extérieur</button>
+        <button class="chip" data-valeur="Les deux">Les deux</button>
+      </div>
+      <div class="filtre-groupe" data-filtre="soleil">
+        <span class="filtre-label">Lumière</span>
+        <button class="chip actif" data-valeur="">Tout</button>
+        <button class="chip" data-valeur="Plein soleil">☀️ Plein soleil</button>
+        <button class="chip" data-valeur="Mi-ombre">⛅ Mi-ombre</button>
+        <button class="chip" data-valeur="Ombre">🌑 Ombre</button>
+      </div>
+      <div class="filtre-groupe" data-filtre="eau">
+        <span class="filtre-label">Arrosage</span>
+        <button class="chip actif" data-valeur="">Tout</button>
+        <button class="chip" data-valeur="Peu">💧 Peu</button>
+        <button class="chip" data-valeur="Modéré">💧💧 Modéré</button>
+        <button class="chip" data-valeur="Souvent">💧💧💧 Souvent</button>
+      </div>
+    </section>
 
-  <!-- Message si aucun résultat -->
-  <p class="aucun" id="aucun" hidden>Aucune plante ne correspond à votre recherche 🌱</p>
+    <p class="compteur" id="compteur"></p>
+    <main class="grille" id="grille"></main>
+    <p class="aucun" id="aucun" hidden>Aucune plante ne correspond à votre recherche 🌱</p>
+  </section>
 
-  <!-- Fiche détaillée (fenêtre) -->
+  <!-- ================= SWIPE (façon TikTok) ================= -->
+  <section class="vue" id="vue-swipe">
+    <div class="swipe-conteneur" id="swipe-conteneur"></div>
+    <div class="swipe-aide" id="swipe-aide">↑ Glissez vers le haut</div>
+  </section>
+
+  <!-- ================= QUIZZ ================= -->
+  <section class="vue" id="vue-quizz">
+    <div class="quizz" id="quizz"></div>
+  </section>
+
+  <!-- ================= CLASSEMENT ================= -->
+  <section class="vue" id="vue-classement">
+    <div class="vue-entete"><h2>🏆 Classement</h2></div>
+    <div class="classement" id="classement"></div>
+  </section>
+
+  <!-- ================= Fiche détaillée ================= -->
   <div class="overlay" id="overlay" hidden>
     <div class="fiche" id="fiche" role="dialog" aria-modal="true">
       <button class="fermer" id="fermer" aria-label="Fermer">✕</button>
@@ -67,9 +113,24 @@
     </div>
   </div>
 
-  <footer class="pied">
-    <p>🌿 Herbier — votre encyclopédie des plantes. Ajoutez vos propres espèces dans le fichier <code>plantes.js</code>.</p>
-  </footer>
+  <!-- ================= BARRE DE NAVIGATION (bas) ================= -->
+  <nav class="barre-nav">
+    <button class="nav-item actif" data-aller="vue-accueil">
+      <span class="nav-ico">🏠</span><span class="nav-lbl">Accueil</span>
+    </button>
+    <button class="nav-item" data-aller="vue-recherche">
+      <span class="nav-ico">🔍</span><span class="nav-lbl">Recherche</span>
+    </button>
+    <button class="nav-item nav-centre" data-aller="vue-swipe">
+      <span class="nav-ico">🎬</span>
+    </button>
+    <button class="nav-item" data-aller="vue-quizz">
+      <span class="nav-ico">❓</span><span class="nav-lbl">Quizz</span>
+    </button>
+    <button class="nav-item" data-aller="vue-classement">
+      <span class="nav-ico">🏆</span><span class="nav-lbl">Classement</span>
+    </button>
+  </nav>
 
   <script src="plantes.js"></script>
   <script src="app.js"></script>
