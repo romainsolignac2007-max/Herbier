@@ -183,11 +183,16 @@ h1, h2, h3, .nom-plante {
 .aucun { text-align: center; color: var(--texte-doux); padding: 30px; font-size: 1.05rem; }
 
 /* ===== Fiche détaillée ===== */
+/* Tant que la fenêtre est marquée "hidden", elle reste cachée
+   (sinon le display:flex ci-dessous la garderait visible et floutterait toute la page). */
+.overlay[hidden] { display: none !important; }
+
 .overlay {
   position: fixed;
   inset: 0;
   background: rgba(31, 61, 43, 0.55);
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
