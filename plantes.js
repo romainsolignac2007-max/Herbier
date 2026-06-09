@@ -9,7 +9,9 @@
    - latin      : nom scientifique (ex: "Lavandula angustifolia")
    - famille    : famille botanique (ex: "Lamiacées")
    - emoji      : un emoji qui illustre la plante (s'affiche s'il n'y a pas de photo)
-   - photo      : nom du fichier image dans le dossier "images" (ex: "lavande.jpg") — laissez "" si pas de photo
+   - photo      : PETITE photo pour les cartes (ex: "lavande.jpg"). Idéalement bien cadrée pour un petit format.
+   - photoGrande: GRANDE photo pour le mode swipe (plein écran) et le quizz (ex: "lavande-grand.jpg").
+                  Choisir une belle image où on voit bien toute la plante. Si absente, la petite photo est réutilisée.
    - lieu       : "Extérieur", "Intérieur" ou "Les deux"
    - soleil     : "Plein soleil", "Mi-ombre" ou "Ombre"
    - eau        : "Peu", "Modéré" ou "Souvent"
@@ -25,6 +27,7 @@ const PLANTES = [
     famille: "Lamiacées",
     emoji: "💜",
     photo: "lavande.jpg",
+    photoGrande: "lavande-grand.jpg",
     lieu: "Extérieur",
     soleil: "Plein soleil",
     eau: "Peu",
@@ -38,6 +41,7 @@ const PLANTES = [
     famille: "Oléacées",
     emoji: "🫒",
     photo: "olivier.jpg",
+    photoGrande: "olivier-grand.jpg",
     lieu: "Extérieur",
     soleil: "Plein soleil",
     eau: "Peu",
@@ -51,6 +55,7 @@ const PLANTES = [
     famille: "Aracées",
     emoji: "🌿",
     photo: "monstera.jpg",
+    photoGrande: "monstera-grand.jpg",
     lieu: "Intérieur",
     soleil: "Mi-ombre",
     eau: "Modéré",
@@ -64,6 +69,7 @@ const PLANTES = [
     famille: "Rosacées",
     emoji: "🌹",
     photo: "rosier.jpg",
+    photoGrande: "rosier-grand.jpg",
     lieu: "Extérieur",
     soleil: "Plein soleil",
     eau: "Modéré",
@@ -77,6 +83,7 @@ const PLANTES = [
     famille: "Lamiacées",
     emoji: "🌱",
     photo: "basilic.jpg",
+    photoGrande: "basilic-grand.jpg",
     lieu: "Les deux",
     soleil: "Plein soleil",
     eau: "Souvent",
@@ -90,6 +97,7 @@ const PLANTES = [
     famille: "Nephrolépidacées",
     emoji: "🌾",
     photo: "fougere.jpg",
+    photoGrande: "fougere-grand.jpg",
     lieu: "Intérieur",
     soleil: "Ombre",
     eau: "Souvent",

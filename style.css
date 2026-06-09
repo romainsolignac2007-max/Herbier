@@ -471,3 +471,10 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
   .vue-entete h2 { font-size: 1.5rem; }
   .swipe-txt h2 { font-size: 1.8rem; }
 }
+
+/* Grande photo dans le quizz */
+.quizz-photo {
+  width: 100%; height: 220px; border-radius: var(--radius); overflow: hidden;
+  margin-bottom: 16px; box-shadow: var(--ombre); background: var(--vert-clair);
+}
+.quizz-photo img { width: 100%; height: 100%; object-fit: cover; }

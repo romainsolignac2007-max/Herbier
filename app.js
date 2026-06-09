@@ -8,11 +8,15 @@ const ICONE_SOLEIL = { "Plein soleil": "☀️", "Mi-ombre": "⛅", "Ombre": "�
 const ICONE_LIEU = { "Intérieur": "🏠", "Extérieur": "🌳", "Les deux": "🏠🌳" };
 
 // Source d'image (gère le fichier intégré OU le dossier images/)
-function srcImage(p) {
-  if (!p.photo) return null;
-  if (typeof PHOTOS !== "undefined" && PHOTOS[p.photo]) return PHOTOS[p.photo];
-  return "images/" + p.photo;
+function chemin(nom) {
+  if (!nom) return null;
+  if (typeof PHOTOS !== "undefined" && PHOTOS[nom]) return PHOTOS[nom];
+  return "images/" + nom;
 }
+// Petite photo (pour les cartes)
+function srcImage(p) { return chemin(p.photo); }
+// Grande photo (pour le swipe et le quizz) — sinon on retombe sur la petite
+function srcImageGrande(p) { return chemin(p.photoGrande) || chemin(p.photo); }
 function imageHTML(p, classe) {
   const src = srcImage(p);
   if (src) return `<div class="${classe}"><img src="${src}" alt="${p.nom}" onerror="this.parentNode.textContent='${p.emoji || "🌿"}'"></div>`;
@@ -155,7 +159,7 @@ function remplirAccueil() {
 function construireSwipe() {
   const c = document.getElementById("swipe-conteneur");
   c.innerHTML = melanger(PLANTES).map(p => {
-    const src = srcImage(p);
+    const src = srcImageGrande(p);
     const fond = src
       ? `<div class="fond"><img src="${src}" alt="${p.nom}"></div>`
       : `<div class="fond" style="background:linear-gradient(150deg,var(--vert-clair),var(--vert-fonce));display:flex;align-items:center;justify-content:center;font-size:8rem">${p.emoji || "🌿"}</div>`;
@@ -196,24 +200,28 @@ function genererBanque() {
   PLANTES.forEach(p => {
     // Famille
     banque.push({
-      q: `À quelle famille appartient « ${p.nom} » ?`,
+      plante: p,
+      q: `À quelle famille appartient cette plante ?`,
       bonne: p.famille,
       options: melanger([p.famille, ...distracteurs(p.famille, famillesToutes)])
     });
     // Nom latin
     banque.push({
+      plante: p,
       q: `Quel est le nom latin de « ${p.nom} » ?`,
       bonne: p.latin,
       options: melanger([p.latin, ...distracteurs(p.latin, latinsTous)])
     });
     // Arrosage
     banque.push({
+      plante: p,
       q: `Quel arrosage convient à « ${p.nom} » ?`,
       bonne: p.eau,
       options: melanger([p.eau, ...distracteurs(p.eau, ["Peu", "Modéré", "Souvent"], 2)])
     });
     // Lumière
     banque.push({
+      plante: p,
       q: `Quelle exposition préfère « ${p.nom} » ?`,
       bonne: p.soleil,
       options: melanger([p.soleil, ...distracteurs(p.soleil, ["Plein soleil", "Mi-ombre", "Ombre"], 2)])
@@ -243,9 +251,12 @@ function demarrerQuizz() {
 function montrerQuestion() {
   const q = questions[qIndex];
   const prog = Math.round((qIndex / questions.length) * 100);
+  const src = q.plante ? srcImageGrande(q.plante) : null;
+  const photo = src ? `<div class="quizz-photo"><img src="${src}" alt="plante"></div>` : "";
   document.getElementById("quizz").innerHTML = `
     <div class="quizz-barre"><i style="width:${prog}%"></i></div>
     <p class="quizz-compte">Question ${qIndex + 1} / ${questions.length} · ${qScore} pts</p>
+    ${photo}
     <div class="quizz-question"><h3>${q.q}</h3></div>
     <div class="quizz-options">
       ${q.options.map(o => `<button class="opt">${o}</button>`).join("")}
