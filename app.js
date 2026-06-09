@@ -160,14 +160,13 @@ function construireSwipe() {
   const c = document.getElementById("swipe-conteneur");
   c.innerHTML = melanger(PLANTES).map(p => {
     const src = srcImageGrande(p);
-    const fond = src
-      ? `<div class="fond"><img src="${src}" alt="${p.nom}"></div>`
-      : `<div class="fond" style="background:linear-gradient(150deg,var(--vert-clair),var(--vert-fonce));display:flex;align-items:center;justify-content:center;font-size:8rem">${p.emoji || "🌿"}</div>`;
+    const photo = src
+      ? `<div class="swipe-photo"><img src="${src}" alt="${p.nom}"></div>`
+      : `<div class="swipe-photo swipe-photo-emoji">${p.emoji || "🌿"}</div>`;
     return `
       <div class="swipe-slide">
-        ${fond}
-        <div class="voile"></div>
-        <div class="swipe-txt">
+        ${photo}
+        <div class="swipe-info">
           <h2>${p.nom}</h2>
           <p class="latin">${p.latin} · ${p.famille}</p>
           <div class="swipe-tags">
