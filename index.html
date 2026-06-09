@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=5" />
+  <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
 
@@ -59,33 +59,14 @@
       </div>
     </div>
 
-    <section class="filtres" id="filtres">
-      <div class="filtre-groupe" data-filtre="lieu">
-        <span class="filtre-label">Lieu</span>
-        <button class="chip actif" data-valeur="">Tout</button>
-        <button class="chip" data-valeur="Intérieur">Intérieur</button>
-        <button class="chip" data-valeur="Extérieur">Extérieur</button>
-        <button class="chip" data-valeur="Les deux">Les deux</button>
+    <div class="recherche-corps">
+      <aside class="filtres-panel" id="filtres-panel"></aside>
+      <div class="recherche-resultats">
+        <p class="compteur" id="compteur"></p>
+        <main class="grille" id="grille"></main>
+        <p class="aucun" id="aucun" hidden>Aucune plante ne correspond à votre recherche 🌱</p>
       </div>
-      <div class="filtre-groupe" data-filtre="soleil">
-        <span class="filtre-label">Lumière</span>
-        <button class="chip actif" data-valeur="">Tout</button>
-        <button class="chip" data-valeur="Plein soleil">☀️ Plein soleil</button>
-        <button class="chip" data-valeur="Mi-ombre">⛅ Mi-ombre</button>
-        <button class="chip" data-valeur="Ombre">🌑 Ombre</button>
-      </div>
-      <div class="filtre-groupe" data-filtre="eau">
-        <span class="filtre-label">Arrosage</span>
-        <button class="chip actif" data-valeur="">Tout</button>
-        <button class="chip" data-valeur="Peu">💧 Peu</button>
-        <button class="chip" data-valeur="Modéré">💧💧 Modéré</button>
-        <button class="chip" data-valeur="Souvent">💧💧💧 Souvent</button>
-      </div>
-    </section>
-
-    <p class="compteur" id="compteur"></p>
-    <main class="grille" id="grille"></main>
-    <p class="aucun" id="aucun" hidden>Aucune plante ne correspond à votre recherche 🌱</p>
+    </div>
   </section>
 
   <!-- ================= SWIPE (façon TikTok) ================= -->
@@ -132,7 +113,7 @@
     </button>
   </nav>
 
-  <script src="plantes.js?v=5"></script>
-  <script src="app.js?v=5"></script>
+  <script src="plantes.js?v=6"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

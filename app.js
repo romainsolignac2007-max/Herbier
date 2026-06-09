@@ -57,7 +57,34 @@ const grille = document.getElementById("grille");
 const compteur = document.getElementById("compteur");
 const aucun = document.getElementById("aucun");
 const champRecherche = document.getElementById("recherche");
-const filtres = { texte: "", lieu: "", soleil: "", eau: "" };
+const panneauFiltres = document.getElementById("filtres-panel");
+
+// Configuration des filtres (sections dépliables à cases à cocher)
+const CATEGORIES = [
+  { cle: "soleil", titre: "Lumière", options: [
+    { val: "Plein soleil", ico: "☀️" }, { val: "Mi-ombre", ico: "⛅" }, { val: "Ombre", ico: "🌑" } ] },
+  { cle: "eau", titre: "Arrosage", options: [
+    { val: "Peu", ico: "💧" }, { val: "Modéré", ico: "💧💧" }, { val: "Souvent", ico: "💧💧💧" } ] },
+  { cle: "lieu", titre: "Lieu", options: [
+    { val: "Intérieur", ico: "🏠" }, { val: "Extérieur", ico: "🌳" } ] },
+];
+const recherche = { texte: "" };
+const selections = { soleil: new Set(), eau: new Set(), lieu: new Set() };
+const sectionsOuvertes = { soleil: true, eau: true, lieu: true };
+
+// Une plante a-t-elle la valeur d'une option ? (le lieu "Les deux" compte pour Intérieur ET Extérieur)
+function plantePossede(cle, val, p) {
+  if (cle === "lieu") return p.lieu === val || p.lieu === "Les deux";
+  return p[cle] === val;
+}
+function matchTexte(p) {
+  const t = recherche.texte.toLowerCase().trim();
+  return !t || p.nom.toLowerCase().includes(t) || p.latin.toLowerCase().includes(t) || p.famille.toLowerCase().includes(t);
+}
+function matchCategorie(cle, p) {
+  const sel = selections[cle];
+  return sel.size === 0 || [...sel].some(v => plantePossede(cle, v, p));
+}
 
 function carteHTML(p) {
   return `
@@ -81,36 +108,72 @@ function brancherCartes(conteneur) {
   });
 }
 
-function afficher() {
-  const t = filtres.texte.toLowerCase().trim();
-  const resultats = PLANTES.filter(p => {
-    const matchTexte = !t || p.nom.toLowerCase().includes(t) || p.latin.toLowerCase().includes(t) || p.famille.toLowerCase().includes(t);
-    const matchLieu = !filtres.lieu || p.lieu === filtres.lieu || p.lieu === "Les deux";
-    const matchSoleil = !filtres.soleil || p.soleil === filtres.soleil;
-    const matchEau = !filtres.eau || p.eau === filtres.eau;
-    return matchTexte && matchLieu && matchSoleil && matchEau;
-  });
-
-  grille.innerHTML = resultats.map(carteHTML).join("");
-  const n = resultats.length;
-  compteur.textContent = n === 0 ? "" : `${n} plante${n > 1 ? "s" : ""} trouvée${n > 1 ? "s" : ""}`;
-  aucun.hidden = n !== 0;
-  brancherCartes(grille);
+// Plantes qui passent le texte + toutes les catégories SAUF une (pour calculer les quantités)
+function plantesFiltrees(saufCle) {
+  return PLANTES.filter(p =>
+    matchTexte(p) && CATEGORIES.every(c => c.cle === saufCle || matchCategorie(c.cle, p))
+  );
 }
 
-champRecherche.addEventListener("input", e => { filtres.texte = e.target.value; afficher(); });
+// Construit le panneau de filtres (sections dépliables + cases à cocher + quantités)
+function construireFiltres() {
+  let html = `<div class="filtres-titre">Filtrer</div>`;
+  CATEGORIES.forEach(cat => {
+    const ouvert = sectionsOuvertes[cat.cle];
+    const base = plantesFiltrees(cat.cle); // pour compter sans s'auto-exclure
+    html += `
+      <div class="filtre-section ${ouvert ? "ouvert" : ""}" data-cle="${cat.cle}">
+        <button class="filtre-tete" data-toggle="${cat.cle}">
+          <span>${cat.titre}</span><span class="chevron">⌄</span>
+        </button>
+        <div class="filtre-corps">
+          ${cat.options.map(o => {
+            const n = base.filter(p => plantePossede(cat.cle, o.val, p)).length;
+            const coche = selections[cat.cle].has(o.val);
+            return `
+              <label class="filtre-opt ${n === 0 && !coche ? "vide" : ""}">
+                <input type="checkbox" data-cle="${cat.cle}" data-val="${o.val}" ${coche ? "checked" : ""}>
+                <span class="case"></span>
+                <span class="opt-nom">${o.ico} ${o.val}</span>
+                <span class="opt-nb">${n}</span>
+              </label>`;
+          }).join("")}
+        </div>
+      </div>`;
+  });
+  panneauFiltres.innerHTML = html;
 
-document.querySelectorAll(".filtre-groupe").forEach(groupe => {
-  const cle = groupe.dataset.filtre;
-  groupe.querySelectorAll(".chip").forEach(chip => {
-    chip.addEventListener("click", () => {
-      groupe.querySelectorAll(".chip").forEach(c => c.classList.remove("actif"));
-      chip.classList.add("actif");
-      filtres[cle] = chip.dataset.valeur;
+  // Déplier / replier une section
+  panneauFiltres.querySelectorAll(".filtre-tete").forEach(t => {
+    t.addEventListener("click", () => {
+      const cle = t.dataset.toggle;
+      sectionsOuvertes[cle] = !sectionsOuvertes[cle];
+      t.closest(".filtre-section").classList.toggle("ouvert", sectionsOuvertes[cle]);
+    });
+  });
+  // Cocher / décocher une option
+  panneauFiltres.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener("change", () => {
+      const sel = selections[cb.dataset.cle];
+      cb.checked ? sel.add(cb.dataset.val) : sel.delete(cb.dataset.val);
       afficher();
     });
   });
-});
+}
+
+function afficher() {
+  const resultats = PLANTES.filter(p =>
+    matchTexte(p) && CATEGORIES.every(c => matchCategorie(c.cle, p))
+  );
+  grille.innerHTML = resultats.map(carteHTML).join("");
+  const n = resultats.length;
+  compteur.textContent = `${n} plante${n > 1 ? "s" : ""} trouvée${n > 1 ? "s" : ""}`;
+  aucun.hidden = n !== 0;
+  brancherCartes(grille);
+  construireFiltres(); // recalcule les quantités à chaque changement
+}
+
+champRecherche.addEventListener("input", e => { recherche.texte = e.target.value; afficher(); });
 
 /* ===================== FICHE DÉTAILLÉE ===================== */
 const overlay = document.getElementById("overlay");
