@@ -539,3 +539,14 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
   .recherche-corps { flex-direction: column; gap: 16px; }
   .filtres-panel { flex: none; width: 100%; position: static; }
 }
+
+/* Texte de présentation (swipe + fiche) */
+.swipe-presentation {
+  font-size: 1.25rem; line-height: 1.5; color: var(--texte);
+  margin-bottom: 20px; font-weight: 500;
+}
+.fiche-presentation {
+  font-size: 1.08rem; line-height: 1.6; color: var(--texte);
+  margin-bottom: 22px; padding: 14px 16px; background: #fff;
+  border-left: 4px solid var(--vert-clair); border-radius: 0 12px 12px 0;
+}

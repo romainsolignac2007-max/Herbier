@@ -15,6 +15,7 @@
    - lieu       : "Extérieur", "Intérieur" ou "Les deux"
    - soleil     : "Plein soleil", "Mi-ombre" ou "Ombre"
    - eau        : "Peu", "Modéré" ou "Souvent"
+   - presentation: petit texte qui présente la plante (son charme, son usage) — affiché en grand dans le swipe
    - reconnaitre: comment la reconnaître (texte libre)
    - entretien  : comment l'entretenir (texte libre)
    - saison     : période de floraison / d'intérêt
@@ -28,6 +29,7 @@ const PLANTES = [
     emoji: "💜",
     photo: "lavande.jpg",
     photoGrande: "lavande-grand.jpg",
+    presentation: "Emblème de la Provence, la lavande séduit par son parfum envoûtant et ses épis d'un violet intense. Mellifère et très facile à vivre, elle structure les massifs, borde les allées et parfume aussi bien le jardin que le linge.",
     lieu: "Extérieur",
     soleil: "Plein soleil",
     eau: "Peu",
@@ -42,6 +44,7 @@ const PLANTES = [
     emoji: "🫒",
     photo: "olivier.jpg",
     photoGrande: "olivier-grand.jpg",
+    presentation: "Symbole de paix et de la Méditerranée, l'olivier est un arbre presque éternel au tronc noueux plein de caractère. Rustique, graphique et persistant, il apporte une touche du Sud aussi bien en pleine terre qu'en grand pot sur une terrasse.",
     lieu: "Extérieur",
     soleil: "Plein soleil",
     eau: "Peu",
@@ -56,6 +59,7 @@ const PLANTES = [
     emoji: "🌿",
     photo: "monstera.jpg",
     photoGrande: "monstera-grand.jpg",
+    presentation: "Star incontestée des plantes d'intérieur, la Monstera impressionne par ses grandes feuilles découpées en forme de cœur. Facile à vivre et spectaculaire, elle crée une ambiance jungle très tendance dans n'importe quelle pièce lumineuse.",
     lieu: "Intérieur",
     soleil: "Mi-ombre",
     eau: "Modéré",
@@ -70,6 +74,7 @@ const PLANTES = [
     emoji: "🌹",
     photo: "rosier.jpg",
     photoGrande: "rosier-grand.jpg",
+    presentation: "Reine du jardin, le rosier offre des floraisons généreuses et délicatement parfumées du printemps jusqu'aux gelées. Il en existe pour tous les goûts — buisson, tige, grimpant ou couvre-sol — et toutes les couleurs imaginables.",
     lieu: "Extérieur",
     soleil: "Plein soleil",
     eau: "Modéré",
@@ -84,6 +89,7 @@ const PLANTES = [
     emoji: "🌱",
     photo: "basilic.jpg",
     photoGrande: "basilic-grand.jpg",
+    presentation: "Incontournable du potager comme de la cuisine, le basilic embaume dès qu'on effleure ses feuilles. Cultivé en pot sur un rebord de fenêtre ou en pleine terre, il accompagne à merveille tomates, pâtes et plats d'été.",
     lieu: "Les deux",
     soleil: "Plein soleil",
     eau: "Souvent",
@@ -98,6 +104,7 @@ const PLANTES = [
     emoji: "🌾",
     photo: "fougere.jpg",
     photoGrande: "fougere-grand.jpg",
+    presentation: "Avec ses longues frondes retombantes d'un vert tendre, la fougère de Boston apporte fraîcheur et légèreté à la maison. Très décorative en suspension, elle adore les pièces lumineuses et humides comme la salle de bains.",
     lieu: "Intérieur",
     soleil: "Ombre",
     eau: "Souvent",

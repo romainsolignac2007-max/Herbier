@@ -186,6 +186,7 @@ function ouvrirFiche(p) {
       <h2>${p.nom}</h2>
       <p class="fiche-latin">${p.latin}</p>
       <p class="fiche-famille">${p.famille}</p>
+      ${p.presentation ? `<p class="fiche-presentation">${p.presentation}</p>` : ""}
       <div class="fiche-infos">
         <div class="info-box"><div class="ico">${ICONE_LIEU[p.lieu] || "🌿"}</div><div class="lib">Lieu</div><div class="val">${p.lieu}</div></div>
         <div class="info-box"><div class="ico">${ICONE_SOLEIL[p.soleil] || "🌿"}</div><div class="lib">Lumière</div><div class="val">${p.soleil}</div></div>
@@ -232,6 +233,7 @@ function construireSwipe() {
         <div class="swipe-info">
           <h2>${p.nom}</h2>
           <p class="latin">${p.latin} · ${p.famille}</p>
+          ${p.presentation ? `<p class="swipe-presentation">${p.presentation}</p>` : ""}
           <div class="swipe-tags">
             <span class="tag">${ICONE_LIEU[p.lieu] || ""} ${p.lieu}</span>
             <span class="tag">${ICONE_SOLEIL[p.soleil] || ""} ${p.soleil}</span>
