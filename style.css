@@ -369,25 +369,34 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .nav-centre.actif .nav-ico { transform: scale(1.05); }
 
 /* ----- Mode SWIPE (façon TikTok) ----- */
+/* Hauteur fixe de la photo : elle se termine TOUJOURS au même endroit */
+:root { --swipe-photo-h: 45dvh; }
 #vue-swipe.active { height: calc(100dvh - var(--nav-h)); overflow: hidden; position: relative; }
 .swipe-conteneur {
   height: calc(100dvh - var(--nav-h));
-  overflow-y: scroll; scroll-snap-type: y mandatory;
+  /* Un seul ascenseur : on lit le texte, puis on continue de descendre
+     et la photo suivante vient se caler en haut (snap de proximité). */
+  overflow-y: scroll; scroll-snap-type: y proximity;
   -webkit-overflow-scrolling: touch; scrollbar-width: none;
 }
 .swipe-conteneur::-webkit-scrollbar { display: none; }
 .swipe-slide {
-  height: calc(100dvh - var(--nav-h)); scroll-snap-align: start; scroll-snap-stop: always;
-  display: flex; flex-direction: column; background: var(--creme); overflow: hidden;
+  /* min-height (et non height) : la diapo s'agrandit si le texte est long,
+     ce qui permet de scroller le texte dans le même flux que la photo. */
+  min-height: calc(100dvh - var(--nav-h)); scroll-snap-align: start;
+  display: flex; flex-direction: column; background: var(--creme);
 }
-/* Photo de la plante entière (haut) */
-.swipe-photo { flex: 0 0 50%; position: relative; background: linear-gradient(150deg, var(--vert-clair), var(--vert-fonce)); }
+/* Photo de la plante entière (haut) — hauteur fixe et identique partout */
+.swipe-photo {
+  flex: 0 0 var(--swipe-photo-h); height: var(--swipe-photo-h);
+  position: relative; background: linear-gradient(150deg, var(--vert-clair), var(--vert-fonce));
+}
 .swipe-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .swipe-photo-emoji { display: flex; align-items: center; justify-content: center; font-size: 9rem; }
-/* Panneau d'infos (bas) avec GRAND texte */
+/* Panneau d'infos (bas) avec GRAND texte — grandit avec le contenu */
 .swipe-info {
-  flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
-  padding: 22px 26px 30px; background: var(--creme);
+  flex: 1 0 auto;
+  padding: 22px 26px 40px; background: var(--creme);
   border-radius: 26px 26px 0 0; margin-top: -26px; position: relative; z-index: 2;
   box-shadow: 0 -10px 30px rgba(31,61,43,0.18);
 }
