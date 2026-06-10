@@ -417,11 +417,55 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 @keyframes aideFade { 0%,70% { opacity: 1; } 100% { opacity: 0; visibility: hidden; } }
 
 /* ----- QUIZZ ----- */
-.quizz { max-width: 640px; margin: 0 auto; padding: 26px 22px; min-height: 60vh; }
+.quizz { max-width: 680px; margin: 0 auto; padding: 26px 22px 40px; min-height: 60vh; }
 .quizz-accueil { text-align: center; padding-top: 20px; }
 .quizz-accueil .big { font-size: 3.4rem; }
 .quizz-accueil h2 { font-size: 2rem; margin: 8px 0; }
 .quizz-accueil p { color: var(--texte-doux); margin-bottom: 24px; }
+
+/* Hub des quizz (choix du thème) */
+.quizz-hub-tete { text-align: center; margin-bottom: 22px; }
+.qh-pastille {
+  display: inline-block; background: var(--vert); color: #fff; font-weight: 600;
+  font-size: 0.8rem; padding: 5px 14px; border-radius: 999px; margin-bottom: 12px;
+  letter-spacing: 0.03em;
+}
+.quizz-hub-tete h2 { font-size: 2.1rem; margin-bottom: 8px; }
+.quizz-hub-tete p { color: var(--texte-doux); font-size: 0.98rem; max-width: 460px; margin: 0 auto; }
+
+.quizz-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.quizz-carte {
+  display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer;
+  background: #fff; border: 1.5px solid var(--creme-fonce); border-left: 6px solid var(--c, var(--vert));
+  border-radius: 16px; padding: 16px 16px; font-family: inherit; color: var(--texte);
+  box-shadow: var(--ombre); transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.quizz-carte:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(31,61,43,0.16); }
+.qc-emoji {
+  flex: 0 0 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+  font-size: 1.7rem; background: color-mix(in srgb, var(--c) 16%, #fff); border-radius: 12px;
+}
+.qc-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.qc-txt strong { font-family: "Fraunces", serif; font-size: 1.12rem; line-height: 1.15; }
+.qc-txt span { font-size: 0.85rem; color: var(--texte-doux); }
+.qc-fleche { font-size: 1.5rem; color: var(--c, var(--vert)); font-weight: 700; }
+.quizz-carte.mix { grid-column: 1 / -1; background: linear-gradient(120deg, var(--vert-fonce), var(--vert)); border-color: transparent; }
+.quizz-carte.mix .qc-txt strong, .quizz-carte.mix .qc-txt span { color: #fff; }
+.quizz-carte.mix .qc-fleche { color: #fff; }
+.quizz-carte.mix .qc-emoji { background: rgba(255,255,255,0.18); }
+
+/* En-tête pendant le jeu (retour + thème) */
+.quizz-tete { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.quizz-retour {
+  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid var(--creme-fonce);
+  background: #fff; font-size: 1.3rem; line-height: 1; cursor: pointer; color: var(--texte);
+}
+.quizz-retour:hover { border-color: var(--vert-clair); }
+.quizz-theme { font-family: "Fraunces", serif; font-weight: 600; font-size: 1.15rem; }
+.quizz-fin-theme { font-family: "Fraunces", serif; color: var(--texte-doux); font-size: 1.1rem; margin-bottom: 6px; }
+.quizz-fin .score span { font-family: "Inter", sans-serif; font-size: 1.2rem; color: var(--texte-doux); font-weight: 500; }
+.quizz-fin-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.rang-theme { display: block; font-family: "Inter", sans-serif; font-weight: 500; font-size: 0.75rem; color: var(--texte-doux); }
 
 .btn-vert {
   background: var(--vert); color: #fff; border: none; border-radius: 999px;

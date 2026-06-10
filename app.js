@@ -6,6 +6,22 @@
 const ICONE_EAU = { "Peu": "💧", "Modéré": "💧💧", "Souvent": "💧💧💧" };
 const ICONE_SOLEIL = { "Plein soleil": "☀️", "Mi-ombre": "⛅", "Ombre": "🌑" };
 const ICONE_LIEU = { "Intérieur": "🏠", "Extérieur": "🌳", "Les deux": "🏠🌳" };
+const ICONE_FLORAISON = { "Printemps": "🌷", "Été": "🌻", "Automne": "🍂", "Hiver": "❄️", "Toute l'année": "🔁" };
+// Terreaux : libellés complets (quizz) + version courte + icône (fiches)
+const TERREAUX = ["Terreau universel", "Terre de bruyère (sol acide)", "Terreau drainant (méditerranéen/cactées)", "Terreau spécial agrumes"];
+const FLORAISONS = ["Printemps", "Été", "Automne", "Hiver", "Toute l'année"];
+const TERREAU_COURT = {
+  "Terreau universel": "Universel",
+  "Terre de bruyère (sol acide)": "Terre de bruyère",
+  "Terreau drainant (méditerranéen/cactées)": "Drainant",
+  "Terreau spécial agrumes": "Agrumes",
+};
+const ICONE_TERREAU = {
+  "Terreau universel": "🪴",
+  "Terre de bruyère (sol acide)": "🍂",
+  "Terreau drainant (méditerranéen/cactées)": "🏜️",
+  "Terreau spécial agrumes": "🍋",
+};
 
 // Source d'image (gère le fichier intégré OU le dossier images/)
 function chemin(nom) {
@@ -191,6 +207,8 @@ function ouvrirFiche(p) {
         <div class="info-box"><div class="ico">${ICONE_LIEU[p.lieu] || "🌿"}</div><div class="lib">Lieu</div><div class="val">${p.lieu}</div></div>
         <div class="info-box"><div class="ico">${ICONE_SOLEIL[p.soleil] || "🌿"}</div><div class="lib">Lumière</div><div class="val">${p.soleil}</div></div>
         <div class="info-box"><div class="ico">${ICONE_EAU[p.eau] || "🌿"}</div><div class="lib">Arrosage</div><div class="val">${p.eau}</div></div>
+        ${p.floraison ? `<div class="info-box"><div class="ico">${ICONE_FLORAISON[p.floraison] || "🌸"}</div><div class="lib">Floraison</div><div class="val">${p.floraison}</div></div>` : ""}
+        ${p.terreau ? `<div class="info-box"><div class="ico">${ICONE_TERREAU[p.terreau] || "🪴"}</div><div class="lib">Terreau</div><div class="val">${TERREAU_COURT[p.terreau] || p.terreau}</div></div>` : ""}
       </div>
       <div class="bloc"><h3>👁️ Comment la reconnaître</h3><p>${p.reconnaitre}</p></div>
       <div class="bloc"><h3>🪴 Comment l'entretenir</h3><p>${p.entretien}</p></div>
@@ -238,6 +256,8 @@ function construireSwipe() {
             <span class="tag">${ICONE_LIEU[p.lieu] || ""} ${p.lieu}</span>
             <span class="tag">${ICONE_SOLEIL[p.soleil] || ""} ${p.soleil}</span>
             <span class="tag">${ICONE_EAU[p.eau] || ""} ${p.eau}</span>
+            ${p.floraison ? `<span class="tag">${ICONE_FLORAISON[p.floraison] || "🌸"} ${p.floraison}</span>` : ""}
+            ${p.terreau ? `<span class="tag">${ICONE_TERREAU[p.terreau] || "🪴"} ${TERREAU_COURT[p.terreau] || p.terreau}</span>` : ""}
           </div>
           <div class="swipe-bloc"><h3>👁️ Reconnaître</h3><p>${p.reconnaitre}</p></div>
           <div class="swipe-bloc"><h3>🪴 Entretenir</h3><p>${p.entretien}</p></div>
@@ -246,68 +266,85 @@ function construireSwipe() {
   }).join("");
 }
 
-/* ===================== QUIZZ ===================== */
+/* ===================== QUIZZ (thématique) ===================== */
 const POINTS_PAR_BONNE = 10;
-const NB_QUESTIONS = 8;
-let questions = [], qIndex = 0, qScore = 0;
+const NB_QUESTIONS = 10;
+let questions = [], qIndex = 0, qScore = 0, themeActuel = null;
 
-// Génère une banque de questions à partir des données des plantes
-function genererBanque() {
-  const banque = [];
-  const famillesToutes = [...new Set(PLANTES.map(p => p.famille))];
-  const latinsTous = PLANTES.map(p => p.latin);
+// Catégories de quizz. champ = propriété testée ; options = jeu de réponses fixe ;
+// poolFrom = on pioche les distracteurs parmi cette propriété ; photoSeule = on cache le nom (deviner la plante).
+const QUIZZ_THEMES = [
+  { id: "soleil",    emoji: "🌞", titre: "Exposition",           sous: "Plein soleil, mi-ombre ou ombre ?", couleur: "#e8a13a",
+    champ: "soleil",   options: ["Plein soleil", "Mi-ombre", "Ombre"],   question: p => `Quelle exposition préfère « ${p.nom} » ?` },
+  { id: "eau",       emoji: "💧", titre: "Arrosage",             sous: "Quels besoins en eau ?",            couleur: "#3f8fd0",
+    champ: "eau",      options: ["Peu", "Modéré", "Souvent"],             question: p => `Quel arrosage convient à « ${p.nom} » ?` },
+  { id: "terreau",   emoji: "🪴", titre: "Terreau",              sous: "Quel substrat utiliser ?",          couleur: "#9c7038",
+    champ: "terreau",  options: TERREAUX,                                 question: p => `Quel terreau convient le mieux à « ${p.nom} » ?` },
+  { id: "floraison", emoji: "🌸", titre: "Floraison",            sous: "À quelle saison ça fleurit ?",      couleur: "#d96e98",
+    champ: "floraison",options: FLORAISONS,                               question: p => `À quelle saison fleurit « ${p.nom} » ?` },
+  { id: "lieu",      emoji: "🏡", titre: "Intérieur / extérieur",sous: "Où la cultiver ?",                  couleur: "#2f6b46",
+    champ: "lieu",     options: ["Intérieur", "Extérieur", "Les deux"],   question: p => `Où cultive-t-on plutôt « ${p.nom} » ?` },
+  { id: "latin",     emoji: "🔬", titre: "Nom latin",            sous: "Trouvez le nom scientifique",       couleur: "#7b61a8",
+    champ: "latin",    poolFrom: "latin",                                 question: p => `Quel est le nom latin de « ${p.nom} » ?` },
+  { id: "famille",   emoji: "🌿", titre: "Famille botanique",    sous: "À quelle famille appartient-elle ?",couleur: "#3a8f6f",
+    champ: "famille",  poolFrom: "famille",                               question: p => `À quelle famille appartient « ${p.nom} » ?` },
+  { id: "photo",     emoji: "📸", titre: "Reconnaître la photo", sous: "Quelle est cette plante ?",         couleur: "#d9694a",
+    champ: "nom",      poolFrom: "nom", photoSeule: true,                 question: () => `Quelle est cette plante ?` },
+  { id: "mix",       emoji: "🎲", titre: "Quizz mêlé",           sous: "Toutes les catégories mélangées",   couleur: "#1f3d2b", mix: true },
+];
 
-  function distracteurs(bonne, pool, n = 3) {
-    return melanger(pool.filter(x => x !== bonne)).slice(0, n);
-  }
-
-  PLANTES.forEach(p => {
-    // Famille
-    banque.push({
-      plante: p,
-      q: `À quelle famille appartient cette plante ?`,
-      bonne: p.famille,
-      options: melanger([p.famille, ...distracteurs(p.famille, famillesToutes)])
-    });
-    // Nom latin
-    banque.push({
-      plante: p,
-      q: `Quel est le nom latin de « ${p.nom} » ?`,
-      bonne: p.latin,
-      options: melanger([p.latin, ...distracteurs(p.latin, latinsTous)])
-    });
-    // Arrosage
-    banque.push({
-      plante: p,
-      q: `Quel arrosage convient à « ${p.nom} » ?`,
-      bonne: p.eau,
-      options: melanger([p.eau, ...distracteurs(p.eau, ["Peu", "Modéré", "Souvent"], 2)])
-    });
-    // Lumière
-    banque.push({
-      plante: p,
-      q: `Quelle exposition préfère « ${p.nom} » ?`,
-      bonne: p.soleil,
-      options: melanger([p.soleil, ...distracteurs(p.soleil, ["Plein soleil", "Mi-ombre", "Ombre"], 2)])
-    });
-  });
-  return banque;
+function distracteurs(bonne, pool, n = 3) {
+  return melanger([...new Set(pool)].filter(x => x !== bonne)).slice(0, n);
 }
 
+// Construit une question pour un thème donné et une plante donnée
+function questionPourTheme(theme, p) {
+  const bonne = p[theme.champ];
+  let options;
+  if (theme.options) {
+    options = melanger(theme.options.slice());        // jeu fixe (toutes les réponses possibles)
+  } else {
+    const pool = PLANTES.map(x => x[theme.poolFrom]); // distracteurs piochés dans les données
+    options = melanger([bonne, ...distracteurs(bonne, pool)]);
+  }
+  return { plante: p, q: theme.question(p), bonne, options, cacherNom: !!theme.photoSeule };
+}
+
+function genererQuizz(theme) {
+  const plantes = melanger(PLANTES).slice(0, NB_QUESTIONS);
+  if (theme.mix) {
+    const sous = QUIZZ_THEMES.filter(t => !t.mix);
+    return plantes.map(p => questionPourTheme(sous[Math.floor(Math.random() * sous.length)], p));
+  }
+  return plantes.map(p => questionPourTheme(theme, p));
+}
+
+// Page d'accueil : hub avec toutes les catégories
 function montrerAccueilQuizz() {
   const meilleur = lireClassement().reduce((m, r) => Math.max(m, r.points), 0);
+  const cartes = QUIZZ_THEMES.map(t => `
+    <button class="quizz-carte ${t.mix ? "mix" : ""}" data-theme="${t.id}" style="--c:${t.couleur}">
+      <span class="qc-emoji">${t.emoji}</span>
+      <span class="qc-txt"><strong>${t.titre}</strong><span>${t.sous}</span></span>
+      <span class="qc-fleche">›</span>
+    </button>`).join("");
   document.getElementById("quizz").innerHTML = `
-    <div class="quizz-accueil">
-      <div class="big">❓</div>
-      <h2>Quizz des plantes</h2>
-      <p>${NB_QUESTIONS} questions · ${POINTS_PAR_BONNE} points par bonne réponse${meilleur ? `<br>Meilleur score : <strong>${meilleur} pts</strong>` : ""}</p>
-      <button class="btn-vert" id="btn-demarrer">Commencer le quizz</button>
+    <div class="quizz-hub">
+      <div class="quizz-hub-tete">
+        <span class="qh-pastille">🧠 Quizz</span>
+        <h2>Testez vos connaissances</h2>
+        <p>Choisissez un thème — ${NB_QUESTIONS} questions, ${POINTS_PAR_BONNE} pts par bonne réponse.${meilleur ? ` Votre record : <strong>${meilleur} pts</strong>.` : ""}</p>
+      </div>
+      <div class="quizz-grille">${cartes}</div>
     </div>`;
-  document.getElementById("btn-demarrer").addEventListener("click", demarrerQuizz);
+  document.querySelectorAll(".quizz-carte").forEach(b => {
+    b.addEventListener("click", () => demarrerQuizz(b.dataset.theme));
+  });
 }
 
-function demarrerQuizz() {
-  questions = melanger(genererBanque()).slice(0, NB_QUESTIONS);
+function demarrerQuizz(themeId) {
+  themeActuel = QUIZZ_THEMES.find(t => t.id === themeId) || QUIZZ_THEMES[QUIZZ_THEMES.length - 1];
+  questions = genererQuizz(themeActuel);
   qIndex = 0; qScore = 0;
   montrerQuestion();
 }
@@ -318,13 +355,20 @@ function montrerQuestion() {
   const src = q.plante ? srcImageGrande(q.plante) : null;
   const photo = src ? `<div class="quizz-photo"><img src="${src}" alt="plante" onerror="this.closest('.quizz-photo').style.display='none'"></div>` : "";
   document.getElementById("quizz").innerHTML = `
-    <div class="quizz-barre"><i style="width:${prog}%"></i></div>
-    <p class="quizz-compte">Question ${qIndex + 1} / ${questions.length} · ${qScore} pts</p>
-    ${photo}
-    <div class="quizz-question"><h3>${q.q}</h3></div>
-    <div class="quizz-options">
-      ${q.options.map(o => `<button class="opt">${o}</button>`).join("")}
+    <div class="quizz-jeu">
+      <div class="quizz-tete">
+        <button class="quizz-retour" id="quizz-retour" aria-label="Retour aux thèmes">←</button>
+        <span class="quizz-theme">${themeActuel.emoji} ${themeActuel.titre}</span>
+      </div>
+      <div class="quizz-barre"><i style="width:${prog}%"></i></div>
+      <p class="quizz-compte">Question ${qIndex + 1} / ${questions.length} · ${qScore} pts</p>
+      ${photo}
+      <div class="quizz-question"><h3>${q.q}</h3></div>
+      <div class="quizz-options">
+        ${q.options.map(o => `<button class="opt">${o}</button>`).join("")}
+      </div>
     </div>`;
+  document.getElementById("quizz-retour").addEventListener("click", montrerAccueilQuizz);
   document.querySelectorAll("#quizz .opt").forEach(btn => {
     btn.addEventListener("click", () => repondre(btn, q));
   });
@@ -355,20 +399,25 @@ function montrerFin() {
   else if (qScore >= sur * 0.6) msg = "Bravo, beau score ! 🌿";
   document.getElementById("quizz").innerHTML = `
     <div class="quizz-fin">
-      <div class="score">${qScore} pts</div>
+      <div class="quizz-fin-theme">${themeActuel.emoji} ${themeActuel.titre}</div>
+      <div class="score">${qScore} <span>/ ${sur} pts</span></div>
       <p class="msg">${msg}</p>
       <div class="quizz-save">
         <input type="text" id="pseudo" placeholder="Votre prénom / pseudo" maxlength="18" />
         <button class="btn-vert" id="btn-save">Enregistrer mon score</button>
       </div>
-      <button class="btn-doux" id="btn-rejouer">Rejouer</button>
+      <div class="quizz-fin-actions">
+        <button class="btn-doux" id="btn-rejouer">Rejouer ce quizz</button>
+        <button class="btn-doux" id="btn-autres">Choisir un autre quizz</button>
+      </div>
     </div>`;
   document.getElementById("btn-save").addEventListener("click", () => {
     const nom = (document.getElementById("pseudo").value || "").trim() || "Anonyme";
-    enregistrerScore(nom, qScore);
+    enregistrerScore(nom, qScore, themeActuel.titre);
     naviguer("vue-classement");
   });
-  document.getElementById("btn-rejouer").addEventListener("click", demarrerQuizz);
+  document.getElementById("btn-rejouer").addEventListener("click", () => demarrerQuizz(themeActuel.id));
+  document.getElementById("btn-autres").addEventListener("click", montrerAccueilQuizz);
 }
 
 /* ===================== CLASSEMENT (local) ===================== */
@@ -378,9 +427,9 @@ function lireClassement() {
   try { return JSON.parse(localStorage.getItem(CLE_CLASSEMENT)) || []; }
   catch (e) { return []; }
 }
-function enregistrerScore(nom, points) {
+function enregistrerScore(nom, points, theme) {
   const liste = lireClassement();
-  liste.push({ nom, points, t: Date.now() });
+  liste.push({ nom, points, theme: theme || "", t: Date.now() });
   liste.sort((a, b) => b.points - a.points);
   localStorage.setItem(CLE_CLASSEMENT, JSON.stringify(liste.slice(0, 50)));
   dernierNom = nom;
@@ -399,7 +448,7 @@ function afficherClassement() {
   cont.innerHTML = liste.map((r, i) => `
     <div class="rang ${classes[i] || ""} ${r.nom === dernierNom && r.points === liste[i].points ? "moi" : ""}">
       <div class="pos">${medailles[i] || (i + 1)}</div>
-      <div class="nom">${r.nom}</div>
+      <div class="nom">${r.nom}${r.theme ? `<span class="rang-theme">${r.theme}</span>` : ""}</div>
       <div class="pts">${r.points} pts</div>
     </div>`).join("");
 }
