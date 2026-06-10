@@ -406,8 +406,9 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 #vue-swipe.active { height: calc(100dvh - var(--nav-h)); overflow: hidden; position: relative; }
 .swipe-conteneur {
   height: calc(100dvh - var(--nav-h));
-  /* Snap OBLIGATOIRE : effet TikTok, une plante à la fois (pas de glissement continu). */
-  overflow-y: scroll; scroll-snap-type: y mandatory;
+  /* Snap de PROXIMITÉ : on cale sur une plante à la fois, mais sans capturer le 1er geste
+     (le 'mandatory' obligeait à toucher 2 fois pour faire défiler le texte). */
+  overflow-y: scroll; scroll-snap-type: y proximity;
   -webkit-overflow-scrolling: touch; scrollbar-width: none;
 }
 .swipe-conteneur::-webkit-scrollbar { display: none; }
@@ -425,7 +426,10 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .swipe-photo-emoji { display: flex; align-items: center; justify-content: center; font-size: 9rem; }
 /* Panneau d'infos (bas) : SEUL le texte défile ici ; au bout, on bascule à la plante suivante */
 .swipe-info {
-  flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  /* Le texte défile dès le 1er contact (touch-action: pan-y) ; en fin de texte le
+     défilement se prolonge sur le conteneur (overscroll auto) → on passe à la plante suivante. */
+  flex: 1; min-height: 0; overflow-y: auto;
+  touch-action: pan-y; overscroll-behavior-y: auto;
   padding: 22px 26px 30px; background: var(--creme);
   border-radius: 26px 26px 0 0; margin-top: -26px; position: relative; z-index: 2;
   box-shadow: 0 -10px 30px rgba(31,61,43,0.18);
