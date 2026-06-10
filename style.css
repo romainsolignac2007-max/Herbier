@@ -370,7 +370,7 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 
 /* ----- Mode SWIPE (façon TikTok) ----- */
 /* Hauteur fixe de la photo : elle se termine TOUJOURS au même endroit */
-:root { --swipe-photo-h: 52dvh; }
+:root { --swipe-photo-h: 45dvh; }
 #vue-swipe.active { height: calc(100dvh - var(--nav-h)); overflow: hidden; position: relative; }
 .swipe-conteneur {
   height: calc(100dvh - var(--nav-h));
