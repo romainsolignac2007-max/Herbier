@@ -407,7 +407,7 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 /* Navigation pilotée en JS : le conteneur ne défile pas, c'est la piste qui coulisse.
    Le seul élément à défilement natif est le texte (.swipe-info) → scroll fiable sur mobile. */
 .swipe-conteneur { height: calc(100dvh - var(--nav-h)); overflow: hidden; position: relative; }
-.swipe-piste { will-change: transform; transition: transform 0.36s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.swipe-piste { transition: transform 0.36s cubic-bezier(0.22, 0.61, 0.36, 1); }
 .swipe-slide {
   /* Diapo = exactement un écran. L'image reste figée, seul le texte défile dedans. */
   height: calc(100dvh - var(--nav-h));

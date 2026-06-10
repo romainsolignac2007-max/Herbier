@@ -315,8 +315,9 @@ function construireSwipe() {
   swipeConteneur = document.getElementById("swipe-conteneur");
   const slides = melanger(PLANTES).map(p => {
     const src = srcImageGrande(p);
+    // data-src : l'image n'est chargée que lorsque la plante est proche (fenêtre glissante)
     const photo = src
-      ? `<div class="swipe-photo"><img src="${src}" alt="${p.nom}" onerror="this.parentNode.classList.add('swipe-photo-emoji');this.parentNode.textContent='${p.emoji || "🌿"}'"></div>`
+      ? `<div class="swipe-photo"><img data-src="${src}" alt="${p.nom}" onerror="this.parentNode.classList.add('swipe-photo-emoji');this.parentNode.textContent='${p.emoji || "🌿"}'"></div>`
       : `<div class="swipe-photo swipe-photo-emoji">${p.emoji || "🌿"}</div>`;
     return `
       <div class="swipe-slide">
@@ -342,7 +343,23 @@ function construireSwipe() {
   swipeNb = swipePiste.children.length;
   swipeIndex = 0;
   placerSwipe(false);
+  chargerFenetre();
   brancherSwipe();
+}
+
+// N'attache les images qu'autour de la plante affichée et libère les éloignées (mémoire).
+function chargerFenetre() {
+  const enfants = swipePiste.children;
+  for (let k = 0; k < enfants.length; k++) {
+    const img = enfants[k].querySelector("img");
+    if (!img || !img.dataset.src) continue;
+    const dist = Math.abs(k - swipeIndex);
+    if (dist <= 1) {
+      if (!img.getAttribute("src")) img.setAttribute("src", img.dataset.src);
+    } else if (dist > 2 && img.getAttribute("src")) {
+      img.removeAttribute("src");
+    }
+  }
 }
 
 function placerSwipe(animer) {
@@ -357,6 +374,7 @@ function allerSlide(i) {
   swipeIndex = cible;
   swipeAnime = true;
   placerSwipe(true);
+  chargerFenetre();
   // La nouvelle plante démarre texte en haut
   const info = swipePiste.children[swipeIndex].querySelector(".swipe-info");
   if (info) info.scrollTop = 0;
