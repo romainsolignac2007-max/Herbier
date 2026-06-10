@@ -263,13 +263,18 @@ function numeroSemaine(d) {
   return 1 + Math.round(((date - premierJeudi) / 86400000 - 3 + ((premierJeudi.getUTCDay() + 6) % 7)) / 7);
 }
 
-function astuceDeLaSemaine() {
+// Renvoie n astuces du mois courant ; la sélection glisse chaque semaine.
+function astucesDeLaSemaine(n = 3) {
   const d = new Date();
   const mois = d.getMonth() + 1;
   let pool = ASTUCES.filter(a => a.mois.includes(mois));
   if (pool.length === 0) pool = ASTUCES;
-  const a = pool[numeroSemaine(d) % pool.length];
-  return { ...a, mois };
+  const debut = numeroSemaine(d) % pool.length;
+  const res = [];
+  for (let k = 0; k < Math.min(n, pool.length); k++) {
+    res.push(pool[(debut + k) % pool.length]);
+  }
+  return { mois, liste: res };
 }
 
 function remplirAccueil() {
@@ -280,16 +285,17 @@ function remplirAccueil() {
     <div class="stat-bulle"><div class="nb">${familles}</div><div class="lb">familles</div></div>
     <div class="stat-bulle"><div class="nb">∞</div><div class="lb">à apprendre</div></div>`;
 
-  // Astuce de la semaine (saisonnière)
-  const a = astuceDeLaSemaine();
+  // Astuces de saison (plusieurs à la fois, renouvelées chaque semaine)
+  const { mois, liste } = astucesDeLaSemaine(3);
   document.getElementById("astuce-semaine").innerHTML = `
-    <div class="astuce">
-      <div class="astuce-ico">${a.emoji}</div>
-      <div class="astuce-corps">
-        <span class="astuce-label">Astuce de la semaine · ${MOIS_NOM[a.mois - 1]}</span>
-        <h3>${a.titre}</h3>
-        <p>${a.texte}</p>
-      </div>
+    <h2 class="section-titre">🌿 Astuces de saison · ${MOIS_NOM[mois - 1]}</h2>
+    <p class="section-sous">Les bons gestes du moment — renouvelés chaque semaine.</p>
+    <div class="astuces-liste">
+      ${liste.map(a => `
+        <div class="astuce">
+          <div class="astuce-ico">${a.emoji}</div>
+          <div class="astuce-corps"><h3>${a.titre}</h3><p>${a.texte}</p></div>
+        </div>`).join("")}
     </div>`;
 
   // À la une : 3 plantes au hasard
