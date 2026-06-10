@@ -324,18 +324,49 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .stat-bulle .nb { font-family: "Fraunces", serif; font-size: 1.9rem; color: var(--vert); font-weight: 600; }
 .stat-bulle .lb { font-size: 0.82rem; color: var(--texte-doux); }
 
-.section-titre { font-size: 1.4rem; margin: 30px 0 14px; }
+.section-titre { font-size: 1.4rem; margin: 30px 0 6px; }
+.section-sous { color: var(--texte-doux); font-size: 0.92rem; margin-bottom: 14px; }
 
-.accueil-cartes { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
-.acces {
-  display: flex; align-items: center; gap: 14px; text-align: left;
-  background: #fff; border: none; border-radius: var(--radius); box-shadow: var(--ombre);
-  padding: 18px 20px; cursor: pointer; font-family: inherit; transition: transform 0.15s ease;
+/* Astuce de la semaine (saisonnière) */
+.astuce {
+  display: flex; gap: 16px; align-items: flex-start;
+  background: linear-gradient(135deg, #fff, var(--creme));
+  border: 1px solid var(--creme-fonce); border-left: 6px solid var(--vert-clair);
+  border-radius: var(--radius); box-shadow: var(--ombre); padding: 18px 20px; margin-top: 22px;
 }
-.acces:hover { transform: translateY(-4px); }
-.acces-ico { font-size: 2rem; }
-.acces-txt { display: flex; flex-direction: column; color: var(--texte-doux); font-size: 0.85rem; }
-.acces-txt strong { color: var(--texte); font-size: 1.05rem; font-family: "Fraunces", serif; }
+.astuce-ico {
+  flex: 0 0 52px; height: 52px; display: flex; align-items: center; justify-content: center;
+  font-size: 1.8rem; background: #fff; border-radius: 14px; box-shadow: var(--ombre);
+}
+.astuce-corps { flex: 1; min-width: 0; }
+.astuce-label {
+  display: inline-block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+  font-weight: 600; color: var(--vert); margin-bottom: 4px;
+}
+.astuce-corps h3 { font-size: 1.2rem; margin-bottom: 4px; }
+.astuce-corps p { color: var(--texte-doux); font-size: 0.95rem; }
+
+/* À propos */
+.apropos {
+  margin: 40px 0 20px; background: var(--vert-fonce); color: var(--creme);
+  border-radius: 22px; padding: 34px 30px;
+  background-image: radial-gradient(110% 110% at 90% -10%, rgba(90,157,110,0.35), transparent 55%);
+}
+.apropos-badge {
+  display: inline-block; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
+  padding: 5px 14px; border-radius: 999px; font-size: 0.8rem; font-weight: 500; margin-bottom: 14px;
+}
+.apropos h2 { font-size: clamp(1.4rem, 3.5vw, 2rem); margin-bottom: 12px; max-width: 620px; }
+.apropos > p { color: rgba(246,244,236,0.82); max-width: 640px; margin-bottom: 24px; }
+.apropos-points { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.ap-point {
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 3px;
+}
+.ap-point .ap-ico { font-size: 1.6rem; }
+.ap-point strong { font-family: "Fraunces", serif; font-size: 1.1rem; }
+.ap-point span:last-child { color: rgba(246,244,236,0.72); font-size: 0.85rem; }
+.apropos-pied { text-align: center; color: rgba(246,244,236,0.75); font-size: 0.92rem; margin-top: 22px; }
 
 /* ----- Barre de navigation du bas ----- */
 .barre-nav {

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=15" />
+  <link rel="stylesheet" href="style.css?v=16" />
 </head>
 <body>
 
@@ -24,28 +24,31 @@
     <div class="accueil-corps">
       <div class="accueil-stats" id="accueil-stats"></div>
 
-      <h2 class="section-titre">Que voulez-vous faire ?</h2>
-      <div class="accueil-cartes">
-        <button class="acces" data-aller="vue-recherche">
-          <span class="acces-ico">🔍</span>
-          <span class="acces-txt"><strong>Rechercher</strong>Trouver une plante et sa fiche</span>
-        </button>
-        <button class="acces" data-aller="vue-swipe">
-          <span class="acces-ico">🎬</span>
-          <span class="acces-txt"><strong>Découvrir en swipe</strong>Faire défiler les plantes</span>
-        </button>
-        <button class="acces" data-aller="vue-quizz">
-          <span class="acces-ico">❓</span>
-          <span class="acces-txt"><strong>Jouer au quizz</strong>Testez vos connaissances</span>
-        </button>
-        <button class="acces" data-aller="vue-classement">
-          <span class="acces-ico">🏆</span>
-          <span class="acces-txt"><strong>Classement</strong>Voir les meilleurs scores</span>
-        </button>
-      </div>
+      <!-- Astuce de saison (change chaque semaine) -->
+      <div id="astuce-semaine"></div>
 
-      <h2 class="section-titre">À la une</h2>
+      <h2 class="section-titre">🌟 À la une</h2>
+      <p class="section-sous">Trois plantes à découvrir, tirées au hasard à chaque visite.</p>
       <div class="grille" id="grille-une"></div>
+
+      <!-- À propos du site -->
+      <section class="apropos">
+        <span class="apropos-badge">🌿 À propos</span>
+        <h2>Votre herbier pour reconnaître et choyer chaque plante</h2>
+        <p>
+          Cet herbier numérique rassemble une collection de plantes du jardin et de la maison,
+          avec pour chacune une fiche claire : comment la reconnaître, où l'installer, comment
+          l'arroser, quel terreau utiliser et à quelle saison elle fleurit. L'idée : avoir le bon
+          réflexe au bon moment, que vous soyez jardinier débutant ou passionné.
+        </p>
+        <div class="apropos-points">
+          <div class="ap-point"><span class="ap-ico">🔍</span><strong>Identifier</strong><span>Retrouvez une plante par son nom, sa famille ou ses besoins.</span></div>
+          <div class="ap-point"><span class="ap-ico">🎬</span><strong>Découvrir</strong><span>Faites défiler les plantes en mode swipe, façon cinématique.</span></div>
+          <div class="ap-point"><span class="ap-ico">🧠</span><strong>S'entraîner</strong><span>Testez vos connaissances avec des quizz par thème.</span></div>
+          <div class="ap-point"><span class="ap-ico">🪴</span><strong>Prendre soin</strong><span>Arrosage, exposition, terreau et floraison pour chaque espèce.</span></div>
+        </div>
+        <p class="apropos-pied">Naviguez entre les sections grâce au menu en bas de l'écran 👇</p>
+      </section>
     </div>
   </section>
 
@@ -113,7 +116,7 @@
     </button>
   </nav>
 
-  <script src="plantes.js?v=15"></script>
-  <script src="app.js?v=15"></script>
+  <script src="plantes.js?v=16"></script>
+  <script src="app.js?v=16"></script>
 </body>
 </html>

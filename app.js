@@ -223,6 +223,55 @@ overlay.addEventListener("click", e => { if (e.target === overlay) fermerFiche()
 document.addEventListener("keydown", e => { if (e.key === "Escape") fermerFiche(); });
 
 /* ===================== ACCUEIL ===================== */
+
+// Astuces de saison : chaque astuce est rattachée aux mois où elle est pertinente.
+// L'astuce affichée change chaque semaine (rotation parmi celles du mois en cours).
+const MOIS_NOM = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+const ASTUCES = [
+  // Hiver
+  { mois: [12, 1, 2], emoji: "✂️", titre: "Taillez les arbres fruitiers à pépins", texte: "Profitez du repos végétatif, hors période de gel, pour tailler pommiers et poiriers : retirez le bois mort, les branches qui se croisent et aérez le centre pour laisser entrer la lumière." },
+  { mois: [12, 1], emoji: "🧤", titre: "Protégez les plantes du gel", texte: "Paillez le pied des plantes fragiles et posez un voile d'hivernage sur les sujets gélifs (agrumes, oliviers en pot). Rentrez les potées non rustiques dans un local clair et frais." },
+  { mois: [1], emoji: "🛠️", titre: "Entretenez vos outils", texte: "Saison calme au jardin : nettoyez, affûtez et huilez sécateurs et bêches. Un outil propre et bien tranchant limite la propagation des maladies d'une plante à l'autre." },
+  { mois: [11, 12, 1, 2], emoji: "🌳", titre: "Plantez à racines nues", texte: "C'est la période idéale pour planter arbres et arbustes à racines nues : installés maintenant, ils repartiront de plus belle au printemps." },
+  { mois: [2, 3], emoji: "🌹", titre: "Taillez les rosiers", texte: "En fin d'hiver, rabattez les rosiers buissons à 3-5 yeux, juste au-dessus d'un œil tourné vers l'extérieur. Coupez en biais et éliminez le bois mort ou chétif." },
+  // Printemps
+  { mois: [3, 4], emoji: "🪴", titre: "Rempotez les plantes d'intérieur", texte: "La reprise de croissance arrive : rempotez dans un pot à peine plus grand avec du terreau frais. C'est aussi le bon moment pour diviser les touffes devenues trop serrées." },
+  { mois: [3], emoji: "🌱", titre: "Lancez vos semis sous abri", texte: "Démarrez tomates, basilic et fleurs annuelles à la chaleur, sur un rebord de fenêtre lumineux. Vous les repiquerez dehors une fois tout risque de gelée écarté." },
+  { mois: [3, 4], emoji: "🌿", titre: "Divisez les vivaces", texte: "Séparez en éclats les vivaces (hostas, graminées, asters) en gardant des racines sur chaque morceau : vous rajeunissez la plante et garnissez gratuitement vos massifs." },
+  { mois: [4, 5], emoji: "🌸", titre: "Taillez les arbustes de printemps", texte: "Taillez forsythias, lilas et autres arbustes APRÈS leur floraison, jamais avant : tailler trop tôt reviendrait à supprimer les fleurs de l'année." },
+  { mois: [4, 5], emoji: "🐞", titre: "Surveillez les pucerons", texte: "Les premières chaleurs amènent les pucerons. Inspectez les jeunes pousses et laissez faire les coccinelles avant de penser aux traitements." },
+  { mois: [5], emoji: "🍅", titre: "Installez le potager", texte: "Après la mi-mai (Saints de Glace), plantez sans risque tomates, courgettes et aromatiques en pleine terre, et arrosez régulièrement à la reprise." },
+  // Été
+  { mois: [6, 7, 8], emoji: "💧", titre: "Arrosez au bon moment", texte: "Arrosez tôt le matin ou le soir, copieusement et au pied plutôt qu'un peu chaque jour : les racines plongent en profondeur et la plante résiste mieux à la sécheresse." },
+  { mois: [6, 7], emoji: "🌹", titre: "Retirez les fleurs fanées", texte: "Supprimez régulièrement les fleurs fanées (rosiers, géraniums, vivaces) : la plante, au lieu de faire des graines, relance de nouvelles floraisons tout l'été." },
+  { mois: [6, 7], emoji: "🌾", titre: "Paillez contre la sécheresse", texte: "Un bon paillage (tontes séchées, paille, BRF) garde le sol frais, réduit nettement l'arrosage et étouffe les mauvaises herbes." },
+  { mois: [7, 8], emoji: "💜", titre: "Taillez la lavande", texte: "Juste après la floraison, taillez la lavande en boule sans entamer le vieux bois : elle restera compacte et refleurira généreusement l'an prochain." },
+  { mois: [6, 7, 8], emoji: "🌿", titre: "Bouturez les arbustes", texte: "L'été est parfait pour bouturer en godet (laurier, romarin, hortensia) : prélevez une tige non fleurie et gardez le substrat humide, à l'ombre." },
+  // Automne
+  { mois: [9, 10], emoji: "🍂", titre: "Plantez vivaces et arbustes", texte: "« À la Sainte-Catherine, tout bois prend racine. » Le sol encore chaud et les pluies d'automne favorisent une plantation réussie avant l'hiver." },
+  { mois: [9, 10, 11], emoji: "🌷", titre: "Plantez les bulbes de printemps", texte: "Plantez tulipes, narcisses et crocus à l'automne, à une profondeur de 2 à 3 fois leur hauteur, pour un printemps tout fleuri." },
+  { mois: [10, 11], emoji: "🍁", titre: "Recyclez les feuilles mortes", texte: "Mettez les feuilles au compost ou en tas pour obtenir un terreau de feuilles ; gardez-en une couche au pied des plantes frileuses comme protection." },
+  { mois: [10, 11], emoji: "🏠", titre: "Rentrez les plantes fragiles", texte: "Avant les premières gelées, rentrez agrumes, géraniums et plantes grasses dans un local clair et hors gel, en réduisant les arrosages." },
+  { mois: [9], emoji: "🌱", titre: "Semez ou regarnissez la pelouse", texte: "Septembre, avec un sol chaud et humide, est le meilleur moment pour semer un gazon ou regarnir les zones clairsemées." },
+];
+
+function numeroSemaine(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const jour = (date.getUTCDay() + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - jour + 3);
+  const premierJeudi = new Date(Date.UTC(date.getUTCFullYear(), 0, 4));
+  return 1 + Math.round(((date - premierJeudi) / 86400000 - 3 + ((premierJeudi.getUTCDay() + 6) % 7)) / 7);
+}
+
+function astuceDeLaSemaine() {
+  const d = new Date();
+  const mois = d.getMonth() + 1;
+  let pool = ASTUCES.filter(a => a.mois.includes(mois));
+  if (pool.length === 0) pool = ASTUCES;
+  const a = pool[numeroSemaine(d) % pool.length];
+  return { ...a, mois };
+}
+
 function remplirAccueil() {
   // Stats
   const familles = new Set(PLANTES.map(p => p.famille)).size;
@@ -230,6 +279,19 @@ function remplirAccueil() {
     <div class="stat-bulle"><div class="nb">${PLANTES.length}</div><div class="lb">plantes</div></div>
     <div class="stat-bulle"><div class="nb">${familles}</div><div class="lb">familles</div></div>
     <div class="stat-bulle"><div class="nb">∞</div><div class="lb">à apprendre</div></div>`;
+
+  // Astuce de la semaine (saisonnière)
+  const a = astuceDeLaSemaine();
+  document.getElementById("astuce-semaine").innerHTML = `
+    <div class="astuce">
+      <div class="astuce-ico">${a.emoji}</div>
+      <div class="astuce-corps">
+        <span class="astuce-label">Astuce de la semaine · ${MOIS_NOM[a.mois - 1]}</span>
+        <h3>${a.titre}</h3>
+        <p>${a.texte}</p>
+      </div>
+    </div>`;
+
   // À la une : 3 plantes au hasard
   const une = melanger(PLANTES).slice(0, 3);
   const g = document.getElementById("grille-une");
