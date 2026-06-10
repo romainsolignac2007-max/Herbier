@@ -338,18 +338,20 @@ function slideHTML(p) {
     </div>`;
 }
 
-function rendreSlide(sens) {
-  swipeConteneur.innerHTML = slideHTML(swipeListe[swipeIndex]);
-  const slide = swipeConteneur.firstElementChild;
-  if (sens > 0) slide.classList.add("entre-bas");
-  else if (sens < 0) slide.classList.add("entre-haut");
+function elementDepuisHTML(html) {
+  const t = document.createElement("template");
+  t.innerHTML = html.trim();
+  return t.content.firstElementChild;
 }
+
+const SWIPE_TRANS = "transform 0.42s cubic-bezier(0.33, 1, 0.68, 1)"; // ralenti doux, façon TikTok
 
 function construireSwipe() {
   swipeConteneur = document.getElementById("swipe-conteneur");
   swipeListe = melanger(PLANTES);
   swipeIndex = 0;
-  rendreSlide(0);
+  swipeConteneur.innerHTML = "";
+  swipeConteneur.appendChild(elementDepuisHTML(slideHTML(swipeListe[0])));
   if (!swipeBranche) { brancherSwipe(); swipeBranche = true; }
 }
 
@@ -359,17 +361,34 @@ function allerSlide(i) {
   const sens = cible > swipeIndex ? 1 : -1;
   swipeIndex = cible;
   swipeAnime = true;
-  rendreSlide(sens);
-  setTimeout(() => { swipeAnime = false; }, 360);
+
+  const ancien = swipeConteneur.querySelector(".swipe-slide");
+  const nouveau = elementDepuisHTML(slideHTML(swipeListe[cible]));
+  // La nouvelle plante attend juste hors écran (en bas pour "suivant", en haut pour "précédent")
+  nouveau.style.transform = sens > 0 ? "translateY(100%)" : "translateY(-100%)";
+  swipeConteneur.appendChild(nouveau);
+  void nouveau.offsetHeight; // force le reflow avant d'animer
+
+  // Les deux glissent ENSEMBLE, dans le même sens (mouvement continu)
+  if (ancien) { ancien.style.transition = SWIPE_TRANS; ancien.style.transform = sens > 0 ? "translateY(-100%)" : "translateY(100%)"; }
+  nouveau.style.transition = SWIPE_TRANS;
+  nouveau.style.transform = "translateY(0)";
+
+  setTimeout(() => {
+    if (ancien) ancien.remove();
+    nouveau.style.transition = "";
+    swipeAnime = false;
+  }, 440);
 }
 
-function infoSwipe() { return swipeConteneur.querySelector(".swipe-info"); }
-function texteEnBas() { const i = infoSwipe(); return !i || i.scrollTop + i.clientHeight >= i.scrollHeight - 4; }
-function texteEnHaut() { const i = infoSwipe(); return !i || i.scrollTop <= 4; }
+function infoSwipe() { return swipeConteneur.querySelector(".swipe-slide:last-child .swipe-info"); }
+// Tolérance large = moins de résistance pour basculer en bout de texte
+function texteEnBas() { const i = infoSwipe(); return !i || i.scrollTop + i.clientHeight >= i.scrollHeight - 36; }
+function texteEnHaut() { const i = infoSwipe(); return !i || i.scrollTop <= 36; }
 
 function brancherSwipe() {
   let y0 = 0, x0 = 0, surTexte = false;
-  const SEUIL = 45;
+  const SEUIL = 28; // glissement minimal pour changer de plante (moins de résistance)
 
   swipeConteneur.addEventListener("touchstart", e => {
     const t = e.touches[0]; y0 = t.clientY; x0 = t.clientX;

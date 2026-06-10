@@ -404,19 +404,15 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 /* Hauteur fixe de la photo : elle se termine TOUJOURS au même endroit */
 :root { --swipe-photo-h: 45dvh; }
 #vue-swipe.active { height: calc(100dvh - var(--nav-h)); overflow: hidden; position: relative; }
-/* Navigation pilotée en JS : une SEULE plante dans le DOM à la fois.
-   Le seul élément à défilement natif est le texte (.swipe-info) → scroll fiable sur mobile. */
+/* Navigation pilotée en JS : 1 à 2 plantes dans le DOM (pendant la transition).
+   Diapos en position absolue → elles glissent l'une sur l'autre sans bouger le reste
+   de la page (la barre du bas reste figée). Le texte (.swipe-info) défile nativement. */
 .swipe-conteneur { height: calc(100dvh - var(--nav-h)); overflow: hidden; position: relative; }
 .swipe-slide {
   /* Diapo = exactement un écran. L'image reste figée, seul le texte défile dedans. */
-  height: calc(100dvh - var(--nav-h));
+  position: absolute; inset: 0; height: 100%;
   display: flex; flex-direction: column; background: var(--creme); overflow: hidden;
 }
-/* Animation d'entrée façon TikTok (la nouvelle plante glisse) */
-@keyframes entreBas { from { transform: translateY(100%); } to { transform: translateY(0); } }
-@keyframes entreHaut { from { transform: translateY(-100%); } to { transform: translateY(0); } }
-.swipe-slide.entre-bas { animation: entreBas 0.34s cubic-bezier(0.22, 0.61, 0.36, 1); }
-.swipe-slide.entre-haut { animation: entreHaut 0.34s cubic-bezier(0.22, 0.61, 0.36, 1); }
 /* Photo de la plante entière (haut) — FIGÉE, hauteur fixe et identique partout */
 .swipe-photo {
   flex: 0 0 var(--swipe-photo-h); height: var(--swipe-photo-h);
