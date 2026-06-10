@@ -346,12 +346,31 @@ function elementDepuisHTML(html) {
 
 const SWIPE_TRANS = "transform 0.42s cubic-bezier(0.33, 1, 0.68, 1)"; // ralenti doux, façon TikTok
 
+// Précharge les photos voisines (2 suivantes + 1 précédente) pour une transition fluide,
+// tout en libérant les éloignées → la mémoire reste basse.
+let swipePreload = {};
+function prechargerVoisines() {
+  const garder = new Set();
+  for (let d = -1; d <= 2; d++) {
+    const k = swipeIndex + d;
+    if (k < 0 || k >= swipeListe.length) continue;
+    garder.add(k);
+    if (!swipePreload[k]) {
+      const src = srcImageGrande(swipeListe[k]);
+      if (src) { const im = new Image(); im.src = src; swipePreload[k] = im; }
+    }
+  }
+  Object.keys(swipePreload).forEach(k => { if (!garder.has(+k)) delete swipePreload[+k]; });
+}
+
 function construireSwipe() {
   swipeConteneur = document.getElementById("swipe-conteneur");
   swipeListe = melanger(PLANTES);
   swipeIndex = 0;
+  swipePreload = {};
   swipeConteneur.innerHTML = "";
   swipeConteneur.appendChild(elementDepuisHTML(slideHTML(swipeListe[0])));
+  prechargerVoisines();
   if (!swipeBranche) { brancherSwipe(); swipeBranche = true; }
 }
 
@@ -361,6 +380,7 @@ function allerSlide(i) {
   const sens = cible > swipeIndex ? 1 : -1;
   swipeIndex = cible;
   swipeAnime = true;
+  prechargerVoisines();
 
   const ancien = swipeConteneur.querySelector(".swipe-slide");
   const nouveau = elementDepuisHTML(slideHTML(swipeListe[cible]));
