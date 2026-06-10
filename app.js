@@ -306,85 +306,66 @@ function remplirAccueil() {
 }
 
 /* ===================== MODE SWIPE (façon TikTok) =====================
-   Navigation pilotée en JS : le texte garde un défilement natif simple et
-   fiable ; un détecteur de geste décide quand changer de plante (geste sur
-   l'image, ou geste prolongé une fois le texte arrivé en butée). */
-let swipeIndex = 0, swipeNb = 0, swipePiste = null, swipeConteneur = null, swipeAnime = false;
+   UNE seule plante dans le DOM à la fois (donc une seule image en mémoire) :
+   impossible de saturer la mémoire, quel que soit le nombre de plantes.
+   Le contenu est remplacé à chaque changement, avec une animation glissée.
+   Le texte garde un défilement natif simple (fiable) ; un détecteur de geste
+   décide quand passer à la plante suivante (geste sur l'image, ou en bout de texte). */
+let swipeListe = [], swipeIndex = 0, swipeConteneur = null, swipeAnime = false, swipeBranche = false;
+
+function slideHTML(p) {
+  const src = srcImageGrande(p);
+  const photo = src
+    ? `<div class="swipe-photo"><img src="${src}" alt="${p.nom}" onerror="this.parentNode.classList.add('swipe-photo-emoji');this.parentNode.textContent='${p.emoji || "🌿"}'"></div>`
+    : `<div class="swipe-photo swipe-photo-emoji">${p.emoji || "🌿"}</div>`;
+  return `
+    <div class="swipe-slide">
+      ${photo}
+      <div class="swipe-info">
+        <h2>${p.nom}</h2>
+        <p class="latin">${p.latin} · ${p.famille}</p>
+        ${p.presentation ? `<p class="swipe-presentation">${p.presentation}</p>` : ""}
+        <div class="swipe-tags">
+          <span class="tag">${ICONE_LIEU[p.lieu] || ""} ${p.lieu}</span>
+          <span class="tag">${ICONE_SOLEIL[p.soleil] || ""} ${p.soleil}</span>
+          <span class="tag">${ICONE_EAU[p.eau] || ""} ${p.eau}</span>
+          ${p.floraison ? `<span class="tag">${ICONE_FLORAISON[p.floraison] || "🌸"} ${p.floraison}</span>` : ""}
+          ${p.terreau ? `<span class="tag">${ICONE_TERREAU[p.terreau] || "🪴"} ${TERREAU_COURT[p.terreau] || p.terreau}</span>` : ""}
+        </div>
+        <div class="swipe-bloc"><h3>👁️ Reconnaître</h3><p>${p.reconnaitre}</p></div>
+        <div class="swipe-bloc"><h3>🪴 Entretenir</h3><p>${p.entretien}</p></div>
+      </div>
+    </div>`;
+}
+
+function rendreSlide(sens) {
+  swipeConteneur.innerHTML = slideHTML(swipeListe[swipeIndex]);
+  const slide = swipeConteneur.firstElementChild;
+  if (sens > 0) slide.classList.add("entre-bas");
+  else if (sens < 0) slide.classList.add("entre-haut");
+}
 
 function construireSwipe() {
   swipeConteneur = document.getElementById("swipe-conteneur");
-  const slides = melanger(PLANTES).map(p => {
-    const src = srcImageGrande(p);
-    // data-src : l'image n'est chargée que lorsque la plante est proche (fenêtre glissante)
-    const photo = src
-      ? `<div class="swipe-photo"><img data-src="${src}" alt="${p.nom}" onerror="this.parentNode.classList.add('swipe-photo-emoji');this.parentNode.textContent='${p.emoji || "🌿"}'"></div>`
-      : `<div class="swipe-photo swipe-photo-emoji">${p.emoji || "🌿"}</div>`;
-    return `
-      <div class="swipe-slide">
-        ${photo}
-        <div class="swipe-info">
-          <h2>${p.nom}</h2>
-          <p class="latin">${p.latin} · ${p.famille}</p>
-          ${p.presentation ? `<p class="swipe-presentation">${p.presentation}</p>` : ""}
-          <div class="swipe-tags">
-            <span class="tag">${ICONE_LIEU[p.lieu] || ""} ${p.lieu}</span>
-            <span class="tag">${ICONE_SOLEIL[p.soleil] || ""} ${p.soleil}</span>
-            <span class="tag">${ICONE_EAU[p.eau] || ""} ${p.eau}</span>
-            ${p.floraison ? `<span class="tag">${ICONE_FLORAISON[p.floraison] || "🌸"} ${p.floraison}</span>` : ""}
-            ${p.terreau ? `<span class="tag">${ICONE_TERREAU[p.terreau] || "🪴"} ${TERREAU_COURT[p.terreau] || p.terreau}</span>` : ""}
-          </div>
-          <div class="swipe-bloc"><h3>👁️ Reconnaître</h3><p>${p.reconnaitre}</p></div>
-          <div class="swipe-bloc"><h3>🪴 Entretenir</h3><p>${p.entretien}</p></div>
-        </div>
-      </div>`;
-  }).join("");
-  swipeConteneur.innerHTML = `<div class="swipe-piste">${slides}</div>`;
-  swipePiste = swipeConteneur.querySelector(".swipe-piste");
-  swipeNb = swipePiste.children.length;
+  swipeListe = melanger(PLANTES);
   swipeIndex = 0;
-  placerSwipe(false);
-  chargerFenetre();
-  brancherSwipe();
-}
-
-// N'attache les images qu'autour de la plante affichée et libère les éloignées (mémoire).
-function chargerFenetre() {
-  const enfants = swipePiste.children;
-  for (let k = 0; k < enfants.length; k++) {
-    const img = enfants[k].querySelector("img");
-    if (!img || !img.dataset.src) continue;
-    const dist = Math.abs(k - swipeIndex);
-    if (dist <= 1) {
-      if (!img.getAttribute("src")) img.setAttribute("src", img.dataset.src);
-    } else if (dist > 2 && img.getAttribute("src")) {
-      img.removeAttribute("src");
-    }
-  }
-}
-
-function placerSwipe(animer) {
-  if (!swipePiste) return;
-  swipePiste.style.transition = animer ? "" : "none";
-  swipePiste.style.transform = `translateY(${-swipeIndex * swipeConteneur.clientHeight}px)`;
+  rendreSlide(0);
+  if (!swipeBranche) { brancherSwipe(); swipeBranche = true; }
 }
 
 function allerSlide(i) {
-  const cible = Math.max(0, Math.min(swipeNb - 1, i));
-  if (cible === swipeIndex) return;
+  const cible = Math.max(0, Math.min(swipeListe.length - 1, i));
+  if (cible === swipeIndex || swipeAnime) return;
+  const sens = cible > swipeIndex ? 1 : -1;
   swipeIndex = cible;
   swipeAnime = true;
-  placerSwipe(true);
-  chargerFenetre();
-  // La nouvelle plante démarre texte en haut
-  const info = swipePiste.children[swipeIndex].querySelector(".swipe-info");
-  if (info) info.scrollTop = 0;
-  setTimeout(() => { swipeAnime = false; }, 380);
+  rendreSlide(sens);
+  setTimeout(() => { swipeAnime = false; }, 360);
 }
 
-// Le texte de la diapo courante est-il en butée (haut / bas) ?
-function infoCourant() { return swipePiste.children[swipeIndex].querySelector(".swipe-info"); }
-function texteEnBas() { const i = infoCourant(); return !i || i.scrollTop + i.clientHeight >= i.scrollHeight - 4; }
-function texteEnHaut() { const i = infoCourant(); return !i || i.scrollTop <= 4; }
+function infoSwipe() { return swipeConteneur.querySelector(".swipe-info"); }
+function texteEnBas() { const i = infoSwipe(); return !i || i.scrollTop + i.clientHeight >= i.scrollHeight - 4; }
+function texteEnHaut() { const i = infoSwipe(); return !i || i.scrollTop <= 4; }
 
 function brancherSwipe() {
   let y0 = 0, x0 = 0, surTexte = false;
@@ -419,8 +400,6 @@ function brancherSwipe() {
     verrou = true; setTimeout(() => { verrou = false; }, 450);
     allerSlide(swipeIndex + (versBas ? 1 : -1));
   }, { passive: false });
-
-  window.addEventListener("resize", () => placerSwipe(false));
 }
 
 /* ===================== QUIZZ (thématique) ===================== */
