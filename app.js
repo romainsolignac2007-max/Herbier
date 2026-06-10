@@ -305,10 +305,15 @@ function remplirAccueil() {
   brancherCartes(g);
 }
 
-/* ===================== MODE SWIPE (façon TikTok) ===================== */
+/* ===================== MODE SWIPE (façon TikTok) =====================
+   Navigation pilotée en JS : le texte garde un défilement natif simple et
+   fiable ; un détecteur de geste décide quand changer de plante (geste sur
+   l'image, ou geste prolongé une fois le texte arrivé en butée). */
+let swipeIndex = 0, swipeNb = 0, swipePiste = null, swipeConteneur = null, swipeAnime = false;
+
 function construireSwipe() {
-  const c = document.getElementById("swipe-conteneur");
-  c.innerHTML = melanger(PLANTES).map(p => {
+  swipeConteneur = document.getElementById("swipe-conteneur");
+  const slides = melanger(PLANTES).map(p => {
     const src = srcImageGrande(p);
     const photo = src
       ? `<div class="swipe-photo"><img src="${src}" alt="${p.nom}" onerror="this.parentNode.classList.add('swipe-photo-emoji');this.parentNode.textContent='${p.emoji || "🌿"}'"></div>`
@@ -332,6 +337,72 @@ function construireSwipe() {
         </div>
       </div>`;
   }).join("");
+  swipeConteneur.innerHTML = `<div class="swipe-piste">${slides}</div>`;
+  swipePiste = swipeConteneur.querySelector(".swipe-piste");
+  swipeNb = swipePiste.children.length;
+  swipeIndex = 0;
+  placerSwipe(false);
+  brancherSwipe();
+}
+
+function placerSwipe(animer) {
+  if (!swipePiste) return;
+  swipePiste.style.transition = animer ? "" : "none";
+  swipePiste.style.transform = `translateY(${-swipeIndex * swipeConteneur.clientHeight}px)`;
+}
+
+function allerSlide(i) {
+  const cible = Math.max(0, Math.min(swipeNb - 1, i));
+  if (cible === swipeIndex) return;
+  swipeIndex = cible;
+  swipeAnime = true;
+  placerSwipe(true);
+  // La nouvelle plante démarre texte en haut
+  const info = swipePiste.children[swipeIndex].querySelector(".swipe-info");
+  if (info) info.scrollTop = 0;
+  setTimeout(() => { swipeAnime = false; }, 380);
+}
+
+// Le texte de la diapo courante est-il en butée (haut / bas) ?
+function infoCourant() { return swipePiste.children[swipeIndex].querySelector(".swipe-info"); }
+function texteEnBas() { const i = infoCourant(); return !i || i.scrollTop + i.clientHeight >= i.scrollHeight - 4; }
+function texteEnHaut() { const i = infoCourant(); return !i || i.scrollTop <= 4; }
+
+function brancherSwipe() {
+  let y0 = 0, x0 = 0, surTexte = false;
+  const SEUIL = 45;
+
+  swipeConteneur.addEventListener("touchstart", e => {
+    const t = e.touches[0]; y0 = t.clientY; x0 = t.clientX;
+    surTexte = !!e.target.closest(".swipe-info");
+  }, { passive: true });
+
+  swipeConteneur.addEventListener("touchend", e => {
+    if (swipeAnime) return;
+    const t = e.changedTouches[0];
+    const dy = t.clientY - y0, dx = t.clientX - x0;
+    if (Math.abs(dy) < SEUIL || Math.abs(dx) > Math.abs(dy)) return; // pas un swipe vertical net
+    if (dy < 0) {                       // vers le haut → plante suivante
+      if (!surTexte || texteEnBas()) allerSlide(swipeIndex + 1);
+    } else {                            // vers le bas → plante précédente
+      if (!surTexte || texteEnHaut()) allerSlide(swipeIndex - 1);
+    }
+  }, { passive: true });
+
+  // Molette / trackpad (ordinateur)
+  let verrou = false;
+  swipeConteneur.addEventListener("wheel", e => {
+    const surInfo = !!e.target.closest(".swipe-info");
+    const versBas = e.deltaY > 0;
+    const bloque = versBas ? (!surInfo || texteEnBas()) : (!surInfo || texteEnHaut());
+    if (!bloque) return;                // on laisse le texte défiler
+    e.preventDefault();
+    if (verrou || swipeAnime) return;
+    verrou = true; setTimeout(() => { verrou = false; }, 450);
+    allerSlide(swipeIndex + (versBas ? 1 : -1));
+  }, { passive: false });
+
+  window.addEventListener("resize", () => placerSwipe(false));
 }
 
 /* ===================== QUIZZ (thématique) ===================== */

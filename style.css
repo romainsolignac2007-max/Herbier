@@ -404,17 +404,13 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 /* Hauteur fixe de la photo : elle se termine TOUJOURS au même endroit */
 :root { --swipe-photo-h: 45dvh; }
 #vue-swipe.active { height: calc(100dvh - var(--nav-h)); overflow: hidden; position: relative; }
-.swipe-conteneur {
-  height: calc(100dvh - var(--nav-h));
-  /* Snap de PROXIMITÉ : on cale sur une plante à la fois, mais sans capturer le 1er geste
-     (le 'mandatory' obligeait à toucher 2 fois pour faire défiler le texte). */
-  overflow-y: scroll; scroll-snap-type: y proximity;
-  -webkit-overflow-scrolling: touch; scrollbar-width: none;
-}
-.swipe-conteneur::-webkit-scrollbar { display: none; }
+/* Navigation pilotée en JS : le conteneur ne défile pas, c'est la piste qui coulisse.
+   Le seul élément à défilement natif est le texte (.swipe-info) → scroll fiable sur mobile. */
+.swipe-conteneur { height: calc(100dvh - var(--nav-h)); overflow: hidden; position: relative; }
+.swipe-piste { will-change: transform; transition: transform 0.36s cubic-bezier(0.22, 0.61, 0.36, 1); }
 .swipe-slide {
   /* Diapo = exactement un écran. L'image reste figée, seul le texte défile dedans. */
-  height: calc(100dvh - var(--nav-h)); scroll-snap-align: start; scroll-snap-stop: always;
+  height: calc(100dvh - var(--nav-h));
   display: flex; flex-direction: column; background: var(--creme); overflow: hidden;
 }
 /* Photo de la plante entière (haut) — FIGÉE, hauteur fixe et identique partout */
@@ -426,10 +422,10 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .swipe-photo-emoji { display: flex; align-items: center; justify-content: center; font-size: 9rem; }
 /* Panneau d'infos (bas) : SEUL le texte défile ici ; au bout, on bascule à la plante suivante */
 .swipe-info {
-  /* Le texte défile dès le 1er contact (touch-action: pan-y) ; en fin de texte le
-     défilement se prolonge sur le conteneur (overscroll auto) → on passe à la plante suivante. */
-  flex: 1; min-height: 0; overflow-y: auto;
-  touch-action: pan-y; overscroll-behavior-y: auto;
+  /* Défilement natif simple du texte (fiable car aucun conteneur parent ne défile).
+     overscroll contain : le rebond ne perturbe rien, c'est le JS qui change de plante. */
+  flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  touch-action: pan-y; overscroll-behavior: contain;
   padding: 22px 26px 30px; background: var(--creme);
   border-radius: 26px 26px 0 0; margin-top: -26px; position: relative; z-index: 2;
   box-shadow: 0 -10px 30px rgba(31,61,43,0.18);
