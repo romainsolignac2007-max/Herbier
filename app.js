@@ -854,6 +854,7 @@ function afficherClassement() {
   const scene = document.getElementById("acc-scene");
   const wrap = scene ? scene.closest(".acc-wrap") : null;
   const hint = document.getElementById("acc-hint");
+  const photosWrap = document.getElementById("acc-photos");
   const photos = scene ? [...scene.querySelectorAll(".acc-photo")] : [];
   if (!scene || !wrap) return;
   function majAccueil() {
@@ -862,10 +863,21 @@ function afficherClassement() {
     const total = wrap.offsetHeight - window.innerHeight;
     const p = total > 0 ? Math.min(1, Math.max(0, -wrap.getBoundingClientRect().top / total)) : 0;
     scene.style.setProperty("--p", p.toFixed(4));
-    // Fondu enchaîné : la position glisse de 0 à N-1, chaque photo s'estompe vers sa voisine
+
+    // 1) Ouverture : l'image part d'un cadre arrondi puis s'étend en plein écran (12 % du scroll)
+    if (photosWrap) {
+      const ex = Math.min(1, p / 0.12);
+      photosWrap.style.transform = "scale(" + (0.86 + 0.14 * ex).toFixed(4) + ")";
+      photosWrap.style.borderRadius = (34 * (1 - ex)).toFixed(1) + "px";
+    }
+    // 2) Enchaînement "3D" : fondu + zoom-in continu de chaque photo (on plonge dans l'image)
     if (photos.length) {
       const pos = p * (photos.length - 1);
-      photos.forEach((el, i) => { el.style.opacity = Math.max(0, 1 - Math.abs(pos - i)).toFixed(3); });
+      photos.forEach((el, i) => {
+        el.style.opacity = Math.max(0, 1 - Math.abs(pos - i)).toFixed(3);
+        const z = 1 + 0.22 * Math.max(0, Math.min(2, pos - (i - 1))); // 1.0 → 1.44 sur sa durée de vie
+        el.style.transform = "scale(" + z.toFixed(4) + ")";
+      });
     }
     if (hint) hint.style.opacity = p > 0.06 ? "0" : "";
   }

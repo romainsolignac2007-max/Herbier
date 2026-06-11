@@ -693,11 +693,11 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
    ============================================================ */
 .acc-wrap { position: relative; height: 320vh; }
 .acc-scene { position: sticky; top: 0; height: 100dvh; overflow: hidden; --p: 0; background: #0a1f19; }
-/* léger zoom (Ken Burns) piloté par le scroll */
-.acc-photos { position: absolute; inset: 0; transform: scale(calc(1.04 + var(--p) * 0.09)); will-change: transform; }
+/* "Expanding images" : le cadre s'ouvre puis chaque photo zoome (effet 3D), piloté par le scroll en JS */
+.acc-photos { position: absolute; inset: 0; overflow: hidden; transform-origin: center center; will-change: transform, border-radius; }
 .acc-photo {
   position: absolute; inset: 0; background-size: cover; background-position: center;
-  opacity: 0; will-change: opacity;
+  opacity: 0; transform-origin: center center; will-change: opacity, transform;
 }
 .acc-photo:first-child { opacity: 1; } /* visible avant l'init JS */
 /* voile sombre pour la lisibilité du texte par-dessus n'importe quelle photo */
