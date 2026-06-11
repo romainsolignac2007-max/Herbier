@@ -135,6 +135,24 @@
     return "Caduc";
   }
 
+  // Cycle de vie (annuelle / bisannuelle / vivace / arbuste ou arbre)
+  const ANNUELLE = ["Tomate","Courgette","Tournesol","Cosmos","Zinnia","Pétunia","Capucine","Souci","Basilic","Muflier"];
+  const BISAN = ["Persil","Pensée"];
+  const LIGNEUX = ["olivier","olea","laurier","buis","buxus","eucalyptus","houx","ilex","fusain","euonymus","troène","ligustrum","cornouiller","cornus","sureau","sambucus","aubépine","crataegus","rhododendron","azalée","bruyère","calluna","skimmia","piéris","pieris","mahonia","chèvrefeuille","lonicera","passiflore","passiflora","jasmin","jasminum","vigne vierge","parthenocissus","lierre","hedera","cerisier","prunus","ginkgo","bouleau","betula","saule","salix","tilleul","tilia","marronnier","aesculus","catalpa","pin parasol","pinus","if commun","taxus","érable","acer","cèdre","cedrus","magnolia","hibiscus","lilas","syringa","forsythia","viorne","viburnum","weigela","spirée","spiraea","deutzia","seringat","philadelphus","groseillier","cognassier","chaenomeles","abélia","abelia","bougainvill","glycine","wisteria","clématite","clematis","rosier","arbousier","arbutus","mimosa","acacia","grenadier","punica","céanothe","ceanothus","pittosporum","photinia","nerium","choisya","eleagnus","cytise","cyprès","cupressus","phormium","yucca","palmier","trachycarpus"];
+  function cycleDe(p) {
+    if (ANNUELLE.indexOf(p.nom) >= 0) return "Annuelle";
+    if (BISAN.indexOf(p.nom) >= 0) return "Bisannuelle";
+    const t = [p.saison, p.reconnaitre, p.entretien, p.presentation].join(" ").toLowerCase();
+    if (t.includes("bisannuel")) return "Bisannuelle";
+    if (t.includes("annuelle")) return "Annuelle";
+    if (p.lieu === "Intérieur") return "Vivace";
+    if (t.includes("arbuste") || t.includes("arbrisseau") || t.includes("arbre")) return "Arbuste ou arbre";
+    const id = ((p.nom || "") + " " + (p.latin || "")).toLowerCase();
+    if (LIGNEUX.some(k => id.includes(k))) return "Arbuste ou arbre";
+    if (t.includes("grimpante") || t.includes("liane")) return "Arbuste ou arbre";
+    return "Vivace";
+  }
+
   // [nom, latin, famille, emoji, lieu, soleil, eau, floraison, terreau, gel, saison, presentation, reconnaitre, entretien]
   const data = [
     // ---------- Plantes d'intérieur ----------
@@ -255,6 +273,7 @@
       saison: d[10], presentation: d[11], reconnaitre: d[12], entretien: d[13],
     };
     o.feuillage = feuillageDe(o);
+    o.cycle = cycleDe(o);
     const ph = PHOTOS_NOUVELLES[d[0]];
     if (ph) { o.photo = ph; o.photoGrande = ph; }
     PLANTES.push(o);

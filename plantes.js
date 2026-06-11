@@ -41,6 +41,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Petit arbuste touffu aux feuilles fines, étroites et gris-vert. Tiges florales dressées portant des épis de petites fleurs violettes très parfumées. Parfum reconnaissable entre tous quand on froisse une feuille.",
     entretien: "Adore le soleil et les sols pauvres, secs et bien drainés. Craint l'excès d'eau et l'humidité stagnante. Taillez après la floraison pour garder une forme compacte. Très résistante à la sécheresse une fois installée."
   },
@@ -60,6 +61,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Peu rustique (−5 à −10 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbre au tronc noueux et tortueux avec l'âge. Feuilles persistantes, vert foncé dessus et argentées dessous. Petites fleurs blanches au printemps, suivies des olives en fin d'été.",
     entretien: "Plein soleil indispensable. Supporte très bien la sécheresse et les sols pauvres. Arrosez peu, surtout les premières années. Craint le gel intense et prolongé. Taille légère en fin d'hiver."
   },
@@ -79,6 +81,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Craint le froid (à garder > 10 °C)",
     feuillage: "Persistant",
+    cycle: "Vivace",
     reconnaitre: "Grandes feuilles vert brillant, en forme de cœur, qui se découpent et se perforent en grandissant (les fameux « trous »). Tiges épaisses produisant des racines aériennes.",
     entretien: "Lumière vive mais sans soleil direct. Arrosez quand les premiers centimètres de terre sont secs, sans laisser d'eau stagner. Aime l'humidité ambiante : brumisez les feuilles. Tuteurez-la pour qu'elle grimpe."
   },
@@ -98,6 +101,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste aux tiges épineuses. Feuilles dentées composées de plusieurs folioles. Fleurs très variées en forme et en couleur, souvent parfumées.",
     entretien: "Au moins 6 h de soleil par jour. Sol riche et bien drainé. Arrosez au pied, jamais sur le feuillage, pour éviter les maladies. Taillez en fin d'hiver et retirez les fleurs fanées pour relancer la floraison."
   },
@@ -117,6 +121,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Caduc",
+    cycle: "Annuelle",
     reconnaitre: "Plante aromatique aux feuilles vertes tendres, ovales et brillantes, au parfum puissant. Tiges carrées typiques des Lamiacées. Petites fleurs blanches s'il monte en graine.",
     entretien: "Beaucoup de lumière et de chaleur. Terre toujours légèrement humide, mais sans excès. Pincez régulièrement le haut des tiges pour qu'il se ramifie et retirez les fleurs pour prolonger la production de feuilles."
   },
@@ -136,6 +141,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Craint le froid (à garder > 10 °C)",
     feuillage: "Persistant",
+    cycle: "Vivace",
     reconnaitre: "Touffe retombante de longues frondes vert clair, finement découpées en multiples petites folioles. Port léger et arqué, très graphique.",
     entretien: "Lumière douce, jamais de soleil direct qui brûle les frondes. Aime une atmosphère humide : brumisez souvent et gardez le terreau frais. Évitez les courants d'air et l'air trop sec du chauffage."
   },
@@ -150,6 +156,7 @@ const PLANTES = [
     terreau: "Terre de bruyère (sol acide)",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste arrondi aux grandes feuilles vertes dentées. Grosses inflorescences en boules ou en plateaux, dans les tons bleu, rose, mauve ou blanc.",
     entretien: "Aime la mi-ombre et un sol frais, riche et qui ne sèche jamais. Arrosez abondamment en été. Taillez légèrement en fin d'hiver en gardant les bourgeons. Un sol acide bleuit les fleurs."
   },
@@ -162,6 +169,7 @@ const PLANTES = [
     terreau: "Terre de bruyère (sol acide)",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Petit arbre au port étalé et gracieux. Feuilles palmées à 5-7 lobes pointus, vertes, pourpres ou rouges selon la variété, virant au feu en automne.",
     entretien: "Mi-ombre à l'abri du vent et du soleil brûlant qui grille le feuillage. Sol frais, drainé, plutôt acide. Arrosez en été sans excès. Taille très légère, hors sève."
   },
@@ -174,6 +182,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Peu rustique (−5 à −10 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste touffu aux longues feuilles étroites, vert foncé et coriaces. Bouquets de fleurs roses, blanches, rouges ou jaunes au bout des rameaux.",
     entretien: "Plein soleil et chaleur. Très résistant à la sécheresse une fois installé. Craint le gel fort : à rentrer ou protéger en hiver. Taillez après la floraison. Toxique : à éloigner des enfants et animaux."
   },
@@ -186,6 +195,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Plante touffue aux feuilles rondes et veloutées, souvent marquées d'un cercle plus foncé. Bouquets de fleurs vives, rouges, roses, blanches ou saumon.",
     entretien: "Soleil et chaleur. Laissez sécher la terre entre deux arrosages. Retirez les fleurs fanées pour relancer la floraison. Rentrez-le hors gel en hiver."
   },
@@ -198,6 +208,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Vivace",
     reconnaitre: "Cannes creuses et ligneuses, souvent dorées ou vertes, portant un feuillage fin et léger. Pousse en touffe ou s'étale par rhizomes traçants.",
     entretien: "Soleil ou mi-ombre, sol frais. Arrosez bien la première année. Installez une barrière anti-rhizome pour les variétés traçantes, sinon il envahit. Très vigoureux."
   },
@@ -210,6 +221,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste très dense à petites feuilles ovales, vert foncé et luisantes. Croissance lente, se prête parfaitement à la taille en formes géométriques.",
     entretien: "Soleil ou mi-ombre, tout sol drainé. Taillez 1 à 2 fois par an pour garder la forme. Surveillez la pyrale (chenilles) et le dépérissement. Arrosage modéré."
   },
@@ -222,6 +234,7 @@ const PLANTES = [
     terreau: "Terre de bruyère (sol acide)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste au feuillage persistant, vert foncé et brillant. Grandes fleurs simples ou doubles, blanches, roses ou rouges, en fin d'hiver.",
     entretien: "Mi-ombre à l'abri du soleil du matin sur le gel. Sol acide (terre de bruyère), frais et drainé. Arrosez à l'eau non calcaire. Ne taillez quasiment pas."
   },
@@ -234,6 +247,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Plante grimpante ligneuse aux tiges torsadées très vigoureuses. Longues grappes pendantes de fleurs mauves, lilas ou blanches, parfumées.",
     entretien: "Plein soleil pour bien fleurir. Sol profond et riche. Support solide indispensable. Taillez deux fois par an (été et hiver) pour maîtriser sa vigueur et favoriser la floraison."
   },
@@ -246,6 +260,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste aux feuilles fines en aiguilles, vert foncé dessus et argentées dessous, très aromatiques. Petites fleurs bleu pâle le long des tiges.",
     entretien: "Plein soleil, sol pauvre, sec et bien drainé. Arrose très peu. Taillez légèrement après la floraison pour garder une forme compacte. Rustique et facile."
   },
@@ -258,6 +273,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Touffe basse et compacte de minuscules feuilles aromatiques gris-vert. Petites fleurs roses ou mauves très visitées par les abeilles.",
     entretien: "Plein soleil, sol pauvre et très drainé, même caillouteux. Craint l'humidité stagnante. Arrosage quasi nul une fois installé. Taillez après floraison."
   },
@@ -270,6 +286,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Touffe souple et buissonnante aux fines tiges arquées. Multitude de petites fleurs blanches ou roses évoquant des papillons en vol.",
     entretien: "Plein soleil, sol drainé même pauvre. Très résistante à la sécheresse. Rabattez en fin d'hiver. Floraison ininterrompue sans entretien."
   },
@@ -282,6 +299,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Touffe de longues feuilles rubanées vert vif. Hautes tiges nues portant une ombelle sphérique de fleurs bleues ou blanches.",
     entretien: "Plein soleil, sol drainé et riche. Arrosez en période de croissance. Protégez la souche du gel en hiver (paillage) ou rentrez les potées. Belle en pot un peu serré."
   },
@@ -294,6 +312,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste au port dressé, à feuilles dentées. Grandes fleurs en trompette, blanches, roses, mauves ou bleutées, souvent à cœur rouge.",
     entretien: "Plein soleil, tout sol drainé. Rustique et résistant. Taillez en fin d'hiver pour une floraison généreuse. Arrosage modéré, un peu plus en pot."
   },
@@ -306,6 +325,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Plante grimpante aux tiges fines s'accrochant par les pétioles. Grandes fleurs plates étoilées, dans toutes les teintes de blanc, rose, mauve, violet.",
     entretien: "Fleurs au soleil mais pied à l'ombre (paillez ou plantez une vivace devant). Sol frais et riche. Arrosez régulièrement. La taille dépend du groupe de la variété."
   },
@@ -318,6 +338,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Touffe de feuilles découpées vert profond. Grosses fleurs simples ou doubles, blanches, roses ou rouges, souvent parfumées.",
     entretien: "Plein soleil, sol riche et profond. Ne plantez pas trop profond (sinon elle ne fleurit pas). Patiente : elle s'installe en 2-3 ans. Ne la déplacez pas."
   },
@@ -330,6 +351,7 @@ const PLANTES = [
     terreau: "Terre de bruyère (sol acide)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Petit arbre au port arrondi. Grandes fleurs en coupe, rose tendre à pourpre et blanc, s'ouvrant sur les rameaux nus avant le feuillage.",
     entretien: "Soleil ou mi-ombre à l'abri des vents froids qui abîment les fleurs. Sol frais, riche, plutôt acide. Arrosez les premières années. Évitez de tailler."
   },
@@ -342,6 +364,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Tronc unique couvert de fibres brunes, couronné de grandes feuilles palmées en éventail, vert foncé et rigides.",
     entretien: "Soleil ou mi-ombre, sol drainé. Arrosez bien les premières années puis il devient résistant. Rustique. Coupez les palmes sèches à la base."
   },
@@ -354,6 +377,7 @@ const PLANTES = [
     terreau: "Terreau spécial agrumes",
     gel: "Très peu rustique (0 à −5 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Petit arbre au feuillage persistant vert brillant. Fleurs blanches très parfumées, suivies de citrons jaunes.",
     entretien: "Plein soleil et chaleur. Arrosez régulièrement sans détremper, engrais agrumes en saison. Rentrez-le en véranda ou serre hors gel l'hiver. Craint le froid."
   },
@@ -366,6 +390,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbre au port étalé, à grandes feuilles vertes profondément découpées en lobes. Figues vertes à violettes selon la variété.",
     entretien: "Plein soleil et chaleur, sol drainé. Très résistant à la sécheresse une fois installé. Taille légère en hiver. Rustique dans la plupart des régions."
   },
@@ -378,6 +403,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Vivace",
     reconnaitre: "Rosette de feuilles épaisses, charnues et dentelées sur les bords, vert glauque, remplies d'un gel translucide.",
     entretien: "Beaucoup de lumière, soleil direct progressif. Substrat très drainant (terreau cactées). Arrosez peu, seulement quand la terre est bien sèche. Craint le gel."
   },
@@ -390,6 +416,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Craint le froid (à garder > 10 °C)",
     feuillage: "Persistant",
+    cycle: "Vivace",
     reconnaitre: "Plante à grosses feuilles épaisses et brillantes, racines aériennes vertes. Hampe arquée portant des fleurs papillon blanches, roses ou mouchetées.",
     entretien: "Lumière vive sans soleil direct. Arrosez en trempant le pot 10 min par semaine puis laissez égoutter (jamais d'eau stagnante). Ambiance chaude et humide."
   },
@@ -402,6 +429,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Peu rustique (−5 à −10 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Petit arbre au feuillage persistant finement découpé, vert argenté. Multitude de petits pompons jaune vif, très parfumés, en fin d'hiver.",
     entretien: "Plein soleil, sol drainé plutôt acide, à l'abri du vent froid. Craint le gel intense. Taillez après la floraison. Pousse vite."
   },
@@ -414,6 +442,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Petit arbuste gris-vert aromatique. Épis floraux compacts violet foncé, coiffés de bractées en forme d'ailes de papillon mauves.",
     entretien: "Plein soleil, sol pauvre, sec et très drainé. Craint l'humidité et le calcaire. Taillez après floraison. Un peu moins rustique que la lavande vraie."
   },
@@ -426,6 +455,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Longues tiges sarmenteuses et épineuses à palisser. Fleurs simples ou doubles, en bouquets, dans toutes les couleurs, souvent parfumées.",
     entretien: "Au moins 6 h de soleil. Sol riche et drainé. Palissez les tiges à l'horizontale pour multiplier les fleurs. Taillez et retirez les fleurs fanées. Arrosez au pied."
   },
@@ -446,6 +476,7 @@ const PLANTES = [
     terreau: "Terre de bruyère (sol acide)",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste dressé portant de grandes panicules coniques, blanc crème puis rosées. Feuilles vertes ovales et pointues.",
     entretien: "Soleil ou mi-ombre, sol frais et riche. Taillez court en fin d'hiver pour obtenir de grosses fleurs. Arrosez en été."
   },
@@ -466,6 +497,7 @@ const PLANTES = [
     terreau: "Terre de bruyère (sol acide)",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste souple aux très grosses inflorescences sphériques blanches pouvant atteindre 30 cm de diamètre.",
     entretien: "Mi-ombre, sol frais et riche qui ne sèche pas. Rabattez en fin d'hiver. Arrosez généreusement en été."
   },
@@ -486,6 +518,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste aux longs rameaux arqués entièrement recouverts de petites fleurs jaune vif au début du printemps.",
     entretien: "Plein soleil, tout sol. Taillez juste après la floraison (il fleurit sur le bois de l'année précédente). Très rustique."
   },
@@ -506,6 +539,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste au port évasé, à feuilles dentées. Nombreuses fleurs en trompette roses à rouges réparties le long des tiges.",
     entretien: "Soleil à mi-ombre, sol ordinaire. Supprimez les vieilles branches après la floraison. Arrosage modéré, rustique."
   },
@@ -526,6 +560,7 @@ const PLANTES = [
     terreau: "Terre de bruyère (sol acide)",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste buissonnant aux fleurs blanches simples ou doubles, très parfumées, à cœur souvent jaune.",
     entretien: "Soleil ou mi-ombre, sol ordinaire drainé. Taillez après la floraison. Rustique et sans souci."
   },
@@ -546,6 +581,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Grand arbuste aux feuilles en cœur. Grappes coniques denses de petites fleurs très parfumées, mauves à blanches.",
     entretien: "Plein soleil, sol drainé plutôt calcaire. Retirez les fleurs fanées. Taille légère après floraison. Très rustique."
   },
@@ -566,6 +602,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste bas et dense à petites feuilles. Corymbes plats de minuscules fleurs roses à rouges en été.",
     entretien: "Plein soleil, tout sol. Rabattez en fin d'hiver pour une belle refloraison. Très facile et rustique."
   },
@@ -586,6 +623,7 @@ const PLANTES = [
     terreau: "Terre de bruyère (sol acide)",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste aux tiges arquées, couvert de grappes de petites fleurs étoilées blanches ou teintées de rose.",
     entretien: "Soleil ou mi-ombre, sol ordinaire. Taillez après la floraison en supprimant le vieux bois. Rustique."
   },
@@ -606,6 +644,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste aux feuilles lobées comme l'érable. Grosses inflorescences sphériques blanc verdâtre puis blanc pur.",
     entretien: "Soleil ou mi-ombre, sol frais. Taille légère après floraison. Arrosez en été. Rustique et facile."
   },
@@ -626,6 +665,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste persistant aux feuilles vert foncé. Bouquets de petites fleurs blanches issues de boutons roses, en hiver.",
     entretien: "Soleil ou mi-ombre, tout sol drainé. Très rustique et résistant. Taille légère après floraison."
   },
@@ -646,6 +686,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Semi-persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste aux rameaux arqués, petites feuilles luisantes. Multitude de fleurs tubulaires blanc rosé, calices rougeâtres.",
     entretien: "Plein soleil, sol drainé. Taille légère en fin d'hiver. Arrosage modéré. Semi-persistant, assez rustique."
   },
@@ -666,6 +707,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste au feuillage souvent persistant, vert brillant. Grappes denses de minuscules fleurs bleu vif.",
     entretien: "Plein soleil, sol drainé, à l'abri du vent froid. Résiste à la sécheresse. Taille légère après floraison."
   },
@@ -686,6 +728,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste épineux aux fleurs en coupe rouges, oranges ou roses, précoces. Petits fruits jaunes parfumés.",
     entretien: "Soleil ou mi-ombre, tout sol. Taillez après la floraison. Très rustique et facile. Bon pour les confitures."
   },
@@ -706,6 +749,7 @@ const PLANTES = [
     terreau: "Terreau spécial agrumes",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste arrondi aux feuilles vert brillant divisées en trois, aromatiques. Fleurs blanches étoilées parfumées.",
     entretien: "Soleil ou mi-ombre, sol drainé, à l'abri du gel intense. Taille légère après floraison. Persistant."
   },
@@ -726,6 +770,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Grand arbuste aux longues feuilles lancéolées. Épis coniques de petites fleurs très mellifères et parfumées.",
     entretien: "Plein soleil, tout sol drainé. Rabattez sévèrement en fin d'hiver. Résiste à la sécheresse. Très rustique."
   },
@@ -746,6 +791,7 @@ const PLANTES = [
     terreau: "Terre de bruyère (sol acide)",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Liane ligneuse s'accrochant par des crampons. Grandes inflorescences plates blanches en début d'été.",
     entretien: "Mi-ombre à ombre, sol frais et riche. Patient à s'installer puis vigoureux. Arrosez les premières années."
   },
@@ -766,6 +812,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste persistant aux feuilles brillantes, rouge éclatant quand elles sont jeunes puis vert foncé.",
     entretien: "Soleil ou mi-ombre, sol drainé. Taillez 1 à 2 fois par an pour relancer les pousses rouges. Rustique."
   },
@@ -786,6 +833,7 @@ const PLANTES = [
     terreau: "Terre de bruyère (sol acide)",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste bas et dense. Grandes fleurs jaune vif à nombreuses étamines, longue floraison estivale.",
     entretien: "Soleil ou mi-ombre, tout sol. Rabattez en fin d'hiver. Résiste à la sécheresse. Très facile."
   },
@@ -806,6 +854,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Petit arbre aux longues grappes pendantes de fleurs jaunes parfumées. Feuilles à trois folioles.",
     entretien: "Plein soleil, sol drainé. Taille minimale. Rustique. Toxique : éloignez les enfants des gousses et graines."
   },
@@ -826,6 +875,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste aux feuilles lobées aromatiques. Grappes pendantes de petites fleurs rose vif au début du printemps.",
     entretien: "Soleil ou mi-ombre, tout sol. Taillez après la floraison. Très rustique et sans entretien."
   },
@@ -846,6 +896,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste aux feuilles vert foncé, coriaces et aromatiques, utilisées en cuisine. Petites fleurs jaunâtres.",
     entretien: "Soleil ou mi-ombre, sol drainé. Résiste à la sécheresse. Se taille bien. Craint le gel intense en jeune sujet."
   },
@@ -866,6 +917,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Conifère à port colonnaire très étroit et dressé, feuillage persistant vert sombre en écailles.",
     entretien: "Plein soleil, sol drainé. Très résistant à la sécheresse. Rustique. Aucune taille nécessaire."
   },
@@ -886,6 +938,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste compact aux feuilles vert luisant en rosettes. Petites fleurs blanc crème très parfumées au printemps.",
     entretien: "Plein soleil, sol drainé. Résiste à la sécheresse et aux embruns. Se taille bien. Craint le gel sévère."
   },
@@ -906,6 +959,7 @@ const PLANTES = [
     terreau: "Terre de bruyère (sol acide)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste à écorce rougeâtre et feuilles persistantes brillantes. Clochettes blanches et fruits ronds rouges granuleux.",
     entretien: "Plein soleil, sol drainé acide. Résiste à la sécheresse. Rustique. Taille légère seulement."
   },
@@ -926,6 +980,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Peu rustique (−5 à −10 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste aux fleurs en trompette rouge-orangé éclatant. Gros fruits ronds à écorce coriace renfermant des grains rouges.",
     entretien: "Plein soleil et chaleur, sol drainé. Très résistant à la sécheresse. Craint le gel intense. Taille légère."
   },
@@ -946,6 +1001,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Très peu rustique (0 à −5 °C)",
     feuillage: "Caduc",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Grimpante ligneuse et épineuse. Vraies fleurs minuscules entourées de bractées papier très colorées.",
     entretien: "Plein soleil et chaleur, sol drainé. Arrosez peu. Rentrez-le en hiver hors gel (véranda). Palissez les tiges."
   },
@@ -966,6 +1022,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Peu rustique (−5 à −10 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Liane au feuillage persistant vert foncé luisant. Petites fleurs blanches en hélice, très parfumées.",
     entretien: "Soleil ou mi-ombre, sol drainé. Support nécessaire. Assez rustique une fois installé. Taille légère après floraison."
   },
@@ -986,6 +1043,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Arbuste vigoureux aux feuilles persistantes vert argenté, revers écailleux. Petites fleurs crème parfumées en automne.",
     entretien: "Soleil ou mi-ombre, tout sol. Résiste à la sécheresse, au vent et aux embruns. Se taille très bien. Rustique."
   },
@@ -1006,6 +1064,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Peu rustique (−5 à −10 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Grande touffe de feuilles coriaces dressées en lanières, vertes à pourpres ou bicolores selon la variété.",
     entretien: "Plein soleil, sol drainé. Arrosage modéré. Protégez du gel intense (paillage) ou cultivez en pot à rentrer."
   },
@@ -1026,6 +1085,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Rosette de feuilles rigides en glaive, vert bleuté. Grande hampe florale dressée portant des clochettes blanc crème.",
     entretien: "Plein soleil, sol très drainé. Résiste à la sécheresse. Rustique. Arrosez peu. Attention aux pointes piquantes."
   },
@@ -1046,6 +1106,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Vivace dressée aux grandes fleurs roses-pourpres à cœur orangé saillant, en forme de cône.",
     entretien: "Plein soleil, sol drainé. Résiste bien à la sécheresse. Rabattez en fin d'hiver. Mellifère et rustique."
   },
@@ -1066,6 +1127,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Vivace touffue aux nombreuses fleurs jaune vif à cœur brun-noir bombé. Longue floraison.",
     entretien: "Plein soleil, sol ordinaire frais. Rabattez en fin d'hiver. Très rustique et facile. Mellifère."
   },
@@ -1086,6 +1148,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Touffe de feuilles rubanées arquées. Grandes fleurs en trompette éphémères (un jour), renouvelées sans cesse.",
     entretien: "Soleil ou mi-ombre, tout sol. Très tolérante. Rabattez le feuillage en automne. Rustique et facile."
   },
@@ -1106,6 +1169,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Persistant",
+    cycle: "Vivace",
     reconnaitre: "Vivace en touffe de feuilles lobées très colorées. Fines hampes de minuscules clochettes au printemps.",
     entretien: "Mi-ombre, sol frais et drainé. Persistante. Divisez tous les 3 ans. Arrosage modéré. Rustique."
   },
@@ -1126,6 +1190,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Touffe de grandes feuilles nervurées en cœur, vert bleuté à panaché. Hampes de fleurs lilas en été.",
     entretien: "Ombre à mi-ombre, sol frais et riche. Arrosez en été. Surveillez les limaces. Rustique, disparaît l'hiver."
   },
@@ -1146,6 +1211,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Vivace touffue à tiges carrées. Épis dressés de petites fleurs violet intense, longue floraison.",
     entretien: "Plein soleil, sol drainé. Résiste à la sécheresse. Rabattez après la 1re floraison pour une remontée. Rustique."
   },
@@ -1166,6 +1232,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Vivace souple au feuillage gris-vert aromatique. Multitude de petites fleurs bleu-mauve en épis lâches.",
     entretien: "Plein soleil, sol drainé. Très résistante à la sécheresse. Rabattez après la première vague de fleurs. Rustique."
   },
@@ -1186,6 +1253,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Vivace au feuillage très découpé. Larges corymbes plats de petites fleurs, jaunes, roses, rouges ou blanches.",
     entretien: "Plein soleil, sol drainé même pauvre. Très résistante à la sécheresse. Rabattez en fin d'hiver. Rustique."
   },
@@ -1206,6 +1274,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Vivace à hautes hampes dressées garnies de grandes fleurs bleu intense (ou mauves, blanches).",
     entretien: "Plein soleil, sol riche et frais. Tuteurez les hampes. Rabattez après floraison pour une remontée. Rustique."
   },
@@ -1226,6 +1295,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Persistant",
+    cycle: "Arbuste ou arbre",
     reconnaitre: "Vivace à feuilles palmées caractéristiques. Grands épis dressés de fleurs papilionacées, souvent bicolores.",
     entretien: "Plein soleil, sol drainé plutôt acide. Coupez les épis fanés. Arrosage modéré. Rustique, parfois éphémère."
   },
@@ -1246,6 +1316,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Rustique (−10 à −15 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Vivace tapissante au feuillage parfumé. Petites fleurs à cinq pétales roses, mauves ou blanches.",
     entretien: "Soleil ou mi-ombre, tout sol. Très résistant à la sécheresse et sans entretien. Se ressème seul. Rustique."
   },
@@ -1266,6 +1337,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Vivace au feuillage finement découpé. Panicules plumeuses dressées de minuscules fleurs duveteuses.",
     entretien: "Mi-ombre à ombre, sol frais qui ne sèche JAMAIS. Arrosez beaucoup en été. Rustique, disparaît l'hiver."
   },
@@ -1286,6 +1358,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Vivace dressée portant de longues tiges souples coiffées de fleurs simples roses ou blanches à cœur jaune.",
     entretien: "Mi-ombre, sol frais et riche. Patiente à s'installer puis vigoureuse. Arrosez en été. Rustique."
   },
@@ -1306,6 +1379,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Vivace dressée et touffue, couverte en automne d'une multitude de petites fleurs étoilées mauves à cœur jaune.",
     entretien: "Plein soleil, sol frais. Rabattez en fin d'hiver. Tuteurez les variétés hautes. Très rustique et mellifère."
   },
@@ -1326,6 +1400,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Vivace légère et ramifiée. Profusion de petites fleurs jaune vif à long pédoncule, longue floraison.",
     entretien: "Plein soleil, sol drainé même pauvre. Résiste à la sécheresse. Retirez les fleurs fanées. Rustique."
   },
@@ -1346,6 +1421,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Vivace au feuillage découpé bleuté. Fleurs pendantes à éperons, bleues, mauves, roses ou blanches.",
     entretien: "Mi-ombre, sol frais et drainé. Se ressème spontanément. Peu exigeante. Rustique, parfois éphémère."
   },
@@ -1366,6 +1442,7 @@ const PLANTES = [
     terreau: "Terreau drainant (méditerranéen/cactées)",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Persistant",
+    cycle: "Vivace",
     reconnaitre: "Vivace charnue aux feuilles épaisses gris-vert. Larges corymbes plats de petites fleurs roses, mellifères.",
     entretien: "Plein soleil, sol drainé. Très résistant à la sécheresse, increvable. Rabattez en fin d'hiver. Rustique."
   },
@@ -1386,6 +1463,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Persistant",
+    cycle: "Vivace",
     reconnaitre: "Vivace aux grandes feuilles arrondies, épaisses et persistantes, rougissant l'hiver. Grappes de fleurs roses.",
     entretien: "Soleil ou ombre, tout sol. Très tolérant et sans entretien. Persistant. Divisez si nécessaire. Rustique."
   },
@@ -1406,6 +1484,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Vivace dressée aux grandes fleurs blanches classiques à cœur jaune, sur de longues tiges.",
     entretien: "Plein soleil, sol ordinaire drainé. Retirez les fleurs fanées. Divisez tous les 3 ans. Très rustique."
   },
@@ -1426,6 +1505,7 @@ const PLANTES = [
     terreau: "Terreau universel",
     gel: "Très rustique (−15 à −25 °C)",
     feuillage: "Caduc",
+    cycle: "Vivace",
     reconnaitre: "Vivace au feuillage velu et découpé. Très grandes fleurs en coupe rouge-orangé vif à macule noire, aux pétales froissés comme du papier de soie.",
     entretien: "Plein soleil, sol drainé. Le feuillage disparaît après la floraison (c'est normal) : rabattez alors. Résiste bien à la sécheresse. Rustique."
   }
