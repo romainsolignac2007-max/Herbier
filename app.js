@@ -115,7 +115,7 @@ const CATEGORIES = [
 ];
 const recherche = { texte: "" };
 const selections = { soleil: new Set(), eau: new Set(), lieu: new Set(), floraison: new Set(), feuillage: new Set(), cycle: new Set(), gel: new Set() };
-const sectionsOuvertes = { soleil: true, eau: true, lieu: true, floraison: false, feuillage: false, cycle: false, gel: false };
+const sectionsOuvertes = { soleil: false, eau: false, lieu: false, floraison: false, feuillage: false, cycle: false, gel: false };
 
 // Une plante a-t-elle la valeur d'une option ? (le lieu "Les deux" compte pour Intérieur ET Extérieur)
 function plantePossede(cle, val, p) {

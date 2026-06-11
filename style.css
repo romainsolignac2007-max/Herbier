@@ -594,8 +594,8 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .filtres-panel {
   flex: 0 0 250px; background: #fff; border-radius: var(--radius);
   box-shadow: var(--ombre); padding: 8px 4px; position: sticky; top: 14px;
-  /* le panneau défile tout seul s'il dépasse la hauteur de l'écran */
-  max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain;
+  /* le panneau défile tout seul s'il dépasse la hauteur ; s'arrête au-dessus de la barre du bas */
+  max-height: calc(100dvh - var(--nav-h) - 32px); overflow-y: auto; overscroll-behavior: contain;
 }
 .recherche-resultats { flex: 1; min-width: 0; }
 .recherche-corps .grille { max-width: none; margin: 0; padding: 6px 0 0; }
