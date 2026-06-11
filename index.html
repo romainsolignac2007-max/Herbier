@@ -7,48 +7,40 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=48" />
+  <link rel="stylesheet" href="style.css?v=49" />
 </head>
 <body>
 
-  <!-- ================= ACCUEIL ================= -->
+  <!-- ================= ACCUEIL (animation pilotée au scroll) ================= -->
   <section class="vue active" id="vue-accueil">
-    <header class="hero">
-      <div class="hero-inner">
-        <div class="hero-badge">🌿 Herbier</div>
-        <h1>Apprenez à reconnaître<br />et à choyer vos plantes</h1>
-        <p class="hero-sub">Votre encyclopédie pour passionnés et jardiniers : identifier chaque espèce et savoir exactement comment en prendre soin.</p>
-      </div>
-    </header>
-
-    <div class="accueil-corps">
-      <div class="accueil-stats" id="accueil-stats"></div>
-
-      <!-- Astuce de saison (change chaque semaine) -->
-      <div id="astuce-semaine"></div>
-
-      <h2 class="section-titre">🌟 À la une</h2>
-      <p class="section-sous">Trois plantes à découvrir, tirées au hasard à chaque visite.</p>
-      <div class="grille" id="grille-une"></div>
-
-      <!-- À propos du site -->
-      <section class="apropos">
-        <span class="apropos-badge">🌿 À propos</span>
-        <h2>Votre herbier pour reconnaître et choyer chaque plante</h2>
-        <p>
-          Cet herbier numérique rassemble une collection de plantes du jardin et de la maison,
-          avec pour chacune une fiche claire : comment la reconnaître, où l'installer, comment
-          l'arroser, quel terreau utiliser et à quelle saison elle fleurit. L'idée : avoir le bon
-          réflexe au bon moment, que vous soyez jardinier débutant ou passionné.
-        </p>
-        <div class="apropos-points">
-          <div class="ap-point"><span class="ap-ico">🔍</span><strong>Identifier</strong><span>Retrouvez une plante par son nom, sa famille ou ses besoins.</span></div>
-          <div class="ap-point"><span class="ap-ico">🎬</span><strong>Découvrir</strong><span>Faites défiler les plantes en mode swipe, façon cinématique.</span></div>
-          <div class="ap-point"><span class="ap-ico">🧠</span><strong>S'entraîner</strong><span>Testez vos connaissances avec des quizz par thème.</span></div>
-          <div class="ap-point"><span class="ap-ico">🪴</span><strong>Prendre soin</strong><span>Arrosage, exposition, terreau et floraison pour chaque espèce.</span></div>
+    <div class="acc-wrap">
+      <div class="acc-scene" id="acc-scene">
+        <div class="acc-sky"></div>
+        <div class="acc-sun"></div>
+        <svg class="acc-plant" viewBox="0 0 200 240" fill="none" aria-hidden="true">
+          <path class="acc-stem" pathLength="1" d="M100 240 C100 200 100 170 100 120" stroke="#a8d8b4" stroke-width="4" stroke-linecap="round"/>
+          <g class="acc-leaf">
+            <path d="M100 150 C70 150 50 132 48 110 C78 110 100 126 100 150 Z" fill="#6fb985"/>
+            <path d="M100 132 C130 132 150 114 152 92 C122 92 100 108 100 132 Z" fill="#5aa873"/>
+            <path d="M100 120 C100 96 116 74 138 70 C138 96 122 118 100 120 Z" fill="#83c997"/>
+            <path d="M100 120 C100 96 84 74 62 70 C62 96 78 118 100 120 Z" fill="#5fae79"/>
+            <circle cx="100" cy="70" r="10" fill="#e0709a"/>
+            <circle cx="100" cy="70" r="4" fill="#fff0d0"/>
+          </g>
+        </svg>
+        <div class="acc-copy">
+          <div class="acc-card">
+            <span class="acc-badge">🌿 Herbier</span>
+            <h1>Apprenez à reconnaître<br />et à choyer vos plantes</h1>
+            <p>Votre encyclopédie vivante : 180 plantes à identifier, découvrir et entretenir.</p>
+            <div class="acc-cta">
+              <button class="acc-btn" data-aller="vue-recherche">Explorer l'herbier</button>
+              <button class="acc-btn-2" data-aller="vue-swipe">Découvrir en swipe 🎬</button>
+            </div>
+          </div>
         </div>
-        <p class="apropos-pied">Naviguez entre les sections grâce au menu en bas de l'écran 👇</p>
-      </section>
+        <div class="acc-hint" id="acc-hint">Faites défiler ↓</div>
+      </div>
     </div>
   </section>
 
@@ -116,9 +108,9 @@
     </button>
   </nav>
 
-  <script src="plantes.js?v=48"></script>
-  <script src="plantes-nouvelles.js?v=48"></script>
-  <script src="tailles.js?v=48"></script>
-  <script src="app.js?v=48"></script>
+  <script src="plantes.js?v=49"></script>
+  <script src="plantes-nouvelles.js?v=49"></script>
+  <script src="tailles.js?v=49"></script>
+  <script src="app.js?v=49"></script>
 </body>
 </html>

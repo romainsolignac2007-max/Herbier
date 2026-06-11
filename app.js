@@ -849,6 +849,24 @@ function afficherClassement() {
   if (adapt) adapt.addEventListener("click", () => { naviguer("vue-quizz"); demarrerQuizz("adaptatif"); });
 }
 
+/* ===================== ACCUEIL : animation pilotée au scroll ===================== */
+(function () {
+  const scene = document.getElementById("acc-scene");
+  const wrap = scene ? scene.closest(".acc-wrap") : null;
+  const hint = document.getElementById("acc-hint");
+  if (!scene || !wrap) return;
+  function majAccueil() {
+    const acc = document.getElementById("vue-accueil");
+    if (!acc || !acc.classList.contains("active")) return;
+    const total = wrap.offsetHeight - window.innerHeight;
+    const p = total > 0 ? Math.min(1, Math.max(0, -wrap.getBoundingClientRect().top / total)) : 0;
+    scene.style.setProperty("--p", p.toFixed(4));
+    if (hint) hint.style.opacity = p > 0.06 ? "0" : "";
+  }
+  majAccueil();
+  addEventListener("scroll", () => requestAnimationFrame(majAccueil), { passive: true });
+  addEventListener("resize", majAccueil);
+})();
+
 /* ===================== DÉMARRAGE ===================== */
-remplirAccueil();
 afficher();
