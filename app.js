@@ -854,7 +854,7 @@ function afficherClassement() {
   const acc = document.getElementById("vue-accueil");
   if (!acc) return;
   const heroSec = document.getElementById("nw-hero");
-  const heroPanLayers = heroSec ? [...heroSec.querySelectorAll(".hero-pan-layer")] : [];
+  const heroTrack = document.getElementById("nw-hero-track");
   const heroInner = acc.querySelector(".nw-hero-inner");
   const hint = document.getElementById("acc-hint");
   const clampN = (v) => Math.min(1, Math.max(0, v));
@@ -879,21 +879,13 @@ function afficherClassement() {
   function majAccueil() {
     if (!acc.classList.contains("active")) return;
     const vh = window.innerHeight;
-    // Travelling vertical (haut → bas) + fondu de la 1re photo vers la 2e, sur la même scène
-    if (heroSec && heroPanLayers.length) {
+    // Colonne d'images empilées : on descend en continu à travers les deux photos
+    if (heroSec && heroTrack) {
       const r = heroSec.getBoundingClientRect();
       const total = heroSec.offsetHeight - vh;
       const p = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
-      heroPanLayers.forEach(el => {
-        const extra = Math.max(0, el.offsetHeight - vh);
-        el.style.transform = "translateY(" + (-p * extra).toFixed(1) + "px)";
-      });
-      // Fondu : 1re photo visible d'abord, 2e à partir du milieu
-      if (heroPanLayers.length > 1) {
-        const t = clampN((p - 0.48) / 0.14);
-        heroPanLayers[0].style.opacity = (1 - t).toFixed(3);
-        heroPanLayers[1].style.opacity = t.toFixed(3);
-      }
+      const extra = Math.max(0, heroTrack.offsetHeight - vh); // hauteur totale des images qui dépasse
+      heroTrack.style.transform = "translateY(" + (-p * extra).toFixed(1) + "px)";
       if (heroInner) heroInner.style.opacity = Math.max(0, 1 - Math.max(0, p - 0.78) / 0.22).toFixed(3);
     }
     if (hint) hint.style.opacity = window.scrollY > 40 ? "0" : "";
