@@ -860,8 +860,8 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .nw-foot-logo { font-family: "Fraunces", serif; color: #fff; font-size: 1.2rem; }
 
 /* Hero : on démarre en haut de la photo, le scroll fait défiler l'image (haut → bas) */
-.nw-hero { position: relative; height: 220vh; padding: 0 !important; color: #fff; display: block !important; overflow: visible !important; min-height: 0 !important; }
+.nw-hero { position: relative; height: 340vh; padding: 0 !important; color: #fff; display: block !important; overflow: visible !important; min-height: 0 !important; }
 .nw-hero-pan { position: sticky; top: 0; height: 100vh; min-height: 100svh; width: 100%; overflow: hidden; display: flex; align-items: center; }
-#nw-hero-bg { position: absolute; left: 0; right: 0; top: 0; bottom: auto; height: 165vh; background-size: cover; background-position: center top; transform: none; will-change: transform; }
+#nw-hero-bg { position: absolute; left: 0; right: 0; top: 0; bottom: auto; height: 250vh; background-size: cover; background-position: center top; transform: none; will-change: transform; }
 .nw-hero .nw-hero-inner { position: relative; z-index: 3; max-width: 1000px; padding: 0 clamp(20px, 6vw, 90px); }
 .nw-hero .nw-hero-veil { z-index: 2; }
