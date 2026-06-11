@@ -241,8 +241,12 @@ function construireFiltres() {
   panneauFiltres.querySelectorAll(".filtre-toggle").forEach(t => {
     t.addEventListener("click", () => {
       const cle = t.dataset.toggle;
+      const section = t.closest(".filtre-section");
       sectionsOuvertes[cle] = !sectionsOuvertes[cle];
-      t.closest(".filtre-section").classList.toggle("ouvert", sectionsOuvertes[cle]);
+      section.classList.toggle("ouvert", sectionsOuvertes[cle]);
+      // fermer aussi l'encart d'info quand on replie le filtre
+      const aide = section.querySelector(".filtre-aide");
+      if (aide) aide.hidden = true;
     });
   });
   // Petit ⓘ : afficher / masquer les explications des options
