@@ -531,16 +531,21 @@ function brancherSwipe() {
     }
   }, { passive: true });
 
-  // Molette / trackpad (ordinateur)
-  let verrou = false;
+  // Molette / trackpad (ordinateur) — une seule plante par geste (anti-sensibilité)
+  let verrou = false, finGeste = null;
   swipeConteneur.addEventListener("wheel", e => {
     const surInfo = !!e.target.closest(".swipe-info");
     const versBas = e.deltaY > 0;
     const bloque = versBas ? (!surInfo || texteEnBas()) : (!surInfo || texteEnHaut());
     if (!bloque) return;                // on laisse le texte défiler
     e.preventDefault();
+    // Tant que la molette continue d'envoyer des évènements (inertie), on reste verrouillé.
+    // Le verrou ne se libère qu'après une pause (~250 ms) → 1 plante par geste.
+    clearTimeout(finGeste);
+    finGeste = setTimeout(() => { verrou = false; }, 250);
     if (verrou || swipeAnime) return;
-    verrou = true; setTimeout(() => { verrou = false; }, 450);
+    if (Math.abs(e.deltaY) < 8) return; // ignore les micro-déplacements
+    verrou = true;
     allerSlide(swipeIndex + (versBas ? 1 : -1));
   }, { passive: false });
 }
