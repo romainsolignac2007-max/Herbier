@@ -7,53 +7,82 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=56" />
+  <link rel="stylesheet" href="style.css?v=57" />
 </head>
 <body>
 
-  <!-- ================= ACCUEIL (cinématique parallax) ================= -->
+  <!-- ================= ACCUEIL (présentation façon studio cinématique) ================= -->
   <section class="vue active" id="vue-accueil">
-    <div class="cine">
+    <div class="nw">
 
-      <!-- MOTS QUI DÉFILENT -->
-      <section class="cine-words" id="cine-words">
-        <div class="cine-sticky">
-          <div class="cine-bg" style="background-image:url('images/intro-4.jpg')"></div>
-          <div class="cine-veil dark"></div>
-          <div class="cine-green cine-bridge" id="cine-bridge"></div>
-          <div class="cine-words-stage">
-            <span class="cine-pre">Avec l'Herbier, apprenez à…</span>
-            <div class="cine-words-wrap">
-              <span class="cine-word on">Identifier.</span>
-              <span class="cine-word">Découvrir.</span>
-              <span class="cine-word">Comprendre.</span>
-              <span class="cine-word">Cultiver.</span>
-            </div>
-          </div>
+      <!-- HERO -->
+      <header class="nw-hero">
+        <div class="nw-hero-bg" style="background-image:url('images/intro-fougere.jpg')"></div>
+        <div class="nw-hero-veil"></div>
+        <div class="nw-hero-inner">
+          <span class="nw-eyebrow">🌿 Herbier — encyclopédie vivante</span>
+          <h1 class="nw-h1">Des expériences<br />végétales immersives</h1>
+          <p class="nw-lead">Un herbier qui vous fait aimer les plantes : identifier, apprendre et cultiver — en beauté.</p>
+          <button class="nw-cta" data-aller="vue-recherche">Explorer l'herbier →</button>
+        </div>
+        <div class="acc-hint" id="acc-hint">scroll ↓</div>
+      </header>
+
+      <!-- ACCROCHE -->
+      <section class="nw-statement">
+        <p class="reveal">La botanique rencontre le <em>plaisir d'apprendre.</em></p>
+      </section>
+
+      <!-- FEATURE -->
+      <section class="nw-feature">
+        <div class="nw-feature-grid">
+          <h2 class="reveal">Conçu pour les curieux</h2>
+          <p class="reveal d1">180 plantes documentées, un mode swipe cinématique, des quizz adaptatifs et un suivi de progression. Tout pour explorer le vivant avec plaisir, que vous soyez débutant ou passionné.</p>
         </div>
       </section>
 
-      <!-- BANDE STAT (parallax) -->
-      <section class="cine-scene cine-band">
-        <div class="cine-bg" style="background-image:url('images/intro-3.jpg')"></div>
-        <div class="cine-veil"></div>
-        <div class="cine-band-copy reveal">
-          <div class="cine-stat">180</div>
-          <p>plantes documentées : exposition, arrosage, terreau, floraison, résistance au froid, feuillage, cycle de vie et taille adulte.</p>
+      <!-- SÉLECTION / FEATURED WORK -->
+      <section class="nw-work">
+        <div class="nw-work-head reveal">
+          <span class="nw-eyebrow">Sélection</span>
+          <h2>Plantes à la une</h2>
+        </div>
+        <div class="nw-grid" id="nw-featured"></div>
+      </section>
+
+      <!-- AVIS -->
+      <section class="nw-reviews">
+        <h2 class="reveal">Ils adorent</h2>
+        <div class="nw-reviews-grid">
+          <figure class="reveal"><div class="nw-stars">★★★★★</div><blockquote>« J'ai enfin identifié mes plantes de balcon — et les fiches d'entretien sont parfaites. »</blockquote><figcaption>Amélie R. · jardinière amatrice</figcaption></figure>
+          <figure class="reveal d1"><div class="nw-stars">★★★★★</div><blockquote>« Les quizz sont addictifs, le mode adaptatif me fait progresser vite. »</blockquote><figcaption>Tomás G. · étudiant en bio</figcaption></figure>
+          <figure class="reveal d2"><div class="nw-stars">★★★★★</div><blockquote>« Beau, calme et vraiment utile. Nos balades sont devenues des chasses au trésor. »</blockquote><figcaption>Sarah & enfants · curieux de nature</figcaption></figure>
         </div>
       </section>
 
-      <!-- CTA -->
-      <section class="cine-scene cine-cta">
-        <div class="cine-bg" style="background-image:url('images/intro-2.jpg')"></div>
-        <div class="cine-veil dark"></div>
-        <div class="cine-cta-copy reveal">
-          <h2 class="cine-h2">Prêt à explorer<br />le règne végétal ?</h2>
-          <div class="acc-cta">
-            <button class="acc-btn" data-aller="vue-recherche">Explorer l'herbier</button>
-            <button class="acc-btn-2" data-aller="vue-swipe">Découvrir en swipe 🎬</button>
-          </div>
+      <!-- PROCESS -->
+      <section class="nw-process">
+        <div class="nw-work-head reveal"><span class="nw-eyebrow">Comment ça marche</span><h2>4 façons d'explorer</h2></div>
+        <ol class="nw-steps">
+          <li class="reveal"><span class="nw-num">01</span><div><h3>Rechercher &amp; filtrer</h3><p>Trouvez une plante par nom, famille, exposition, arrosage, floraison, rusticité…</p></div></li>
+          <li class="reveal d1"><span class="nw-num">02</span><div><h3>Découvrir en swipe</h3><p>Faites défiler les plantes plein écran, façon cinématique.</p></div></li>
+          <li class="reveal d2"><span class="nw-num">03</span><div><h3>S'entraîner au quizz</h3><p>Des quizz par thème et un mode adaptatif sur vos erreurs.</p></div></li>
+          <li class="reveal d3"><span class="nw-num">04</span><div><h3>Suivre sa progression</h3><p>Statistiques par thème et classement des meilleurs scores.</p></div></li>
+        </ol>
+      </section>
+
+      <!-- CTA FINAL + PIED -->
+      <section class="nw-final">
+        <h2 class="reveal">Prêt à explorer<br />le règne végétal ?</h2>
+        <div class="acc-cta reveal d1">
+          <button class="acc-btn" data-aller="vue-recherche">Explorer l'herbier</button>
+          <button class="acc-btn-2" data-aller="vue-swipe">Découvrir en swipe 🎬</button>
         </div>
+        <footer class="nw-foot">
+          <span class="nw-foot-logo">🌿 Herbier</span>
+          <span>180 plantes · identifier · apprendre · cultiver</span>
+          <span>Fait avec 🌱 — encyclopédie vivante</span>
+        </footer>
       </section>
 
     </div>
@@ -123,9 +152,9 @@
     </button>
   </nav>
 
-  <script src="plantes.js?v=56"></script>
-  <script src="plantes-nouvelles.js?v=56"></script>
-  <script src="tailles.js?v=56"></script>
-  <script src="app.js?v=56"></script>
+  <script src="plantes.js?v=57"></script>
+  <script src="plantes-nouvelles.js?v=57"></script>
+  <script src="tailles.js?v=57"></script>
+  <script src="app.js?v=57"></script>
 </body>
 </html>

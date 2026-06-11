@@ -794,3 +794,67 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .cine-zoomsec .cine-green { z-index: 3; }
 .cine-zoomsec .cine-hero-copy, .cine-zoomsec .acc-hint { z-index: 4; }
 .cine-words .cine-bridge { z-index: 2; }
+
+/* ============================================================
+   ACCUEIL — présentation façon studio cinématique (style neuwebstudio)
+   ============================================================ */
+.nw { background: var(--creme); }
+.nw > section, .nw > header { padding: clamp(72px, 12vw, 160px) clamp(20px, 6vw, 90px); }
+
+/* Hero */
+.nw-hero { position: relative; min-height: 100vh; display: flex; align-items: center; overflow: hidden; color: #fff; }
+.nw-hero-bg { position: absolute; top: -12%; left: 0; right: 0; bottom: -12%; background-size: cover; background-position: center; transform: scale(1.12); will-change: transform; }
+.nw-hero-veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,24,18,0.55), rgba(8,24,18,0.40) 50%, rgba(8,24,18,0.82)); }
+.nw-hero-inner { position: relative; z-index: 2; max-width: 1000px; }
+.nw-eyebrow { display: inline-block; font-size: 0.8rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 600; opacity: 0.85; margin-bottom: 22px; }
+.nw-h1 { font-family: "Fraunces", serif; font-weight: 600; font-size: clamp(2.6rem, 9vw, 7rem); line-height: 0.98; letter-spacing: -0.015em; margin-bottom: 22px; }
+.nw-lead { font-size: clamp(1.1rem, 2.4vw, 1.5rem); max-width: 620px; color: rgba(255,255,255,0.88); margin-bottom: 34px; }
+.nw-cta { background: #fff; color: var(--vert-fonce); border: none; border-radius: 999px; padding: 16px 34px; font-family: inherit; font-weight: 600; font-size: 1.05rem; cursor: pointer; transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease; }
+.nw-cta:hover { transform: translateY(-3px); background: var(--vert-clair); color: #fff; }
+
+/* Accroche (clair, typo géante) */
+.nw-statement p { font-family: "Fraunces", serif; font-weight: 600; color: var(--vert-fonce); font-size: clamp(2rem, 7vw, 5rem); line-height: 1.05; max-width: 16ch; }
+.nw-statement em { color: var(--vert); font-style: italic; }
+
+/* Feature (sombre, 2 colonnes) */
+.nw-feature { background: var(--vert-fonce); color: var(--creme); }
+.nw-feature-grid { display: grid; gap: clamp(20px, 4vw, 60px); grid-template-columns: 1fr; max-width: 1100px; margin: 0 auto; }
+@media (min-width: 820px) { .nw-feature-grid { grid-template-columns: 1.1fr 1fr; align-items: start; } }
+.nw-feature h2 { font-family: "Fraunces", serif; font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.05; }
+.nw-feature p { font-size: clamp(1.05rem, 2vw, 1.3rem); color: rgba(246,244,236,0.82); }
+
+/* Sélection (grille de plantes) */
+.nw-work-head { max-width: 1100px; margin: 0 auto 36px; }
+.nw-work-head .nw-eyebrow { color: var(--vert); opacity: 1; }
+.nw-work-head h2 { font-family: "Fraunces", serif; color: var(--vert-fonce); font-size: clamp(2rem, 6vw, 4rem); }
+.nw-grid { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 18px; }
+.nw-card { position: relative; border-radius: 18px; overflow: hidden; cursor: pointer; aspect-ratio: 4 / 5; background: var(--sanddk, #ddd); box-shadow: var(--ombre); }
+.nw-card img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
+.nw-card:hover img { transform: scale(1.06); }
+.nw-card-cap { position: absolute; inset: auto 0 0 0; padding: 16px 18px; background: linear-gradient(transparent, rgba(8,24,18,0.82)); color: #fff; }
+.nw-card-cap strong { font-family: "Fraunces", serif; font-size: 1.2rem; display: block; }
+.nw-card-cap span { font-style: italic; opacity: 0.85; font-size: 0.88rem; }
+
+/* Avis (sombre) */
+.nw-reviews { background: var(--vert-fonce); color: var(--creme); }
+.nw-reviews h2 { font-family: "Fraunces", serif; font-size: clamp(2rem, 6vw, 4rem); text-align: center; margin-bottom: 42px; }
+.nw-reviews-grid { max-width: 1100px; margin: 0 auto; display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+.nw-reviews figure { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 26px; }
+.nw-stars { color: #e0709a; margin-bottom: 12px; }
+.nw-reviews blockquote { font-size: 1.05rem; line-height: 1.5; margin-bottom: 16px; color: rgba(246,244,236,0.92); }
+.nw-reviews figcaption { font-size: 0.88rem; opacity: 0.7; }
+
+/* Process (clair, étapes) */
+.nw-steps { max-width: 1000px; margin: 0 auto; list-style: none; }
+.nw-steps li { display: flex; gap: clamp(16px, 4vw, 48px); padding: 28px 0; border-top: 1px solid var(--creme-fonce); align-items: baseline; }
+.nw-num { font-family: "Fraunces", serif; color: var(--vert-clair); font-size: clamp(1.6rem, 4vw, 2.6rem); font-weight: 600; flex: 0 0 auto; }
+.nw-steps h3 { font-family: "Fraunces", serif; color: var(--vert-fonce); font-size: clamp(1.4rem, 3.5vw, 2.2rem); margin-bottom: 6px; }
+.nw-steps p { color: var(--texte-doux); font-size: 1.05rem; }
+
+/* CTA final + pied (sombre) */
+.nw-final { background: var(--vert-fonce); color: #fff; text-align: center; }
+.nw-final h2 { font-family: "Fraunces", serif; font-size: clamp(2.2rem, 7vw, 5rem); line-height: 1.02; margin-bottom: 30px; }
+.nw-final .acc-cta { display: flex; gap: 14px; justify-content: center; flex-direction: column; align-items: center; }
+@media (min-width: 640px) { .nw-final .acc-cta { flex-direction: row; } }
+.nw-foot { margin-top: clamp(50px, 10vw, 110px); display: flex; flex-direction: column; gap: 8px; color: rgba(246,244,236,0.6); font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 28px; }
+.nw-foot-logo { font-family: "Fraunces", serif; color: #fff; font-size: 1.2rem; }

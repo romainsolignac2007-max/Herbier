@@ -849,75 +849,46 @@ function afficherClassement() {
   if (adapt) adapt.addEventListener("click", () => { naviguer("vue-quizz"); demarrerQuizz("adaptatif"); });
 }
 
-/* ===================== ACCUEIL : cinématique parallax ===================== */
+/* ===================== ACCUEIL : présentation studio cinématique ===================== */
 (function () {
   const acc = document.getElementById("vue-accueil");
   if (!acc) return;
-  const zoomSec = document.getElementById("cine-zoomsec");
-  const zBack = zoomSec ? zoomSec.querySelector(".cine-z-back") : null;    // fond
-  const zFront = zoomSec ? zoomSec.querySelector(".cine-z-front") : null;  // fougère au 1er plan
-  const green = document.getElementById("cine-green");                     // vert foncé final
-  const bridge = document.getElementById("cine-bridge");                   // pont vert section suivante
-  // Images en parallaxe = toutes sauf celles de la section de zoom
-  const bgs = [...acc.querySelectorAll(".cine-bg")].filter(b => !zoomSec || !zoomSec.contains(b));
-  const wordsSection = document.getElementById("cine-words");
-  const words = wordsSection ? [...wordsSection.querySelectorAll(".cine-word")] : [];
+  const heroBg = acc.querySelector(".nw-hero-bg");
+  const heroInner = acc.querySelector(".nw-hero-inner");
   const hint = document.getElementById("acc-hint");
-  const heroCopy = acc.querySelector(".cine-hero-copy");
-  const clamp = (v) => Math.min(1, Math.max(0, v));
+
+  // Grille "Plantes à la une" : 6 plantes (tirées au hasard) avec photo réelle
+  const grid = document.getElementById("nw-featured");
+  if (grid && typeof PLANTES !== "undefined") {
+    const sel = melanger(PLANTES.filter(p => srcImageGrande(p))).slice(0, 6);
+    grid.innerHTML = sel.map(p => `
+      <article class="nw-card" data-nom="${(p.nom || "").replace(/"/g, "&quot;")}">
+        <img src="${srcImageGrande(p)}" alt="${p.nom}" loading="lazy">
+        <div class="nw-card-cap"><strong>${p.nom}</strong><span>${p.latin}</span></div>
+      </article>`).join("");
+    grid.querySelectorAll(".nw-card").forEach(c => {
+      c.addEventListener("click", () => {
+        const p = PLANTES.find(x => x.nom === c.dataset.nom);
+        if (p) ouvrirFiche(p);
+      });
+    });
+  }
 
   function majAccueil() {
     if (!acc.classList.contains("active")) return;
-    const vh = window.innerHeight;
-
-    // 1) La fougère fonce vers la caméra (2 plans), zoom jusqu'au vert foncé uni
-    if (zoomSec && zBack && zFront) {
-      const r = zoomSec.getBoundingClientRect();
-      const total = zoomSec.offsetHeight - vh;
-      const p = total > 0 ? clamp(-r.top / total) : 0;
-      // fond : zoom lent (profondeur)
-      zBack.style.transform = "scale(" + (1.05 + p * 1.4).toFixed(3) + ")";
-      // 1er plan : fonce vers la caméra (zoom fort) + flou croissant = il "passe" devant nous
-      zFront.style.transform = "scale(" + (1.2 + p * 5.5).toFixed(3) + ")";
-      zFront.style.filter = "blur(" + (p * p * 14).toFixed(1) + "px)";
-      zFront.style.opacity = (p < 0.85 ? 1 : Math.max(0, 1 - (p - 0.85) / 0.15)).toFixed(3);
-      // on finit sur le vert foncé uni (couleur de la fougère, très très près)
-      if (green) green.style.opacity = clamp((p - 0.62) / 0.38).toFixed(3);
-      if (heroCopy) {
-        const f = Math.max(0, 1 - p / 0.2);
-        heroCopy.style.opacity = f.toFixed(3);
-        heroCopy.style.transform = "translateY(" + (-p * 60).toFixed(0) + "px)";
-      }
-    }
-
-    // 2) Parallaxe des autres images
-    bgs.forEach(bg => {
-      const sc = bg.closest(".cine-scene") || bg.closest(".cine-sticky");
-      if (!sc) return;
-      const r = sc.getBoundingClientRect();
-      const off = (r.top + r.height / 2 - vh / 2) * -0.12;
-      bg.style.transform = "translateY(" + off.toFixed(1) + "px) scale(1.18)";
-    });
-
-    // 3) Mots + pont vert : on ARRIVE sur le même vert, qui s'efface pour révéler la suite
-    if (wordsSection && words.length) {
-      const r = wordsSection.getBoundingClientRect();
-      const total = wordsSection.offsetHeight - vh;
-      const p = total > 0 ? Math.min(0.999, Math.max(0, -r.top / total)) : 0;
-      if (bridge) bridge.style.opacity = Math.max(0, 1 - p / 0.12).toFixed(3); // vert plein au début, puis s'efface
-      const idx = Math.min(words.length - 1, Math.floor(p * words.length));
-      words.forEach((w, i) => w.classList.toggle("on", i === idx));
-    }
-    if (hint) hint.style.opacity = window.scrollY > 40 ? "0" : "";
+    const y = window.scrollY;
+    if (heroBg) heroBg.style.transform = "translateY(" + (y * 0.25).toFixed(1) + "px) scale(1.12)";
+    if (heroInner) heroInner.style.opacity = Math.max(0, 1 - y / (window.innerHeight * 0.7)).toFixed(3);
+    if (hint) hint.style.opacity = y > 40 ? "0" : "";
   }
   majAccueil();
   addEventListener("scroll", () => requestAnimationFrame(majAccueil), { passive: true });
   addEventListener("resize", majAccueil);
 
-  // Révélations au scroll (titres / blocs)
+  // Révélations au scroll (titres / blocs / cartes)
   const io = new IntersectionObserver((entries) => {
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
-  }, { threshold: 0.2 });
+  }, { threshold: 0.16 });
   acc.querySelectorAll(".reveal").forEach(el => io.observe(el));
 })();
 
