@@ -117,6 +117,49 @@ const recherche = { texte: "" };
 const selections = { soleil: new Set(), eau: new Set(), lieu: new Set(), floraison: new Set(), feuillage: new Set(), cycle: new Set(), gel: new Set() };
 const sectionsOuvertes = { soleil: false, eau: false, lieu: false, floraison: false, feuillage: false, cycle: false, gel: false };
 
+// Explications affichées au clic sur le petit ⓘ de chaque filtre
+const INFOS = {
+  soleil: {
+    "Plein soleil": "Au moins 6 h de soleil direct par jour. Pour les plantes qui aiment la chaleur et la pleine lumière.",
+    "Mi-ombre": "Soleil le matin ou lumière filtrée, à l'ombre aux heures chaudes. Lumineux mais sans soleil brûlant.",
+    "Ombre": "Peu ou pas de soleil direct. Pour les plantes de sous-bois ou de pièces peu éclairées.",
+  },
+  eau: {
+    "Peu": "Arrosage rare : on laisse bien sécher entre deux. Plantes résistantes à la sécheresse.",
+    "Modéré": "Arrosage régulier : on laisse sécher la surface du sol entre deux arrosages.",
+    "Souvent": "Substrat maintenu frais, arrosages fréquents. La plante craint la sécheresse.",
+  },
+  lieu: {
+    "Intérieur": "Se cultive en pot, à la maison, à l'abri du gel.",
+    "Extérieur": "Se cultive au jardin, en pleine terre ou en pot dehors.",
+  },
+  floraison: {
+    "Printemps": "Fleurit surtout au printemps (mars à mai).",
+    "Été": "Fleurit surtout en été (juin à août).",
+    "Automne": "Fleurit surtout en automne (septembre à novembre).",
+    "Hiver": "Fleurit en hiver ou en fin d'hiver (décembre à février).",
+    "Toute l'année": "Fleurit très longtemps, ou feuillage décoratif toute l'année.",
+  },
+  feuillage: {
+    "Persistant": "Garde ses feuilles toute l'année.",
+    "Semi-persistant": "Conserve une partie de son feuillage selon le climat.",
+    "Caduc": "Perd ses feuilles en automne/hiver et repart au printemps.",
+  },
+  cycle: {
+    "Annuelle": "Vit une seule saison : elle pousse, fleurit, grène puis meurt la même année.",
+    "Bisannuelle": "Vit deux ans : feuillage la 1re année, floraison la 2e, puis elle meurt.",
+    "Vivace": "Vit plusieurs années et repart chaque année (herbacées, bulbes, plantes d'intérieur).",
+    "Arbuste ou arbre": "Plante ligneuse (à bois) qui vit de nombreuses années.",
+  },
+  gel: {
+    "Craint le froid (à garder > 10 °C)": "Frileuse : à garder à l'intérieur ou hors gel, au-dessus de 10 °C.",
+    "Très peu rustique (0 à −5 °C)": "Supporte un léger gel de courte durée, jusqu'à environ −5 °C.",
+    "Peu rustique (−5 à −10 °C)": "Résiste à des gelées modérées, jusqu'à environ −10 °C.",
+    "Rustique (−10 à −15 °C)": "Tient des hivers froids, jusqu'à environ −15 °C.",
+    "Très rustique (−15 à −25 °C)": "Supporte les hivers rigoureux, jusqu'à environ −25 °C.",
+  },
+};
+
 // Une plante a-t-elle la valeur d'une option ? (le lieu "Les deux" compte pour Intérieur ET Extérieur)
 function plantePossede(cle, val, p) {
   if (cle === "lieu") return p.lieu === val || p.lieu === "Les deux";
@@ -168,9 +211,15 @@ function construireFiltres() {
     const base = plantesFiltrees(cat.cle); // pour compter sans s'auto-exclure
     html += `
       <div class="filtre-section ${ouvert ? "ouvert" : ""}" data-cle="${cat.cle}">
-        <button class="filtre-tete" data-toggle="${cat.cle}">
-          <span>${cat.titre}</span><span class="chevron">⌄</span>
-        </button>
+        <div class="filtre-tete">
+          <button class="filtre-toggle" data-toggle="${cat.cle}">
+            <span>${cat.titre}</span><span class="chevron">⌄</span>
+          </button>
+          <button class="filtre-info" data-info="${cat.cle}" title="À quoi correspondent ces choix ?" aria-label="Infos">i</button>
+        </div>
+        <div class="filtre-aide" hidden>
+          ${cat.options.map(o => `<p><b>${o.ico} ${o.label || o.val}</b>${INFOS[cat.cle] && INFOS[cat.cle][o.val] ? " — " + INFOS[cat.cle][o.val] : ""}</p>`).join("")}
+        </div>
         <div class="filtre-corps">
           ${cat.options.map(o => {
             const n = base.filter(p => plantePossede(cat.cle, o.val, p)).length;
@@ -189,11 +238,19 @@ function construireFiltres() {
   panneauFiltres.innerHTML = html;
 
   // Déplier / replier une section
-  panneauFiltres.querySelectorAll(".filtre-tete").forEach(t => {
+  panneauFiltres.querySelectorAll(".filtre-toggle").forEach(t => {
     t.addEventListener("click", () => {
       const cle = t.dataset.toggle;
       sectionsOuvertes[cle] = !sectionsOuvertes[cle];
       t.closest(".filtre-section").classList.toggle("ouvert", sectionsOuvertes[cle]);
+    });
+  });
+  // Petit ⓘ : afficher / masquer les explications des options
+  panneauFiltres.querySelectorAll(".filtre-info").forEach(b => {
+    b.addEventListener("click", e => {
+      e.stopPropagation();
+      const aide = b.closest(".filtre-section").querySelector(".filtre-aide");
+      if (aide) aide.hidden = !aide.hidden;
     });
   });
   // Cocher / décocher une option

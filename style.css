@@ -604,11 +604,22 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
   padding: 12px 18px 14px; border-bottom: 1px solid var(--creme-fonce);
 }
 .filtre-section { border-bottom: 1px solid var(--creme-fonce); }
-.filtre-tete {
-  width: 100%; background: none; border: none; cursor: pointer; font-family: inherit;
+.filtre-tete { display: flex; align-items: center; }
+.filtre-toggle {
+  flex: 1; background: none; border: none; cursor: pointer; font-family: inherit;
   display: flex; justify-content: space-between; align-items: center;
-  padding: 15px 18px; font-size: 1.02rem; font-weight: 600; color: var(--texte);
+  padding: 15px 6px 15px 18px; font-size: 1.02rem; font-weight: 600; color: var(--texte);
 }
+.filtre-info {
+  flex: 0 0 auto; margin: 0 16px 0 6px; width: 20px; height: 20px; line-height: 1;
+  border-radius: 50%; border: 1.5px solid var(--texte-doux); background: none;
+  color: var(--texte-doux); font-family: Georgia, serif; font-style: italic; font-weight: 700;
+  font-size: 0.78rem; cursor: pointer; transition: all 0.15s ease;
+}
+.filtre-info:hover { border-color: var(--vert); color: var(--vert); }
+.filtre-aide { padding: 0 18px 12px; font-size: 0.84rem; color: var(--texte-doux); }
+.filtre-aide p { margin-bottom: 6px; line-height: 1.4; }
+.filtre-aide b { color: var(--texte); font-weight: 600; }
 .filtre-tete .chevron { transition: transform 0.2s ease; color: var(--texte-doux); font-size: 1.2rem; }
 .filtre-section.ouvert .filtre-tete .chevron { transform: rotate(180deg); }
 .filtre-corps { display: none; padding: 0 18px 14px; }
