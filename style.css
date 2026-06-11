@@ -869,3 +869,6 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .nw-stack-img { display: block; width: 100%; height: auto; }
 .nw-hero .nw-hero-inner { position: relative; z-index: 3; max-width: 1000px; padding: 0 clamp(20px, 6vw, 90px); }
 .nw-hero .nw-hero-veil { z-index: 2; }
+
+/* Mots qui défilent sur la 2e image du hero */
+.nw-words { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; opacity: 0; pointer-events: none; }

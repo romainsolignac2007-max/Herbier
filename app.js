@@ -856,6 +856,8 @@ function afficherClassement() {
   const heroSec = document.getElementById("nw-hero");
   const heroTrack = document.getElementById("nw-hero-track");
   const heroInner = acc.querySelector(".nw-hero-inner");
+  const nwWords = document.getElementById("nw-words");
+  const nwWordEls = nwWords ? [...nwWords.querySelectorAll(".cine-word")] : [];
   const hint = document.getElementById("acc-hint");
   const clampN = (v) => Math.min(1, Math.max(0, v));
 
@@ -886,7 +888,14 @@ function afficherClassement() {
       const p = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
       const extra = Math.max(0, heroTrack.offsetHeight - vh); // hauteur totale des images qui dépasse
       heroTrack.style.transform = "translateY(" + (-p * extra).toFixed(1) + "px)";
-      if (heroInner) heroInner.style.opacity = Math.max(0, 1 - Math.max(0, p - 0.78) / 0.22).toFixed(3);
+      // 1re image : le titre. 2e image : les mots qui défilent.
+      if (heroInner) heroInner.style.opacity = clampN(1 - (p - 0.34) / 0.12).toFixed(3);
+      if (nwWords && nwWordEls.length) {
+        nwWords.style.opacity = clampN((p - 0.46) / 0.1).toFixed(3);
+        const wp = clampN((p - 0.5) / 0.46);
+        const idx = Math.min(nwWordEls.length - 1, Math.floor(wp * nwWordEls.length));
+        nwWordEls.forEach((w, i) => w.classList.toggle("on", i === idx));
+      }
     }
     if (hint) hint.style.opacity = window.scrollY > 40 ? "0" : "";
   }
