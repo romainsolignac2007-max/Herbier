@@ -593,7 +593,7 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 }
 .filtres-panel {
   flex: 0 0 250px; background: #fff; border-radius: var(--radius);
-  box-shadow: var(--ombre); padding: 8px 4px 22px; position: sticky; top: 14px;
+  box-shadow: var(--ombre); padding: 8px 4px 60px; position: sticky; top: 14px;
   /* le panneau défile tout seul s'il dépasse la hauteur ; s'arrête au-dessus de la barre du bas */
   max-height: calc(100dvh - var(--nav-h) - 52px); overflow-y: auto; overscroll-behavior: contain;
 }
