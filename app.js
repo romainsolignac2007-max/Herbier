@@ -22,6 +22,21 @@ const ICONE_TERREAU = {
   "Terreau drainant (méditerranéen/cactées)": "🏜️",
   "Terreau spécial agrumes": "🍋",
 };
+// Résistance au froid (rusticité) : fourchettes de température
+const GEL = [
+  "Craint le froid (à garder > 10 °C)",
+  "Gélive (gèle dès 0 à −2 °C)",
+  "Peu rustique (−5 à −10 °C)",
+  "Rustique (−10 à −15 °C)",
+  "Très rustique (−15 à −25 °C)",
+];
+const GEL_COURT = {
+  "Craint le froid (à garder > 10 °C)": "> 10 °C",
+  "Gélive (gèle dès 0 à −2 °C)": "0 à −2 °C",
+  "Peu rustique (−5 à −10 °C)": "−5 à −10 °C",
+  "Rustique (−10 à −15 °C)": "−10 à −15 °C",
+  "Très rustique (−15 à −25 °C)": "−15 à −25 °C",
+};
 
 // Source d'image (gère le fichier intégré OU le dossier images/)
 function chemin(nom) {
@@ -209,6 +224,7 @@ function ouvrirFiche(p) {
         <div class="info-box"><div class="ico">${ICONE_EAU[p.eau] || "🌿"}</div><div class="lib">Arrosage</div><div class="val">${p.eau}</div></div>
         ${p.floraison ? `<div class="info-box"><div class="ico">${ICONE_FLORAISON[p.floraison] || "🌸"}</div><div class="lib">Floraison</div><div class="val">${p.floraison}</div></div>` : ""}
         ${p.terreau ? `<div class="info-box"><div class="ico">${ICONE_TERREAU[p.terreau] || "🪴"}</div><div class="lib">Terreau</div><div class="val">${TERREAU_COURT[p.terreau] || p.terreau}</div></div>` : ""}
+        ${p.gel ? `<div class="info-box"><div class="ico">❄️</div><div class="lib">Résiste au froid</div><div class="val">${GEL_COURT[p.gel] || p.gel}</div></div>` : ""}
       </div>
       <div class="bloc"><h3>👁️ Comment la reconnaître</h3><p>${p.reconnaitre}</p></div>
       <div class="bloc"><h3>🪴 Comment l'entretenir</h3><p>${p.entretien}</p></div>
@@ -331,6 +347,7 @@ function slideHTML(p) {
           <span class="tag">${ICONE_EAU[p.eau] || ""} ${p.eau}</span>
           ${p.floraison ? `<span class="tag">${ICONE_FLORAISON[p.floraison] || "🌸"} ${p.floraison}</span>` : ""}
           ${p.terreau ? `<span class="tag">${ICONE_TERREAU[p.terreau] || "🪴"} ${TERREAU_COURT[p.terreau] || p.terreau}</span>` : ""}
+          ${p.gel ? `<span class="tag">❄️ ${GEL_COURT[p.gel] || p.gel}</span>` : ""}
         </div>
         <div class="swipe-bloc"><h3>👁️ Reconnaître</h3><p>${p.reconnaitre}</p></div>
         <div class="swipe-bloc"><h3>🪴 Entretenir</h3><p>${p.entretien}</p></div>
@@ -459,6 +476,8 @@ const QUIZZ_THEMES = [
     champ: "floraison",options: FLORAISONS,                               question: p => `À quelle saison fleurit « ${p.nom} » ?` },
   { id: "lieu",      emoji: "🏡", titre: "Intérieur / extérieur",sous: "Où la cultiver ?",                  couleur: "#2f6b46",
     champ: "lieu",     options: ["Intérieur", "Extérieur", "Les deux"],   question: p => `Où cultive-t-on plutôt « ${p.nom} » ?` },
+  { id: "gel",       emoji: "❄️", titre: "Résistance au froid",  sous: "Jusqu'à quelle température ?",       couleur: "#4a90c2",
+    champ: "gel",      options: GEL,                                      question: p => `Jusqu'à quel froid « ${p.nom} » résiste-t-elle ?` },
   { id: "latin",     emoji: "🔬", titre: "Nom latin",            sous: "Trouvez le nom scientifique",       couleur: "#7b61a8",
     champ: "latin",    poolFrom: "latin",                                 question: p => `Quel est le nom latin de « ${p.nom} » ?` },
   { id: "famille",   emoji: "🌿", titre: "Famille botanique",    sous: "À quelle famille appartient-elle ?",couleur: "#3a8f6f",
