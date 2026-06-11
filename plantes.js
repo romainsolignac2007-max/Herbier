@@ -329,7 +329,7 @@ const PLANTES = [
     lieu: "Les deux", soleil: "Plein soleil", eau: "Modéré", saison: "Fleurs et fruits une grande partie de l'année",
     floraison: "Été",
     terreau: "Terreau spécial agrumes",
-    gel: "Peu rustique (−5 à −10 °C)",
+    gel: "Très peu rustique (0 à −5 °C)",
     reconnaitre: "Petit arbre au feuillage persistant vert brillant. Fleurs blanches très parfumées, suivies de citrons jaunes.",
     entretien: "Plein soleil et chaleur. Arrosez régulièrement sans détremper, engrais agrumes en saison. Rentrez-le en véranda ou serre hors gel l'hiver. Craint le froid."
   },
@@ -889,7 +889,7 @@ const PLANTES = [
     saison: "Floraison de mai à octobre",
     floraison: "Printemps",
     terreau: "Terreau drainant (méditerranéen/cactées)",
-    gel: "Peu rustique (−5 à −10 °C)",
+    gel: "Très peu rustique (0 à −5 °C)",
     reconnaitre: "Grimpante ligneuse et épineuse. Vraies fleurs minuscules entourées de bractées papier très colorées.",
     entretien: "Plein soleil et chaleur, sol drainé. Arrosez peu. Rentrez-le en hiver hors gel (véranda). Palissez les tiges."
   },
