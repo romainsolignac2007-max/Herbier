@@ -854,6 +854,7 @@ function afficherClassement() {
   const scene = document.getElementById("acc-scene");
   const wrap = scene ? scene.closest(".acc-wrap") : null;
   const hint = document.getElementById("acc-hint");
+  const photos = scene ? [...scene.querySelectorAll(".acc-photo")] : [];
   if (!scene || !wrap) return;
   function majAccueil() {
     const acc = document.getElementById("vue-accueil");
@@ -861,6 +862,11 @@ function afficherClassement() {
     const total = wrap.offsetHeight - window.innerHeight;
     const p = total > 0 ? Math.min(1, Math.max(0, -wrap.getBoundingClientRect().top / total)) : 0;
     scene.style.setProperty("--p", p.toFixed(4));
+    // Fondu enchaîné : la position glisse de 0 à N-1, chaque photo s'estompe vers sa voisine
+    if (photos.length) {
+      const pos = p * (photos.length - 1);
+      photos.forEach((el, i) => { el.style.opacity = Math.max(0, 1 - Math.abs(pos - i)).toFixed(3); });
+    }
     if (hint) hint.style.opacity = p > 0.06 ? "0" : "";
   }
   majAccueil();
