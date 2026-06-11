@@ -74,6 +74,7 @@ function melanger(arr) {
 let swipeConstruit = false;
 
 function naviguer(vueId) {
+  fermerFiche(); // ferme la fiche plein écran si elle était ouverte
   document.querySelectorAll(".vue").forEach(v => v.classList.toggle("active", v.id === vueId));
   document.querySelectorAll(".nav-item").forEach(n => n.classList.toggle("actif", n.dataset.aller === vueId));
   document.body.classList.toggle("swipe-actif", vueId === "vue-swipe");
