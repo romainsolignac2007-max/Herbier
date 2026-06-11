@@ -30,6 +30,7 @@
     "Cactus de Noël": "n-cactus-de-noel.jpg",
     "Haworthia": "n-haworthia.jpg",
     "Aéonium": "n-aeonium.jpg",
+    "Plante araignée": "n-plante-araignee.jpg",
     "Misère": "n-misere-tradescantia.jpg",
     "Bégonia maculé": "n-begonia-macule.jpg",
     "Violette africaine": "n-violette-africaine.jpg",
