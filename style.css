@@ -593,7 +593,7 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 }
 .filtres-panel {
   flex: 0 0 250px; background: #fff; border-radius: var(--radius);
-  box-shadow: var(--ombre); padding: 8px 4px 16px;
+  box-shadow: var(--ombre); padding: 8px 4px 4px;
 }
 .recherche-resultats { flex: 1; min-width: 0; }
 .recherche-corps .grille { max-width: none; margin: 0; padding: 6px 0 0; }
