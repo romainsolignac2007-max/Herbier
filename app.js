@@ -311,7 +311,7 @@ function ouvrirFiche(p) {
         ${p.cycle ? `<div class="info-box"><div class="ico">${ICONE_CYCLE[p.cycle] || "♻️"}</div><div class="lib">Cycle</div><div class="val">${p.cycle}</div></div>` : ""}
         ${p.gel ? `<div class="info-box"><div class="ico">❄️</div><div class="lib">Résiste au froid</div><div class="val">${GEL_COURT[p.gel] || p.gel}</div></div>` : ""}
       </div>
-      ${p.hauteur ? `<div class="bloc"><h3>📐 Taille adulte</h3><p>Hauteur : <strong>${p.hauteur}</strong> · Largeur : <strong>${p.largeur}</strong></p></div>` : ""}
+      ${p.hauteur ? `<div class="bloc"><h3>📐 Taille adulte</h3><p><strong>${p.hauteur} × ${p.largeur}</strong> <span class="taille-note">(hauteur × largeur, approx.)</span></p></div>` : ""}
       <div class="bloc"><h3>👁️ Comment la reconnaître</h3><p>${p.reconnaitre}</p></div>
       <div class="bloc"><h3>🪴 Comment l'entretenir</h3><p>${p.entretien}</p></div>
       ${p.saison ? `<div class="bloc"><h3>📅 Saison</h3><p>${p.saison}</p></div>` : ""}
