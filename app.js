@@ -888,11 +888,21 @@ function afficherClassement() {
       const p = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
       const extra = Math.max(0, heroTrack.offsetHeight - vh); // hauteur totale des images qui dépasse
       heroTrack.style.transform = "translateY(" + (-p * extra).toFixed(1) + "px)";
-      // 1re image : le titre. 2e image : les mots qui défilent.
-      if (heroInner) heroInner.style.opacity = clampN(1 - (p - 0.34) / 0.12).toFixed(3);
+
+      // Position (dans la colonne d'images) du centre du viewport
+      const center = p * extra + vh / 2;
+      // Frontière entre la 1re et la 2e image = hauteur de la 1re image
+      const img1 = heroTrack.children[0];
+      const img2 = heroTrack.children[1];
+      const b = img1 ? img1.offsetHeight : vh;
+      const h2 = img2 ? img2.offsetHeight : vh;
+
+      // 1re image : le titre (disparaît juste avant la frontière).
+      if (heroInner) heroInner.style.opacity = clampN((b - center) / (0.45 * vh)).toFixed(3);
+      // 2e image : les mots qui défilent (apparaissent dès qu'on entre dans l'image 2).
       if (nwWords && nwWordEls.length) {
-        nwWords.style.opacity = clampN((p - 0.46) / 0.1).toFixed(3);
-        const wp = clampN((p - 0.5) / 0.46);
+        nwWords.style.opacity = clampN((center - b) / (0.35 * vh)).toFixed(3);
+        const wp = clampN((center - b) / Math.max(1, h2 - vh * 0.5)); // progression dans l'image 2
         const idx = Math.min(nwWordEls.length - 1, Math.floor(wp * nwWordEls.length));
         nwWordEls.forEach((w, i) => w.classList.toggle("on", i === idx));
       }

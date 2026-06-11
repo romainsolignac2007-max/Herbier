@@ -866,7 +866,8 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 #nw-hero-bg2 { opacity: 0; }
 /* Colonne d'images empilées (haut → bas) qui défile au scroll */
 .nw-hero-track { position: absolute; top: 0; left: 0; width: 100%; will-change: transform; }
-.nw-stack-img { display: block; width: 100%; height: auto; }
+/* Hauteur fixe par image => géométrie déterministe : 2 × 170vh = 340vh (= hauteur du hero) */
+.nw-stack-img { display: block; width: 100%; height: 170vh; object-fit: cover; }
 .nw-hero .nw-hero-inner { position: relative; z-index: 3; max-width: 1000px; padding: 0 clamp(20px, 6vw, 90px); }
 .nw-hero .nw-hero-veil { z-index: 2; }
 
