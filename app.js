@@ -849,41 +849,45 @@ function afficherClassement() {
   if (adapt) adapt.addEventListener("click", () => { naviguer("vue-quizz"); demarrerQuizz("adaptatif"); });
 }
 
-/* ===================== ACCUEIL : animation pilotée au scroll ===================== */
+/* ===================== ACCUEIL : cinématique parallax ===================== */
 (function () {
-  const scene = document.getElementById("acc-scene");
-  const wrap = scene ? scene.closest(".acc-wrap") : null;
+  const acc = document.getElementById("vue-accueil");
+  if (!acc) return;
+  const bgs = [...acc.querySelectorAll(".cine-bg")];
+  const wordsSection = document.getElementById("cine-words");
+  const words = wordsSection ? [...wordsSection.querySelectorAll(".cine-word")] : [];
   const hint = document.getElementById("acc-hint");
-  const photosWrap = document.getElementById("acc-photos");
-  const photos = scene ? [...scene.querySelectorAll(".acc-photo")] : [];
-  if (!scene || !wrap) return;
-  function majAccueil() {
-    const acc = document.getElementById("vue-accueil");
-    if (!acc || !acc.classList.contains("active")) return;
-    const total = wrap.offsetHeight - window.innerHeight;
-    const p = total > 0 ? Math.min(1, Math.max(0, -wrap.getBoundingClientRect().top / total)) : 0;
-    scene.style.setProperty("--p", p.toFixed(4));
 
-    // 1) Ouverture : l'image part d'un cadre arrondi puis s'étend en plein écran (12 % du scroll)
-    if (photosWrap) {
-      const ex = Math.min(1, p / 0.12);
-      photosWrap.style.transform = "scale(" + (0.86 + 0.14 * ex).toFixed(4) + ")";
-      photosWrap.style.borderRadius = (34 * (1 - ex)).toFixed(1) + "px";
+  function majAccueil() {
+    if (!acc.classList.contains("active")) return;
+    const vh = window.innerHeight;
+    // Parallaxe : chaque image bouge plus lentement que le scroll
+    bgs.forEach(bg => {
+      const sc = bg.closest(".cine-scene") || bg.closest(".cine-sticky");
+      if (!sc) return;
+      const r = sc.getBoundingClientRect();
+      const off = (r.top + r.height / 2 - vh / 2) * -0.12;
+      bg.style.transform = "translateY(" + off.toFixed(1) + "px) scale(1.18)";
+    });
+    // Mots qui s'enchaînent selon la progression de la section
+    if (wordsSection && words.length) {
+      const r = wordsSection.getBoundingClientRect();
+      const total = wordsSection.offsetHeight - vh;
+      const p = total > 0 ? Math.min(0.999, Math.max(0, -r.top / total)) : 0;
+      const idx = Math.min(words.length - 1, Math.floor(p * words.length));
+      words.forEach((w, i) => w.classList.toggle("on", i === idx));
     }
-    // 2) Enchaînement "3D" : fondu + zoom-in continu de chaque photo (on plonge dans l'image)
-    if (photos.length) {
-      const pos = p * (photos.length - 1);
-      photos.forEach((el, i) => {
-        el.style.opacity = Math.max(0, 1 - Math.abs(pos - i)).toFixed(3);
-        const z = 1 + 0.22 * Math.max(0, Math.min(2, pos - (i - 1))); // 1.0 → 1.44 sur sa durée de vie
-        el.style.transform = "scale(" + z.toFixed(4) + ")";
-      });
-    }
-    if (hint) hint.style.opacity = p > 0.06 ? "0" : "";
+    if (hint) hint.style.opacity = window.scrollY > 40 ? "0" : "";
   }
   majAccueil();
   addEventListener("scroll", () => requestAnimationFrame(majAccueil), { passive: true });
   addEventListener("resize", majAccueil);
+
+  // Révélations au scroll (titres / blocs)
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+  }, { threshold: 0.2 });
+  acc.querySelectorAll(".reveal").forEach(el => io.observe(el));
 })();
 
 /* ===================== DÉMARRAGE ===================== */

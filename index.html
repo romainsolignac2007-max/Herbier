@@ -7,34 +7,66 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=51" />
+  <link rel="stylesheet" href="style.css?v=52" />
 </head>
 <body>
 
-  <!-- ================= ACCUEIL (animation pilotée au scroll) ================= -->
+  <!-- ================= ACCUEIL (cinématique parallax) ================= -->
   <section class="vue active" id="vue-accueil">
-    <div class="acc-wrap">
-      <div class="acc-scene" id="acc-scene">
-        <div class="acc-photos" id="acc-photos">
-          <div class="acc-photo" style="background-image:url('images/intro-1.jpg')"></div>
-          <div class="acc-photo" style="background-image:url('images/intro-2.jpg')"></div>
-          <div class="acc-photo" style="background-image:url('images/intro-3.jpg')"></div>
-          <div class="acc-photo" style="background-image:url('images/intro-4.jpg')"></div>
+    <div class="cine">
+
+      <!-- HERO -->
+      <section class="cine-scene cine-hero">
+        <div class="cine-bg" style="background-image:url('images/intro-1.jpg')"></div>
+        <div class="cine-veil"></div>
+        <div class="cine-hero-copy">
+          <span class="acc-badge">🌿 Herbier</span>
+          <h1 class="cine-h1">Trouvez ce qui<br />vous fait pousser</h1>
+          <p class="cine-sub">180 plantes à identifier, découvrir et cultiver. Votre encyclopédie vivante.</p>
         </div>
-        <div class="acc-veil"></div>
-        <div class="acc-copy">
-          <div class="acc-card">
-            <span class="acc-badge">🌿 Herbier</span>
-            <h1>Apprenez à reconnaître<br />et à choyer vos plantes</h1>
-            <p>Votre encyclopédie vivante : 180 plantes à identifier, découvrir et entretenir.</p>
-            <div class="acc-cta">
-              <button class="acc-btn" data-aller="vue-recherche">Explorer l'herbier</button>
-              <button class="acc-btn-2" data-aller="vue-swipe">Découvrir en swipe 🎬</button>
+        <div class="acc-hint" id="acc-hint">Faites défiler ↓</div>
+      </section>
+
+      <!-- MOTS QUI DÉFILENT -->
+      <section class="cine-words" id="cine-words">
+        <div class="cine-sticky">
+          <div class="cine-bg" style="background-image:url('images/intro-4.jpg')"></div>
+          <div class="cine-veil dark"></div>
+          <div class="cine-words-stage">
+            <span class="cine-pre">Avec l'Herbier, apprenez à…</span>
+            <div class="cine-words-wrap">
+              <span class="cine-word on">Identifier.</span>
+              <span class="cine-word">Découvrir.</span>
+              <span class="cine-word">Comprendre.</span>
+              <span class="cine-word">Cultiver.</span>
             </div>
           </div>
         </div>
-        <div class="acc-hint" id="acc-hint">Faites défiler ↓</div>
-      </div>
+      </section>
+
+      <!-- BANDE STAT (parallax) -->
+      <section class="cine-scene cine-band">
+        <div class="cine-bg" style="background-image:url('images/intro-3.jpg')"></div>
+        <div class="cine-veil"></div>
+        <div class="cine-band-copy reveal">
+          <div class="cine-stat">180</div>
+          <p>plantes documentées : exposition, arrosage, terreau, floraison, résistance au froid, feuillage, cycle de vie et taille adulte.</p>
+        </div>
+      </section>
+
+      <!-- CTA -->
+      <section class="cine-scene cine-cta">
+        <div class="cine-bg" style="background-image:url('images/intro-2.jpg')"></div>
+        <div class="cine-veil dark"></div>
+        <div class="cine-cta-copy reveal">
+          <h2 class="cine-h2">Prêt à explorer<br />le règne végétal ?</h2>
+          <div class="acc-cta">
+            <button class="acc-btn" data-aller="vue-recherche">Explorer l'herbier</button>
+            <button class="acc-btn-2" data-aller="vue-swipe">Découvrir en swipe 🎬</button>
+          </div>
+        </div>
+      </section>
+
     </div>
   </section>
 
@@ -102,9 +134,9 @@
     </button>
   </nav>
 
-  <script src="plantes.js?v=51"></script>
-  <script src="plantes-nouvelles.js?v=51"></script>
-  <script src="tailles.js?v=51"></script>
-  <script src="app.js?v=51"></script>
+  <script src="plantes.js?v=52"></script>
+  <script src="plantes-nouvelles.js?v=52"></script>
+  <script src="tailles.js?v=52"></script>
+  <script src="app.js?v=52"></script>
 </body>
 </html>
