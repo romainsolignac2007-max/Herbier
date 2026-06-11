@@ -857,18 +857,31 @@ function afficherClassement() {
   const wordsSection = document.getElementById("cine-words");
   const words = wordsSection ? [...wordsSection.querySelectorAll(".cine-word")] : [];
   const hint = document.getElementById("acc-hint");
+  const heroScene = acc.querySelector(".cine-hero");
+  const heroCopy = acc.querySelector(".cine-hero-copy");
 
   function majAccueil() {
     if (!acc.classList.contains("active")) return;
     const vh = window.innerHeight;
-    // Parallaxe : chaque image bouge plus lentement que le scroll
+    // Parallaxe (et zoom droit pour l'image marquée .cine-zoom)
     bgs.forEach(bg => {
       const sc = bg.closest(".cine-scene") || bg.closest(".cine-sticky");
       if (!sc) return;
       const r = sc.getBoundingClientRect();
-      const off = (r.top + r.height / 2 - vh / 2) * -0.12;
-      bg.style.transform = "translateY(" + off.toFixed(1) + "px) scale(1.18)";
+      if (bg.classList.contains("cine-zoom")) {
+        const prog = Math.min(1, Math.max(0, -r.top / vh));   // 0 → 1 sur la 1re scène
+        bg.style.transform = "scale(" + (1 + prog * 0.8).toFixed(4) + ")"; // zoom droit dans la fougère
+      } else {
+        const off = (r.top + r.height / 2 - vh / 2) * -0.12;
+        bg.style.transform = "translateY(" + off.toFixed(1) + "px) scale(1.18)";
+      }
     });
+    // Le texte du hero s'estompe pendant le zoom
+    if (heroScene && heroCopy) {
+      const prog = Math.min(1, Math.max(0, -heroScene.getBoundingClientRect().top / vh));
+      heroCopy.style.opacity = Math.max(0, 1 - prog * 1.4).toFixed(3);
+      heroCopy.style.transform = "translateY(" + (-prog * 40).toFixed(1) + "px)";
+    }
     // Mots qui s'enchaînent selon la progression de la section
     if (wordsSection && words.length) {
       const r = wordsSection.getBoundingClientRect();
