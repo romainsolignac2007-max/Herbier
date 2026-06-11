@@ -25,7 +25,6 @@ const ICONE_TERREAU = {
 // Résistance au froid (rusticité) : fourchettes de température
 const GEL = [
   "Craint le froid (à garder > 10 °C)",
-  "Gélive (gèle dès 0 à −2 °C)",
   "Très peu rustique (0 à −5 °C)",
   "Peu rustique (−5 à −10 °C)",
   "Rustique (−10 à −15 °C)",
@@ -33,7 +32,6 @@ const GEL = [
 ];
 const GEL_COURT = {
   "Craint le froid (à garder > 10 °C)": "> 10 °C",
-  "Gélive (gèle dès 0 à −2 °C)": "0 à −2 °C",
   "Très peu rustique (0 à −5 °C)": "0 à −5 °C",
   "Peu rustique (−5 à −10 °C)": "−5 à −10 °C",
   "Rustique (−10 à −15 °C)": "−10 à −15 °C",
