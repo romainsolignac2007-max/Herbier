@@ -465,6 +465,7 @@ const QUIZZ_THEMES = [
     champ: "famille",  poolFrom: "famille",                               question: p => `À quelle famille appartient « ${p.nom} » ?` },
   { id: "photo",     emoji: "📸", titre: "Reconnaître la photo", sous: "Quelle est cette plante ?",         couleur: "#d9694a",
     champ: "nom",      poolFrom: "nom", photoSeule: true,                 question: () => `Quelle est cette plante ?` },
+  { id: "adaptatif", emoji: "🎯", titre: "Quizz adaptatif",      sous: "Revois tes erreurs, tous thèmes",   couleur: "#c0573e", adaptatif: true },
   { id: "mix",       emoji: "🎲", titre: "Quizz mêlé",           sous: "Toutes les catégories mélangées",   couleur: "#1f3d2b", mix: true },
 ];
 
@@ -482,13 +483,27 @@ function questionPourTheme(theme, p) {
     const pool = PLANTES.map(x => x[theme.poolFrom]); // distracteurs piochés dans les données
     options = melanger([bonne, ...distracteurs(bonne, pool)]);
   }
-  return { plante: p, q: theme.question(p), bonne, options, cacherNom: !!theme.photoSeule };
+  return { plante: p, q: theme.question(p), bonne, options, cacherNom: !!theme.photoSeule, themeId: theme.id, themeTitre: theme.titre };
 }
 
+// Thèmes « jouables » directement (un champ à tester) — exclut mix et adaptatif
+function themesDeBase() { return QUIZZ_THEMES.filter(t => !t.mix && !t.adaptatif); }
+
 function genererQuizz(theme) {
+  if (theme.adaptatif) {
+    // Repioche les erreurs passées (tous thèmes confondus), du plus récent au plus ancien
+    const erreurs = lireStats().erreurs || [];
+    const qs = [];
+    melanger(erreurs.slice()).forEach(e => {
+      const t = QUIZZ_THEMES.find(x => x.id === e.theme);
+      const p = PLANTES.find(pl => pl.nom === e.plante);
+      if (t && p) qs.push(questionPourTheme(t, p));
+    });
+    return qs.slice(0, NB_QUESTIONS);
+  }
   const plantes = melanger(PLANTES).slice(0, NB_QUESTIONS);
   if (theme.mix) {
-    const sous = QUIZZ_THEMES.filter(t => !t.mix);
+    const sous = themesDeBase();
     return plantes.map(p => questionPourTheme(sous[Math.floor(Math.random() * sous.length)], p));
   }
   return plantes.map(p => questionPourTheme(theme, p));
@@ -497,12 +512,18 @@ function genererQuizz(theme) {
 // Page d'accueil : hub avec toutes les catégories
 function montrerAccueilQuizz() {
   const meilleur = lireClassement().reduce((m, r) => Math.max(m, r.points), 0);
-  const cartes = QUIZZ_THEMES.map(t => `
-    <button class="quizz-carte ${t.mix ? "mix" : ""}" data-theme="${t.id}" style="--c:${t.couleur}">
+  const nbErr = (lireStats().erreurs || []).length;
+  const cartes = QUIZZ_THEMES.map(t => {
+    let sous = t.sous;
+    if (t.adaptatif) sous = nbErr ? `${nbErr} erreur${nbErr > 1 ? "s" : ""} à revoir` : "Aucune erreur — bravo !";
+    const extra = t.mix ? "mix" : (t.adaptatif ? "adapt" : "");
+    return `
+    <button class="quizz-carte ${extra}" data-theme="${t.id}" style="--c:${t.couleur}">
       <span class="qc-emoji">${t.emoji}</span>
-      <span class="qc-txt"><strong>${t.titre}</strong><span>${t.sous}</span></span>
+      <span class="qc-txt"><strong>${t.titre}</strong><span>${sous}</span></span>
       <span class="qc-fleche">›</span>
-    </button>`).join("");
+    </button>`;
+  }).join("");
   document.getElementById("quizz").innerHTML = `
     <div class="quizz-hub">
       <div class="quizz-hub-tete">
@@ -520,6 +541,19 @@ function montrerAccueilQuizz() {
 function demarrerQuizz(themeId) {
   themeActuel = QUIZZ_THEMES.find(t => t.id === themeId) || QUIZZ_THEMES[QUIZZ_THEMES.length - 1];
   questions = genererQuizz(themeActuel);
+  if (!questions.length) {           // surtout : quizz adaptatif sans erreur à revoir
+    document.getElementById("quizz").innerHTML = `
+      <div class="quizz-hub">
+        <div class="quizz-hub-tete">
+          <span class="qh-pastille">${themeActuel.emoji} ${themeActuel.titre}</span>
+          <h2>Rien à revoir pour l'instant</h2>
+          <p>${themeActuel.adaptatif ? "Joue à quelques quizz : tes mauvaises réponses atterriront ici pour que tu puisses les retravailler. 🌱" : "Aucune question disponible."}</p>
+        </div>
+        <div style="text-align:center"><button class="btn-doux" id="retour-hub">← Retour aux thèmes</button></div>
+      </div>`;
+    document.getElementById("retour-hub").addEventListener("click", montrerAccueilQuizz);
+    return;
+  }
   qIndex = 0; qScore = 0;
   montrerQuestion();
 }
@@ -555,11 +589,10 @@ function repondre(btn, q) {
     o.disabled = true;
     if (o.textContent === q.bonne) o.classList.add("bon");
   });
-  if (btn.textContent === q.bonne) {
-    qScore += POINTS_PAR_BONNE;
-  } else {
-    btn.classList.add("mauvais");
-  }
+  const bon = btn.textContent === q.bonne;
+  if (bon) qScore += POINTS_PAR_BONNE;
+  else btn.classList.add("mauvais");
+  enregistrerReponse(q.themeId, q.plante ? q.plante.nom : "", bon);
   setTimeout(() => {
     qIndex++;
     if (qIndex < questions.length) montrerQuestion();
@@ -595,6 +628,31 @@ function montrerFin() {
   document.getElementById("btn-autres").addEventListener("click", montrerAccueilQuizz);
 }
 
+/* ===================== STATISTIQUES (par thème + erreurs) ===================== */
+const CLE_STATS = "herbier_stats";
+
+function lireStats() {
+  try {
+    const s = JSON.parse(localStorage.getItem(CLE_STATS));
+    if (s && s.parTheme) { s.erreurs = s.erreurs || []; return s; }
+  } catch (e) {}
+  return { parTheme: {}, erreurs: [] };
+}
+function ecrireStats(s) { localStorage.setItem(CLE_STATS, JSON.stringify(s)); }
+
+// Enregistre une réponse : met à jour le score du thème + le pool d'erreurs (pour l'adaptatif)
+function enregistrerReponse(themeId, planteNom, bon) {
+  if (!themeId) return;
+  const s = lireStats();
+  if (!s.parTheme[themeId]) s.parTheme[themeId] = { total: 0, bons: 0 };
+  s.parTheme[themeId].total++;
+  if (bon) s.parTheme[themeId].bons++;
+  const i = s.erreurs.findIndex(e => e.theme === themeId && e.plante === planteNom);
+  if (bon) { if (i >= 0) s.erreurs.splice(i, 1); }           // maîtrisée → on retire
+  else if (i < 0 && planteNom) s.erreurs.push({ theme: themeId, plante: planteNom });
+  ecrireStats(s);
+}
+
 /* ===================== CLASSEMENT (local) ===================== */
 const CLE_CLASSEMENT = "herbier_classement";
 
@@ -612,20 +670,53 @@ function enregistrerScore(nom, points, theme) {
 let dernierNom = null;
 
 function afficherClassement() {
-  const liste = lireClassement();
   const cont = document.getElementById("classement");
-  if (liste.length === 0) {
-    cont.innerHTML = `<p class="classement-vide">Aucun score pour l'instant.<br>Jouez au quizz pour entrer dans le classement ! 🏆</p>`;
-    return;
+  const stats = lireStats();
+  const themesJoues = themesDeBase().filter(t => stats.parTheme[t.id] && stats.parTheme[t.id].total > 0);
+  const liste = lireClassement();
+  let html = "";
+
+  // 1) Résultats par thème (graphique en barres)
+  if (themesJoues.length) {
+    html += `<h3 class="clt-titre">📊 Résultats par thème</h3><div class="clt-graph">`;
+    themesJoues.forEach(t => {
+      const st = stats.parTheme[t.id];
+      const pct = Math.round((st.bons / st.total) * 100);
+      html += `
+        <div class="clt-ligne">
+          <div class="clt-label">${t.emoji} ${t.titre}</div>
+          <div class="clt-barre"><i style="width:${pct}%;background:${t.couleur}"></i></div>
+          <div class="clt-val">${pct}%<span> ${st.bons}/${st.total}</span></div>
+        </div>`;
+    });
+    html += `</div>`;
+    const totT = themesJoues.reduce((a, t) => a + stats.parTheme[t.id].total, 0);
+    const totB = themesJoues.reduce((a, t) => a + stats.parTheme[t.id].bons, 0);
+    html += `<p class="clt-global">Global : <strong>${Math.round((totB / totT) * 100)}%</strong> de bonnes réponses sur ${totT} questions.</p>`;
+    const nbErr = stats.erreurs.length;
+    html += nbErr
+      ? `<button class="btn-vert clt-adapt" id="clt-adapt">🎯 Revoir mes ${nbErr} erreur${nbErr > 1 ? "s" : ""} (quizz adaptatif)</button>`
+      : `<p class="clt-zero">🎉 Aucune erreur en attente — bravo !</p>`;
+  } else {
+    html += `<p class="classement-vide">Aucun résultat pour l'instant.<br>Jouez à un quizz pour voir vos stats par thème ! 🌿</p>`;
   }
-  const medailles = ["🥇", "🥈", "🥉"];
-  const classes = ["or", "argent", "bronze"];
-  cont.innerHTML = liste.map((r, i) => `
-    <div class="rang ${classes[i] || ""} ${r.nom === dernierNom && r.points === liste[i].points ? "moi" : ""}">
-      <div class="pos">${medailles[i] || (i + 1)}</div>
-      <div class="nom">${r.nom}${r.theme ? `<span class="rang-theme">${r.theme}</span>` : ""}</div>
-      <div class="pts">${r.points} pts</div>
-    </div>`).join("");
+
+  // 2) Meilleurs scores enregistrés
+  if (liste.length) {
+    const medailles = ["🥇", "🥈", "🥉"];
+    const classes = ["or", "argent", "bronze"];
+    html += `<h3 class="clt-titre">🏆 Meilleurs scores</h3>`;
+    html += liste.map((r, i) => `
+      <div class="rang ${classes[i] || ""} ${r.nom === dernierNom && r.points === liste[i].points ? "moi" : ""}">
+        <div class="pos">${medailles[i] || (i + 1)}</div>
+        <div class="nom">${r.nom}${r.theme ? `<span class="rang-theme">${r.theme}</span>` : ""}</div>
+        <div class="pts">${r.points} pts</div>
+      </div>`).join("");
+  }
+
+  cont.innerHTML = html;
+  const adapt = document.getElementById("clt-adapt");
+  if (adapt) adapt.addEventListener("click", () => { naviguer("vue-quizz"); demarrerQuizz("adaptatif"); });
 }
 
 /* ===================== DÉMARRAGE ===================== */

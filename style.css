@@ -485,6 +485,10 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .quizz-carte.mix .qc-txt strong, .quizz-carte.mix .qc-txt span { color: #fff; }
 .quizz-carte.mix .qc-fleche { color: #fff; }
 .quizz-carte.mix .qc-emoji { background: rgba(255,255,255,0.18); }
+.quizz-carte.adapt { grid-column: 1 / -1; background: linear-gradient(120deg, #b94e34, #d9694a); border-color: transparent; }
+.quizz-carte.adapt .qc-txt strong, .quizz-carte.adapt .qc-txt span { color: #fff; }
+.quizz-carte.adapt .qc-fleche { color: #fff; }
+.quizz-carte.adapt .qc-emoji { background: rgba(255,255,255,0.2); }
 
 /* En-tête pendant le jeu (retour + thème) */
 .quizz-tete { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
@@ -552,6 +556,21 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .rang .pts { color: var(--vert); font-weight: 600; }
 .rang.moi { outline: 2px solid var(--vert-clair); }
 .classement-vide { text-align: center; color: var(--texte-doux); padding: 40px 0; }
+
+/* Résultats par thème (graphique en barres) */
+.clt-titre { font-family: "Fraunces", serif; font-size: 1.25rem; margin: 22px 0 12px; }
+.clt-titre:first-child { margin-top: 4px; }
+.clt-graph { background: #fff; border-radius: var(--radius); box-shadow: var(--ombre); padding: 16px 18px; }
+.clt-ligne { display: flex; align-items: center; gap: 12px; padding: 9px 0; }
+.clt-ligne + .clt-ligne { border-top: 1px solid var(--creme-fonce); }
+.clt-label { flex: 0 0 40%; font-weight: 500; font-size: 0.95rem; }
+.clt-barre { flex: 1; height: 12px; background: var(--creme-fonce); border-radius: 999px; overflow: hidden; }
+.clt-barre i { display: block; height: 100%; border-radius: 999px; transition: width 0.5s ease; }
+.clt-val { flex: 0 0 auto; font-weight: 600; font-size: 0.92rem; min-width: 70px; text-align: right; }
+.clt-val span { color: var(--texte-doux); font-weight: 500; font-size: 0.82rem; }
+.clt-global { text-align: center; color: var(--texte-doux); margin: 14px 0 4px; }
+.clt-zero { text-align: center; color: var(--vert); font-weight: 500; margin: 14px 0; }
+.clt-adapt { display: block; margin: 16px auto 4px; }
 
 @media (max-width: 560px) {
   .vue-entete h2 { font-size: 1.5rem; }
