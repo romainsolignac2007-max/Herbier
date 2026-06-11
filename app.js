@@ -853,11 +853,9 @@ function afficherClassement() {
 (function () {
   const acc = document.getElementById("vue-accueil");
   if (!acc) return;
-  const heroSec = document.getElementById("nw-hero");
-  const heroLayers = heroSec ? [...heroSec.querySelectorAll(".hero-layer")] : [];
+  const heroBg = document.getElementById("nw-hero-bg");
   const heroInner = acc.querySelector(".nw-hero-inner");
   const hint = document.getElementById("acc-hint");
-  const clamp = (v) => Math.min(1, Math.max(0, v));
 
   // Grille "Plantes à la une" : 6 plantes (tirées au hasard) avec photo réelle
   const grid = document.getElementById("nw-featured");
@@ -878,21 +876,11 @@ function afficherClassement() {
 
   function majAccueil() {
     if (!acc.classList.contains("active")) return;
-    const vh = window.innerHeight;
-    // Fondu enchaîné des photos du hero (sur la même scène) + léger zoom
-    if (heroSec && heroLayers.length) {
-      const r = heroSec.getBoundingClientRect();
-      const total = heroSec.offsetHeight - vh;
-      const p = total > 0 ? clamp(-r.top / total) : 0;
-      const pos = p * (heroLayers.length - 1);
-      heroLayers.forEach((el, i) => {
-        el.style.opacity = Math.max(0, 1 - Math.abs(pos - i)).toFixed(3);
-        const z = 1.05 + Math.max(0, Math.min(2, pos - (i - 1))) * 0.12;
-        el.style.transform = "scale(" + z.toFixed(3) + ")";
-      });
-      if (heroInner) heroInner.style.opacity = Math.max(0, 1 - p * 1.25).toFixed(3);
-    }
-    if (hint) hint.style.opacity = window.scrollY > 40 ? "0" : "";
+    const y = window.scrollY;
+    // Image unique plein écran + légère parallaxe
+    if (heroBg) heroBg.style.transform = "translateY(" + (y * 0.2).toFixed(1) + "px) scale(1.12)";
+    if (heroInner) heroInner.style.opacity = Math.max(0, 1 - y / (window.innerHeight * 0.7)).toFixed(3);
+    if (hint) hint.style.opacity = y > 40 ? "0" : "";
   }
   majAccueil();
   addEventListener("scroll", () => requestAnimationFrame(majAccueil), { passive: true });
