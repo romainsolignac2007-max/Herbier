@@ -98,10 +98,12 @@ const CATEGORIES = [
     { val: "Peu", ico: "💧" }, { val: "Modéré", ico: "💧💧" }, { val: "Souvent", ico: "💧💧💧" } ] },
   { cle: "lieu", titre: "Lieu", options: [
     { val: "Intérieur", ico: "🏠" }, { val: "Extérieur", ico: "🌳" } ] },
+  { cle: "gel", titre: "Résistance au froid", options:
+    GEL.map(g => ({ val: g, ico: g.indexOf("Craint") === 0 ? "🏠" : "❄️", label: GEL_COURT[g] })) },
 ];
 const recherche = { texte: "" };
-const selections = { soleil: new Set(), eau: new Set(), lieu: new Set() };
-const sectionsOuvertes = { soleil: true, eau: true, lieu: true };
+const selections = { soleil: new Set(), eau: new Set(), lieu: new Set(), gel: new Set() };
+const sectionsOuvertes = { soleil: true, eau: true, lieu: true, gel: false };
 
 // Une plante a-t-elle la valeur d'une option ? (le lieu "Les deux" compte pour Intérieur ET Extérieur)
 function plantePossede(cle, val, p) {
@@ -165,7 +167,7 @@ function construireFiltres() {
               <label class="filtre-opt ${n === 0 && !coche ? "vide" : ""}">
                 <input type="checkbox" data-cle="${cat.cle}" data-val="${o.val}" ${coche ? "checked" : ""}>
                 <span class="case"></span>
-                <span class="opt-nom">${o.ico} ${o.val}</span>
+                <span class="opt-nom">${o.ico} ${o.label || o.val}</span>
                 <span class="opt-nb">${n}</span>
               </label>`;
           }).join("")}
