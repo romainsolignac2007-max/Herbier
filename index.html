@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=54" />
+  <link rel="stylesheet" href="style.css?v=55" />
 </head>
 <body>
 
@@ -15,12 +15,13 @@
   <section class="vue active" id="vue-accueil">
     <div class="cine">
 
-      <!-- HERO : zoom complet dans la fougère, puis l'image suivante apparaît -->
+      <!-- HERO : la fougère fonce vers la caméra, zoom jusqu'au vert foncé uni -->
       <section class="cine-zoomsec" id="cine-zoomsec">
         <div class="cine-sticky">
-          <div class="cine-bg cine-z1" style="background-image:url('images/intro-fougere.jpg')"></div>
-          <div class="cine-bg cine-z2" style="background-image:url('images/intro-1.jpg')"></div>
+          <div class="cine-bg cine-z-back" style="background-image:url('images/intro-fougere.jpg')"></div>
+          <div class="cine-bg cine-z-front" style="background-image:url('images/intro-fougere.jpg')"></div>
           <div class="cine-veil"></div>
+          <div class="cine-green" id="cine-green"></div>
           <div class="cine-hero-copy">
             <span class="acc-badge">🌿 Herbier</span>
             <h1 class="cine-h1">Trouvez ce qui<br />vous fait pousser</h1>
@@ -35,6 +36,7 @@
         <div class="cine-sticky">
           <div class="cine-bg" style="background-image:url('images/intro-4.jpg')"></div>
           <div class="cine-veil dark"></div>
+          <div class="cine-green cine-bridge" id="cine-bridge"></div>
           <div class="cine-words-stage">
             <span class="cine-pre">Avec l'Herbier, apprenez à…</span>
             <div class="cine-words-wrap">
@@ -137,9 +139,9 @@
     </button>
   </nav>
 
-  <script src="plantes.js?v=54"></script>
-  <script src="plantes-nouvelles.js?v=54"></script>
-  <script src="tailles.js?v=54"></script>
-  <script src="app.js?v=54"></script>
+  <script src="plantes.js?v=55"></script>
+  <script src="plantes-nouvelles.js?v=55"></script>
+  <script src="tailles.js?v=55"></script>
+  <script src="app.js?v=55"></script>
 </body>
 </html>

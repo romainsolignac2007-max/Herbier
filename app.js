@@ -854,8 +854,10 @@ function afficherClassement() {
   const acc = document.getElementById("vue-accueil");
   if (!acc) return;
   const zoomSec = document.getElementById("cine-zoomsec");
-  const z1 = zoomSec ? zoomSec.querySelector(".cine-z1") : null;   // fougère
-  const z2 = zoomSec ? zoomSec.querySelector(".cine-z2") : null;   // image suivante
+  const zBack = zoomSec ? zoomSec.querySelector(".cine-z-back") : null;    // fond
+  const zFront = zoomSec ? zoomSec.querySelector(".cine-z-front") : null;  // fougère au 1er plan
+  const green = document.getElementById("cine-green");                     // vert foncé final
+  const bridge = document.getElementById("cine-bridge");                   // pont vert section suivante
   // Images en parallaxe = toutes sauf celles de la section de zoom
   const bgs = [...acc.querySelectorAll(".cine-bg")].filter(b => !zoomSec || !zoomSec.contains(b));
   const wordsSection = document.getElementById("cine-words");
@@ -868,18 +870,21 @@ function afficherClassement() {
     if (!acc.classList.contains("active")) return;
     const vh = window.innerHeight;
 
-    // 1) Zoom COMPLET dans la fougère, puis fondu vers l'image suivante
-    if (zoomSec && z1 && z2) {
+    // 1) La fougère fonce vers la caméra (2 plans), zoom jusqu'au vert foncé uni
+    if (zoomSec && zBack && zFront) {
       const r = zoomSec.getBoundingClientRect();
       const total = zoomSec.offsetHeight - vh;
       const p = total > 0 ? clamp(-r.top / total) : 0;
-      z1.style.transform = "scale(" + (1 + p * 2.2).toFixed(3) + ")";          // on plonge à fond
-      z1.style.opacity = (p < 0.8 ? 1 : Math.max(0, 1 - (p - 0.8) / 0.2)).toFixed(3);
-      const rev = clamp((p - 0.7) / 0.25);                                      // l'image suivante se révèle
-      z2.style.opacity = rev.toFixed(3);
-      z2.style.transform = "scale(" + (1.25 - 0.25 * rev).toFixed(3) + ")";
+      // fond : zoom lent (profondeur)
+      zBack.style.transform = "scale(" + (1.05 + p * 1.4).toFixed(3) + ")";
+      // 1er plan : fonce vers la caméra (zoom fort) + flou croissant = il "passe" devant nous
+      zFront.style.transform = "scale(" + (1.2 + p * 5.5).toFixed(3) + ")";
+      zFront.style.filter = "blur(" + (p * p * 14).toFixed(1) + "px)";
+      zFront.style.opacity = (p < 0.85 ? 1 : Math.max(0, 1 - (p - 0.85) / 0.15)).toFixed(3);
+      // on finit sur le vert foncé uni (couleur de la fougère, très très près)
+      if (green) green.style.opacity = clamp((p - 0.62) / 0.38).toFixed(3);
       if (heroCopy) {
-        const f = Math.max(0, 1 - p / 0.22);
+        const f = Math.max(0, 1 - p / 0.2);
         heroCopy.style.opacity = f.toFixed(3);
         heroCopy.style.transform = "translateY(" + (-p * 60).toFixed(0) + "px)";
       }
@@ -894,11 +899,12 @@ function afficherClassement() {
       bg.style.transform = "translateY(" + off.toFixed(1) + "px) scale(1.18)";
     });
 
-    // 3) Mots qui s'enchaînent selon la progression de la section
+    // 3) Mots + pont vert : on ARRIVE sur le même vert, qui s'efface pour révéler la suite
     if (wordsSection && words.length) {
       const r = wordsSection.getBoundingClientRect();
       const total = wordsSection.offsetHeight - vh;
       const p = total > 0 ? Math.min(0.999, Math.max(0, -r.top / total)) : 0;
+      if (bridge) bridge.style.opacity = Math.max(0, 1 - p / 0.12).toFixed(3); // vert plein au début, puis s'efface
       const idx = Math.min(words.length - 1, Math.floor(p * words.length));
       words.forEach((w, i) => w.classList.toggle("on", i === idx));
     }

@@ -785,3 +785,12 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 /* Hero "zoom transition" : la fougère zoome à fond puis l'image suivante se révèle */
 .cine-zoomsec { position: relative; height: 240vh; }
 .cine-bg.cine-z2 { opacity: 0; }
+
+/* Dissociation fond/avant-plan + transition vers le vert foncé uni */
+.cine-z-back { z-index: 0; }
+.cine-z-front { z-index: 1; }
+.cine-zoomsec .cine-veil { z-index: 2; }
+.cine-green { position: absolute; inset: 0; background: #0f2a1c; opacity: 0; }
+.cine-zoomsec .cine-green { z-index: 3; }
+.cine-zoomsec .cine-hero-copy, .cine-zoomsec .acc-hint { z-index: 4; }
+.cine-words .cine-bridge { z-index: 2; }
