@@ -98,12 +98,14 @@ const CATEGORIES = [
     { val: "Peu", ico: "💧" }, { val: "Modéré", ico: "💧💧" }, { val: "Souvent", ico: "💧💧💧" } ] },
   { cle: "lieu", titre: "Lieu", options: [
     { val: "Intérieur", ico: "🏠" }, { val: "Extérieur", ico: "🌳" } ] },
+  { cle: "floraison", titre: "Floraison", options:
+    FLORAISONS.map(f => ({ val: f, ico: ICONE_FLORAISON[f] || "🌸" })) },
   { cle: "gel", titre: "Résistance au froid", options:
     GEL.map(g => ({ val: g, ico: g.indexOf("Craint") === 0 ? "🏠" : "❄️", label: GEL_COURT[g] })) },
 ];
 const recherche = { texte: "" };
-const selections = { soleil: new Set(), eau: new Set(), lieu: new Set(), gel: new Set() };
-const sectionsOuvertes = { soleil: true, eau: true, lieu: true, gel: false };
+const selections = { soleil: new Set(), eau: new Set(), lieu: new Set(), floraison: new Set(), gel: new Set() };
+const sectionsOuvertes = { soleil: true, eau: true, lieu: true, floraison: false, gel: false };
 
 // Une plante a-t-elle la valeur d'une option ? (le lieu "Les deux" compte pour Intérieur ET Extérieur)
 function plantePossede(cle, val, p) {
