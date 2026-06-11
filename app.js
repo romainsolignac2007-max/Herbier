@@ -253,8 +253,15 @@ function construireFiltres() {
   panneauFiltres.querySelectorAll(".filtre-info").forEach(b => {
     b.addEventListener("click", e => {
       e.stopPropagation();
-      const aide = b.closest(".filtre-section").querySelector(".filtre-aide");
-      if (aide) aide.hidden = !aide.hidden;
+      const section = b.closest(".filtre-section");
+      const aide = section.querySelector(".filtre-aide");
+      if (!aide) return;
+      // si on ouvre l'info alors que le filtre est replié, on déplie aussi le filtre
+      if (aide.hidden && !section.classList.contains("ouvert")) {
+        sectionsOuvertes[b.dataset.info] = true;
+        section.classList.add("ouvert");
+      }
+      aide.hidden = !aide.hidden;
     });
   });
   // Cocher / décocher une option

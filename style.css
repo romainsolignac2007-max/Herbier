@@ -618,6 +618,8 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 }
 .filtre-info:hover { border-color: var(--vert); color: var(--vert); }
 .filtre-aide { padding: 0 18px 12px; font-size: 0.84rem; color: var(--texte-doux); }
+/* un filtre replié n'affiche jamais son encart d'info */
+.filtre-section:not(.ouvert) .filtre-aide { display: none; }
 .filtre-aide p { margin-bottom: 6px; line-height: 1.4; }
 .filtre-aide b { color: var(--texte); font-weight: 600; }
 .filtre-tete .chevron { transition: transform 0.2s ease; color: var(--texte-doux); font-size: 1.2rem; }
