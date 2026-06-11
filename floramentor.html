@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FloraMentor — Unlock the Secrets of Nature, Powered by AI</title>
+<meta name="description" content="FloraMentor is your intelligent guide to the plant kingdom. Identify plants instantly with AI, explore rich profiles and care guides, and grow with a passionate community." />
+<meta name="theme-color" content="#0f2a22" />
+<meta property="og:title" content="FloraMentor — Unlock the Secrets of Nature" />
+<meta property="og:description" content="Your intelligent guide to the plant kingdom. Identify, learn, and grow." />
+<meta property="og:type" content="website" />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          forest: "#0f2a22", moss: "#1f3d2b", leaf: "#2f6b46", sprout: "#5a9d6e",
+          teal: "#14564f", terracotta: "#c0673f", bloom: "#e0709a", sand: "#f6f4ec", sanddk: "#ece8da",
+        },
+        fontFamily: {
+          display: ['Fraunces', 'Georgia', 'serif'],
+          sans: ['Inter', 'system-ui', 'sans-serif'],
+        },
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { background: #0f2a22; color: #233028; -webkit-font-smoothing: antialiased; }
+
+  /* Soft noise texture overlay */
+  .noise::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.05; z-index: 1;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Glassmorphism */
+  .glass {
+    background: rgba(255,255,255,0.10);
+    border: 1px solid rgba(255,255,255,0.18);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  }
+  .glass-light {
+    background: rgba(255,255,255,0.72);
+    border: 1px solid rgba(255,255,255,0.6);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  }
+
+  /* Glowing primary button */
+  .btn-glow {
+    box-shadow: 0 0 0 rgba(90,157,110,0); transition: transform .25s ease, box-shadow .35s ease, background .25s ease;
+  }
+  .btn-glow:hover { transform: translateY(-3px); box-shadow: 0 12px 36px rgba(90,157,110,0.55); }
+
+  /* Reveal on scroll */
+  .reveal { opacity: 0; transform: translateY(34px); transition: opacity .9s cubic-bezier(.2,.7,.2,1), transform .9s cubic-bezier(.2,.7,.2,1); }
+  .reveal.in { opacity: 1; transform: none; }
+  .reveal.d1 { transition-delay: .1s; } .reveal.d2 { transition-delay: .2s; } .reveal.d3 { transition-delay: .3s; }
+
+  /* Hero sun + scene driven by --p (0..1) set via JS */
+  #scene { --p: 0; }
+  .sun {
+    transform: translate(-50%, calc(40% - var(--p) * 230%));
+    opacity: calc(.35 + var(--p) * .65);
+    filter: blur(calc((1 - var(--p)) * 6px));
+  }
+  /* sky gradient morph dawn -> day */
+  .sky {
+    background:
+      radial-gradient(120% 90% at 50% 110%, rgba(224,112,154,calc(.45*(1 - var(--p)))), transparent 60%),
+      linear-gradient(180deg,
+        hsl(calc(255 - var(--p)*100), calc(40% + var(--p)*0%), calc(22% + var(--p)*18%)),
+        hsl(calc(160 + var(--p)*0deg), 38%, calc(16% + var(--p)*10%)));
+  }
+  /* growing plant: stroke draw + leaves scale */
+  .stem { stroke-dasharray: 1; stroke-dashoffset: calc(1 - var(--p)); }
+  .leaf-g { transform-origin: 100px 230px; transform: scale(var(--p)); opacity: var(--p); transition: none; }
+  .hero-copy { opacity: calc(1 - var(--p) * 1.4); transform: translateY(calc(var(--p) * -40px)); }
+
+  .marquee-track { animation: scrollx 26s linear infinite; }
+  @keyframes scrollx { to { transform: translateX(-50%); } }
+
+  ::selection { background: #5a9d6e; color: #fff; }
+  *:focus-visible { outline: 3px solid #5a9d6e; outline-offset: 2px; border-radius: 6px; }
+</style>
+</head>
+<body class="font-sans">
+
+<!-- ===================== HEADER ===================== -->
+<header id="header" class="fixed top-0 inset-x-0 z-50 transition-all duration-300">
+  <nav class="max-w-7xl mx-auto px-5 sm:px-8 h-[68px] flex items-center justify-between">
+    <a href="#top" class="flex items-center gap-2 text-sand font-display font-semibold text-xl tracking-tight">
+      <span class="text-2xl">🌿</span> FloraMentor
+    </a>
+    <div class="hidden md:flex items-center gap-8 text-sand/85 text-sm font-medium">
+      <a href="#value" class="hover:text-sand transition">Why FloraMentor</a>
+      <a href="#how" class="hover:text-sand transition">How it works</a>
+      <a href="#voices" class="hover:text-sand transition">Stories</a>
+      <a href="#join" class="hover:text-sand transition">Community</a>
+    </div>
+    <div class="flex items-center gap-3">
+      <button id="sound-toggle" aria-pressed="false" aria-label="Toggle ambient nature sound"
+        class="hidden sm:grid place-items-center w-10 h-10 rounded-full glass text-sand hover:scale-105 transition" title="Ambient sound">
+        <span id="sound-icon">🔈</span>
+      </button>
+      <a href="#join" class="btn-glow bg-sprout text-forest font-semibold text-sm px-5 py-2.5 rounded-full hidden sm:inline-block">Start your journey</a>
+      <button id="burger" aria-label="Open menu" class="md:hidden grid place-items-center w-10 h-10 rounded-full glass text-sand text-xl">☰</button>
+    </div>
+  </nav>
+  <!-- mobile menu -->
+  <div id="mobile-menu" class="md:hidden hidden glass mx-4 rounded-2xl p-5 text-sand">
+    <div class="flex flex-col gap-4 text-base">
+      <a href="#value" class="menu-link">Why FloraMentor</a>
+      <a href="#how" class="menu-link">How it works</a>
+      <a href="#voices" class="menu-link">Stories</a>
+      <a href="#join" class="menu-link">Community</a>
+      <a href="#join" class="btn-glow bg-sprout text-forest font-semibold text-center px-5 py-3 rounded-full mt-1">Start your journey</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ===================== HERO (scroll-driven) ===================== -->
+<section id="hero" class="relative h-[260vh]">
+  <div id="scene" class="sticky top-0 h-screen overflow-hidden noise">
+    <!-- morphing sky -->
+    <div class="sky absolute inset-0"></div>
+    <!-- sun -->
+    <div class="sun absolute left-1/2 top-1/2 w-[42vmin] h-[42vmin] rounded-full"
+         style="background: radial-gradient(circle at 50% 50%, #fff6e0, #ffd27a 45%, rgba(255,210,122,0) 72%);"></div>
+
+    <!-- growing plant -->
+    <svg class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[80vmin] max-w-[640px] h-auto" viewBox="0 0 200 240" fill="none" aria-hidden="true">
+      <path class="stem" pathLength="1" d="M100 240 C100 200 100 170 100 120" stroke="#a8d8b4" stroke-width="4" stroke-linecap="round"/>
+      <g class="leaf-g">
+        <path d="M100 150 C70 150 50 132 48 110 C78 110 100 126 100 150 Z" fill="#6fb985"/>
+        <path d="M100 132 C130 132 150 114 152 92 C122 92 100 108 100 132 Z" fill="#5aa873"/>
+        <path d="M100 120 C100 96 116 74 138 70 C138 96 122 118 100 120 Z" fill="#83c997"/>
+        <path d="M100 120 C100 96 84 74 62 70 C62 96 78 118 100 120 Z" fill="#5fae79"/>
+        <circle cx="100" cy="70" r="10" fill="#e0709a"/>
+        <circle cx="100" cy="70" r="4" fill="#fff0d0"/>
+      </g>
+    </svg>
+
+    <!-- frosted overlay copy -->
+    <div class="hero-copy absolute inset-0 z-10 flex items-center justify-center px-5">
+      <div class="glass rounded-[28px] max-w-2xl w-full text-center px-8 py-12 sm:px-12 sm:py-14">
+        <span class="inline-block text-sand/80 text-xs font-semibold tracking-[0.2em] uppercase mb-5 px-4 py-1.5 rounded-full border border-white/20">AI · Botany · Wonder</span>
+        <h1 class="font-display font-semibold text-sand text-4xl sm:text-6xl leading-[1.05] mb-5">
+          Unlock the Secrets<br>of Nature.<span class="text-sprout"> Powered by AI.</span>
+        </h1>
+        <p class="text-sand/85 text-lg sm:text-xl max-w-xl mx-auto mb-9">
+          Your intelligent guide to the plant kingdom. Identify, learn, and grow.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <a href="#join" class="btn-glow bg-sprout text-forest font-semibold text-lg px-8 py-4 rounded-full">Discover FloraMentor</a>
+          <a href="#how" class="text-sand/90 font-medium px-6 py-4 rounded-full hover:bg-white/10 transition flex items-center gap-2">▶ Watch a demo</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- scroll hint -->
+    <div id="scroll-hint" class="absolute bottom-7 left-1/2 -translate-x-1/2 z-10 text-sand/70 text-xs flex flex-col items-center gap-2">
+      <span>Scroll to grow</span>
+      <span class="w-[22px] h-[36px] rounded-full border-2 border-sand/50 grid justify-center pt-1.5">
+        <span class="w-1 h-2 rounded-full bg-sand/70 animate-bounce"></span>
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== VALUE PROPOSITION ===================== -->
+<section id="value" class="relative bg-sand py-24 sm:py-32 px-5 sm:px-8 rounded-t-[40px] -mt-10 z-10">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center max-w-2xl mx-auto mb-16 reveal">
+      <p class="text-leaf font-semibold tracking-[0.18em] uppercase text-sm mb-3">The FloraMentor difference</p>
+      <h2 class="font-display font-semibold text-moss text-3xl sm:text-5xl leading-tight">Knowledge that feels like a walk in the woods</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-7">
+      <article class="reveal d1 glass-light rounded-3xl p-8 hover:-translate-y-2 transition duration-300 shadow-sm">
+        <div class="w-14 h-14 rounded-2xl grid place-items-center text-3xl mb-5" style="background:linear-gradient(140deg,#dff0e4,#bfe3c9)">📷</div>
+        <h3 class="font-display font-semibold text-2xl text-moss mb-3">AI-Powered Identification</h3>
+        <p class="text-moss/70 leading-relaxed">Snap a photo and let our vision model recognize the species in seconds — with a confidence score and look-alikes to compare.</p>
+      </article>
+      <article class="reveal d2 glass-light rounded-3xl p-8 hover:-translate-y-2 transition duration-300 shadow-sm">
+        <div class="w-14 h-14 rounded-2xl grid place-items-center text-3xl mb-5" style="background:linear-gradient(140deg,#e7eef0,#cfe6e3)">📚</div>
+        <h3 class="font-display font-semibold text-2xl text-moss mb-3">Comprehensive Database</h3>
+        <p class="text-moss/70 leading-relaxed">Thousands of richly detailed profiles: light, watering, soil, hardiness, bloom season and care tips, written in plain language.</p>
+      </article>
+      <article class="reveal d3 glass-light rounded-3xl p-8 hover:-translate-y-2 transition duration-300 shadow-sm">
+        <div class="w-14 h-14 rounded-2xl grid place-items-center text-3xl mb-5" style="background:linear-gradient(140deg,#f6e4dd,#f0cdbf)">🧠</div>
+        <h3 class="font-display font-semibold text-2xl text-moss mb-3">Interactive Learning</h3>
+        <p class="text-moss/70 leading-relaxed">Swipe through plants, take themed quizzes, and follow an adaptive path that focuses on exactly what you haven't mastered yet.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== HOW IT WORKS ===================== -->
+<section id="how" class="relative bg-sand pb-28 px-5 sm:px-8">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center max-w-2xl mx-auto mb-16 reveal">
+      <p class="text-leaf font-semibold tracking-[0.18em] uppercase text-sm mb-3">How it works</p>
+      <h2 class="font-display font-semibold text-moss text-3xl sm:text-5xl leading-tight">From curiosity to confidence in three steps</h2>
+    </div>
+
+    <!-- step 1 -->
+    <div class="grid md:grid-cols-2 gap-10 items-center mb-24">
+      <div class="reveal order-2 md:order-1">
+        <span class="text-terracotta font-display font-semibold text-5xl">01</span>
+        <h3 class="font-display font-semibold text-3xl text-moss mt-2 mb-4">Instant Plant ID — Snap, identify, learn</h3>
+        <p class="text-moss/70 text-lg leading-relaxed mb-5">Point your camera at any leaf, flower, or whole plant. FloraMentor returns the most likely species instantly, with a clear breakdown of why.</p>
+        <ul class="space-y-2 text-moss/80">
+          <li class="flex gap-3"><span class="text-leaf">✦</span> Works on photos you already have</li>
+          <li class="flex gap-3"><span class="text-leaf">✦</span> Confidence score & similar species</li>
+          <li class="flex gap-3"><span class="text-leaf">✦</span> Saves to your personal herbarium</li>
+        </ul>
+      </div>
+      <div class="reveal d1 order-1 md:order-2">
+        <div class="glass-light rounded-3xl p-4 shadow-lg rotate-1 hover:rotate-0 transition duration-500">
+          <div class="rounded-2xl h-72 grid place-items-center text-7xl" style="background:linear-gradient(150deg,#5a9d6e,#14564f)">🪴</div>
+          <div class="flex items-center justify-between px-3 py-4">
+            <div><div class="font-display font-semibold text-moss text-lg">Monstera deliciosa</div><div class="text-moss/60 text-sm">Confidence 98% · Araceae</div></div>
+            <span class="bg-leaf text-white text-xs font-semibold px-3 py-1.5 rounded-full">Identified</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- step 2 -->
+    <div class="grid md:grid-cols-2 gap-10 items-center mb-24">
+      <div class="reveal d1">
+        <div class="glass-light rounded-3xl p-6 shadow-lg -rotate-1 hover:rotate-0 transition duration-500">
+          <div class="grid grid-cols-3 gap-3 text-center">
+            <div class="bg-white/70 rounded-xl py-4"><div class="text-2xl">☀️</div><div class="text-xs text-moss/60 mt-1">Full sun</div></div>
+            <div class="bg-white/70 rounded-xl py-4"><div class="text-2xl">💧</div><div class="text-xs text-moss/60 mt-1">Low water</div></div>
+            <div class="bg-white/70 rounded-xl py-4"><div class="text-2xl">❄️</div><div class="text-xs text-moss/60 mt-1">−10 °C</div></div>
+            <div class="bg-white/70 rounded-xl py-4"><div class="text-2xl">🌸</div><div class="text-xs text-moss/60 mt-1">Summer</div></div>
+            <div class="bg-white/70 rounded-xl py-4"><div class="text-2xl">🪴</div><div class="text-xs text-moss/60 mt-1">Drained</div></div>
+            <div class="bg-white/70 rounded-xl py-4"><div class="text-2xl">🌿</div><div class="text-xs text-moss/60 mt-1">Evergreen</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="reveal">
+        <span class="text-terracotta font-display font-semibold text-5xl">02</span>
+        <h3 class="font-display font-semibold text-3xl text-moss mt-2 mb-4">Deep dive into flora — rich profiles & care guides</h3>
+        <p class="text-moss/70 text-lg leading-relaxed">Every plant unfolds into an at-a-glance card: exposure, watering, soil, cold hardiness, bloom season, mature size and a friendly “how to care” guide.</p>
+      </div>
+    </div>
+
+    <!-- step 3 -->
+    <div class="grid md:grid-cols-2 gap-10 items-center">
+      <div class="reveal order-2 md:order-1">
+        <span class="text-terracotta font-display font-semibold text-5xl">03</span>
+        <h3 class="font-display font-semibold text-3xl text-moss mt-2 mb-4">Community & growth — share, connect, level up</h3>
+        <p class="text-moss/70 text-lg leading-relaxed">Post your discoveries, climb the quiz leaderboard, and ask questions to a community of enthusiasts and experts who love plants as much as you do.</p>
+      </div>
+      <div class="reveal d1 order-1 md:order-2">
+        <div class="glass-light rounded-3xl p-6 shadow-lg rotate-1 hover:rotate-0 transition duration-500 space-y-3">
+          <div class="flex items-center gap-3 bg-white/70 rounded-xl p-3"><span class="text-2xl">🥇</span><div class="flex-1"><div class="font-semibold text-moss text-sm">Camille</div><div class="text-moss/55 text-xs">Quiz “Cold hardiness”</div></div><span class="text-leaf font-bold">240 pts</span></div>
+          <div class="flex items-center gap-3 bg-white/70 rounded-xl p-3"><span class="text-2xl">🥈</span><div class="flex-1"><div class="font-semibold text-moss text-sm">Noah</div><div class="text-moss/55 text-xs">Quiz “Foliage”</div></div><span class="text-leaf font-bold">210 pts</span></div>
+          <div class="flex items-center gap-3 bg-white/70 rounded-xl p-3"><span class="text-2xl">🥉</span><div class="flex-1"><div class="font-semibold text-moss text-sm">Léa</div><div class="text-moss/55 text-xs">Quiz “Latin names”</div></div><span class="text-leaf font-bold">180 pts</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== STATS STRIP ===================== -->
+<section class="relative bg-moss text-sand py-16 px-5 noise overflow-hidden">
+  <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center relative z-10">
+    <div class="reveal"><div class="font-display font-semibold text-4xl sm:text-5xl text-sprout">12k+</div><div class="text-sand/70 mt-2 text-sm">Plant species</div></div>
+    <div class="reveal d1"><div class="font-display font-semibold text-4xl sm:text-5xl text-sprout">98%</div><div class="text-sand/70 mt-2 text-sm">ID accuracy</div></div>
+    <div class="reveal d2"><div class="font-display font-semibold text-4xl sm:text-5xl text-sprout">50k+</div><div class="text-sand/70 mt-2 text-sm">Learners</div></div>
+    <div class="reveal d3"><div class="font-display font-semibold text-4xl sm:text-5xl text-sprout">4.9★</div><div class="text-sand/70 mt-2 text-sm">Avg. rating</div></div>
+  </div>
+</section>
+
+<!-- ===================== TESTIMONIALS ===================== -->
+<section id="voices" class="relative bg-sand py-24 sm:py-32 px-5 sm:px-8">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center max-w-2xl mx-auto mb-16 reveal">
+      <p class="text-leaf font-semibold tracking-[0.18em] uppercase text-sm mb-3">Stories from the garden</p>
+      <h2 class="font-display font-semibold text-moss text-3xl sm:text-5xl leading-tight">Loved by curious minds everywhere</h2>
+    </div>
+    <div class="grid md:grid-cols-3 gap-7">
+      <figure class="reveal glass-light rounded-3xl p-7 shadow-sm">
+        <div class="text-bloom text-lg mb-3">★★★★★</div>
+        <blockquote class="text-moss/80 leading-relaxed mb-6">“I finally understand my balcony jungle. The AI nailed a plant I'd been guessing about for years, and the care guide is spot on.”</blockquote>
+        <figcaption class="flex items-center gap-3"><span class="w-11 h-11 rounded-full grid place-items-center text-xl" style="background:linear-gradient(140deg,#bfe3c9,#5a9d6e)">🌼</span><div><div class="font-semibold text-moss">Amélie R.</div><div class="text-moss/55 text-sm">Hobby gardener</div></div></figcaption>
+      </figure>
+      <figure class="reveal d1 glass-light rounded-3xl p-7 shadow-sm">
+        <div class="text-bloom text-lg mb-3">★★★★★</div>
+        <blockquote class="text-moss/80 leading-relaxed mb-6">“As a botany student, the quizzes are addictive. The adaptive mode keeps drilling exactly the species I keep getting wrong.”</blockquote>
+        <figcaption class="flex items-center gap-3"><span class="w-11 h-11 rounded-full grid place-items-center text-xl" style="background:linear-gradient(140deg,#cfe6e3,#14564f)">🍃</span><div><div class="font-semibold text-moss">Tomás G.</div><div class="text-moss/55 text-sm">Biology student</div></div></figcaption>
+      </figure>
+      <figure class="reveal d2 glass-light rounded-3xl p-7 shadow-sm">
+        <div class="text-bloom text-lg mb-3">★★★★★</div>
+        <blockquote class="text-moss/80 leading-relaxed mb-6">“Beautiful, calm, and genuinely useful. It turned my daily walks into little discovery missions for the whole family.”</blockquote>
+        <figcaption class="flex items-center gap-3"><span class="w-11 h-11 rounded-full grid place-items-center text-xl" style="background:linear-gradient(140deg,#f0cdbf,#c0673f)">🌺</span><div><div class="font-semibold text-moss">Sarah&nbsp;&amp;&nbsp;Kids</div><div class="text-moss/55 text-sm">Nature lovers</div></div></figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== JOIN / CTA ===================== -->
+<section id="join" class="relative overflow-hidden bg-forest text-sand py-28 px-5 noise">
+  <div class="absolute inset-0 opacity-20 text-[28rem] leading-none select-none pointer-events-none flex items-center justify-center">🌿</div>
+  <div class="max-w-3xl mx-auto text-center relative z-10 reveal">
+    <h2 class="font-display font-semibold text-4xl sm:text-6xl leading-[1.05] mb-6">Grow your green<br>intelligence today</h2>
+    <p class="text-sand/80 text-lg sm:text-xl mb-10 max-w-xl mx-auto">Join thousands of plant lovers learning faster with AI. Free to start — your first identification is one tap away.</p>
+    <form class="flex flex-col sm:flex-row gap-3 max-w-md mx-auto" onsubmit="event.preventDefault(); this.reset(); document.getElementById('joined').classList.remove('hidden');">
+      <input type="email" required placeholder="you@nature.com" aria-label="Email address"
+        class="flex-1 px-5 py-4 rounded-full text-moss bg-sand placeholder-moss/50 focus:outline-none" />
+      <button class="btn-glow bg-sprout text-forest font-semibold px-7 py-4 rounded-full whitespace-nowrap">Join FloraMentor</button>
+    </form>
+    <p id="joined" class="hidden text-sprout mt-4 font-medium">🌱 Welcome aboard! Check your inbox to begin.</p>
+    <p class="text-sand/50 text-sm mt-4">No spam. Just plants. Unsubscribe anytime.</p>
+  </div>
+</section>
+
+</main>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="bg-[#0a1f19] text-sand/80 px-5 sm:px-8 pt-16 pb-10">
+  <div class="max-w-6xl mx-auto grid md:grid-cols-4 gap-10">
+    <div class="md:col-span-2">
+      <div class="flex items-center gap-2 font-display font-semibold text-xl text-sand mb-4"><span class="text-2xl">🌿</span> FloraMentor</div>
+      <p class="text-sand/60 max-w-sm leading-relaxed">Helping curious humans understand and care for the plant kingdom — one joyful discovery at a time, powered by AI.</p>
+      <div class="flex gap-3 mt-6">
+        <a href="#" aria-label="Instagram" class="w-10 h-10 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 transition">📷</a>
+        <a href="#" aria-label="Facebook" class="w-10 h-10 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 transition">📘</a>
+        <a href="#" aria-label="YouTube" class="w-10 h-10 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 transition">▶️</a>
+      </div>
+    </div>
+    <div>
+      <h4 class="text-sand font-semibold mb-4">Product</h4>
+      <ul class="space-y-2 text-sand/60 text-sm">
+        <li><a href="#value" class="hover:text-sand transition">Features</a></li>
+        <li><a href="#how" class="hover:text-sand transition">How it works</a></li>
+        <li><a href="#join" class="hover:text-sand transition">Pricing</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4 class="text-sand font-semibold mb-4">Company</h4>
+      <ul class="space-y-2 text-sand/60 text-sm">
+        <li><a href="#" class="hover:text-sand transition">About us</a></li>
+        <li><a href="#" class="hover:text-sand transition">Contact</a></li>
+        <li><a href="#" class="hover:text-sand transition">Privacy Policy</a></li>
+        <li><a href="#" class="hover:text-sand transition">Terms of Service</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="max-w-6xl mx-auto mt-12 pt-6 border-t border-white/10 text-sand/45 text-sm flex flex-col sm:flex-row justify-between gap-2">
+    <span>© <span id="year"></span> FloraMentor. Made with 🌱 and a little AI.</span>
+    <span>Grown for the curious.</span>
+  </div>
+</footer>
+
+<script>
+/* ---------- Year ---------- */
+document.getElementById("year").textContent = new Date().getFullYear();
+
+/* ---------- Header background on scroll ---------- */
+const header = document.getElementById("header");
+const onScrollHeader = () => {
+  if (window.scrollY > 40) header.classList.add("glass");
+  else header.classList.remove("glass");
+};
+onScrollHeader(); addEventListener("scroll", onScrollHeader, { passive: true });
+
+/* ---------- Mobile menu ---------- */
+const burger = document.getElementById("burger");
+const menu = document.getElementById("mobile-menu");
+burger.addEventListener("click", () => menu.classList.toggle("hidden"));
+document.querySelectorAll(".menu-link").forEach(a => a.addEventListener("click", () => menu.classList.add("hidden")));
+
+/* ---------- Hero scroll-driven scrubbing ---------- */
+const hero = document.getElementById("hero");
+const scene = document.getElementById("scene");
+const hint = document.getElementById("scroll-hint");
+function updateHero() {
+  const rect = hero.getBoundingClientRect();
+  const total = hero.offsetHeight - window.innerHeight;
+  const progress = Math.min(1, Math.max(0, -rect.top / total));
+  scene.style.setProperty("--p", progress.toFixed(4));
+  if (hint) hint.style.opacity = progress > 0.08 ? "0" : "0.8";
+}
+updateHero();
+addEventListener("scroll", () => requestAnimationFrame(updateHero), { passive: true });
+addEventListener("resize", updateHero);
+
+/* ---------- Reveal on scroll ---------- */
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+}, { threshold: 0.16 });
+document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+
+/* ---------- Optional ambient sound (generated, no audio file) ---------- */
+let audioCtx = null, ambientNodes = null, soundOn = false;
+const soundBtn = document.getElementById("sound-toggle");
+const soundIcon = document.getElementById("sound-icon");
+function startAmbient() {
+  audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+  const ctx = audioCtx;
+  // soft filtered noise = gentle wind
+  const buffer = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
+  const noise = ctx.createBufferSource(); noise.buffer = buffer; noise.loop = true;
+  const filter = ctx.createBiquadFilter(); filter.type = "lowpass"; filter.frequency.value = 520;
+  const gain = ctx.createGain(); gain.gain.value = 0;
+  // slow swell (breathing wind)
+  const lfo = ctx.createOscillator(); lfo.frequency.value = 0.08;
+  const lfoGain = ctx.createGain(); lfoGain.gain.value = 0.05;
+  lfo.connect(lfoGain); lfoGain.connect(gain.gain);
+  noise.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+  noise.start(); lfo.start();
+  gain.gain.setTargetAtTime(0.12, ctx.currentTime, 1.2);
+  ambientNodes = { noise, lfo, gain };
+}
+function stopAmbient() {
+  if (!ambientNodes) return;
+  const { gain, noise, lfo } = ambientNodes;
+  gain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.6);
+  setTimeout(() => { try { noise.stop(); lfo.stop(); } catch(e){} ambientNodes = null; }, 900);
+}
+soundBtn.addEventListener("click", () => {
+  soundOn = !soundOn;
+  soundBtn.setAttribute("aria-pressed", String(soundOn));
+  soundIcon.textContent = soundOn ? "🔊" : "🔈";
+  if (soundOn) startAmbient(); else stopAmbient();
+});
+</script>
+</body>
+</html>
