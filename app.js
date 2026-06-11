@@ -206,7 +206,7 @@ function plantesFiltrees(saufCle) {
 
 // Construit le panneau de filtres (sections dépliables + cases à cocher + quantités)
 function construireFiltres() {
-  let html = `<div class="filtres-titre">Filtrer</div>`;
+  let html = `<div class="filtres-titre"><span>Filtrer</span><button class="filtres-reset" id="filtres-reset" title="Réinitialiser les filtres" aria-label="Réinitialiser les filtres">↻</button></div>`;
   CATEGORIES.forEach(cat => {
     const ouvert = sectionsOuvertes[cat.cle];
     const base = plantesFiltrees(cat.cle); // pour compter sans s'auto-exclure
@@ -237,6 +237,15 @@ function construireFiltres() {
       </div>`;
   });
   panneauFiltres.innerHTML = html;
+
+  // Bouton ↻ : réinitialiser tous les filtres (et la recherche)
+  const btnReset = document.getElementById("filtres-reset");
+  if (btnReset) btnReset.addEventListener("click", () => {
+    Object.values(selections).forEach(s => s.clear());
+    recherche.texte = "";
+    if (champRecherche) champRecherche.value = "";
+    afficher();
+  });
 
   // Déplier / replier une section
   panneauFiltres.querySelectorAll(".filtre-toggle").forEach(t => {

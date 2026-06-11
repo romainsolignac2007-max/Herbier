@@ -602,7 +602,16 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .filtres-titre {
   font-family: "Fraunces", serif; font-weight: 600; font-size: 1.35rem;
   padding: 12px 18px 14px; border-bottom: 1px solid var(--creme-fonce);
+  display: flex; align-items: center; justify-content: space-between;
 }
+.filtres-reset {
+  flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%;
+  border: 1.5px solid var(--creme-fonce); background: #fff; color: var(--vert);
+  font-size: 1.1rem; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.4s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.filtres-reset:hover { background: var(--vert); color: #fff; border-color: var(--vert); transform: rotate(-360deg); }
 .filtre-section { border-bottom: 1px solid var(--creme-fonce); }
 .filtre-tete { display: flex; align-items: center; }
 .filtre-toggle {
