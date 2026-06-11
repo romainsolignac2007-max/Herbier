@@ -853,6 +853,7 @@ function afficherClassement() {
 (function () {
   const acc = document.getElementById("vue-accueil");
   if (!acc) return;
+  const heroSec = document.getElementById("nw-hero");
   const heroBg = document.getElementById("nw-hero-bg");
   const heroInner = acc.querySelector(".nw-hero-inner");
   const hint = document.getElementById("acc-hint");
@@ -876,11 +877,17 @@ function afficherClassement() {
 
   function majAccueil() {
     if (!acc.classList.contains("active")) return;
-    const y = window.scrollY;
-    // Image unique plein écran + légère parallaxe
-    if (heroBg) heroBg.style.transform = "translateY(" + (y * 0.2).toFixed(1) + "px) scale(1.12)";
-    if (heroInner) heroInner.style.opacity = Math.max(0, 1 - y / (window.innerHeight * 0.7)).toFixed(3);
-    if (hint) hint.style.opacity = y > 40 ? "0" : "";
+    const vh = window.innerHeight;
+    // Travelling vertical : on part du HAUT de la photo et on descend vers le BAS au scroll
+    if (heroSec && heroBg) {
+      const r = heroSec.getBoundingClientRect();
+      const total = heroSec.offsetHeight - vh;
+      const p = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
+      const extra = Math.max(0, heroBg.offsetHeight - vh); // partie de l'image qui dépasse l'écran
+      heroBg.style.transform = "translateY(" + (-p * extra).toFixed(1) + "px)";
+      if (heroInner) heroInner.style.opacity = Math.max(0, 1 - Math.max(0, p - 0.72) / 0.28).toFixed(3);
+    }
+    if (hint) hint.style.opacity = window.scrollY > 40 ? "0" : "";
   }
   majAccueil();
   addEventListener("scroll", () => requestAnimationFrame(majAccueil), { passive: true });

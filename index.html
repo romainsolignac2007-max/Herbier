@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=63" />
+  <link rel="stylesheet" href="style.css?v=64" />
 </head>
 <body>
 
@@ -15,17 +15,19 @@
   <section class="vue active" id="vue-accueil">
     <div class="nw">
 
-      <!-- HERO : une seule image plein écran -->
+      <!-- HERO : travelling vertical dans la photo (haut → bas) au scroll -->
       <header class="nw-hero" id="nw-hero">
-        <div class="nw-hero-bg" id="nw-hero-bg" style="background-image:url('images/hero-jungle.jpg')"></div>
-        <div class="nw-hero-veil"></div>
-        <div class="nw-hero-inner">
-          <span class="nw-eyebrow">🌿 Herbier — encyclopédie vivante</span>
-          <h1 class="nw-h1">Des expériences<br />végétales immersives</h1>
-          <p class="nw-lead">Un herbier qui vous fait aimer les plantes : identifier, apprendre et cultiver — en beauté.</p>
-          <button class="nw-cta" data-aller="vue-recherche">Explorer l'herbier →</button>
+        <div class="nw-hero-pan">
+          <div class="nw-hero-bg" id="nw-hero-bg" style="background-image:url('images/hero-jungle.jpg')"></div>
+          <div class="nw-hero-veil"></div>
+          <div class="nw-hero-inner">
+            <span class="nw-eyebrow">🌿 Herbier — encyclopédie vivante</span>
+            <h1 class="nw-h1">Des expériences<br />végétales immersives</h1>
+            <p class="nw-lead">Un herbier qui vous fait aimer les plantes : identifier, apprendre et cultiver — en beauté.</p>
+            <button class="nw-cta" data-aller="vue-recherche">Explorer l'herbier →</button>
+          </div>
+          <div class="acc-hint" id="acc-hint">scroll ↓</div>
         </div>
-        <div class="acc-hint" id="acc-hint">scroll ↓</div>
       </header>
 
       <!-- ACCROCHE -->
@@ -152,9 +154,9 @@
     </button>
   </nav>
 
-  <script src="plantes.js?v=63"></script>
-  <script src="plantes-nouvelles.js?v=63"></script>
-  <script src="tailles.js?v=63"></script>
-  <script src="app.js?v=63"></script>
+  <script src="plantes.js?v=64"></script>
+  <script src="plantes-nouvelles.js?v=64"></script>
+  <script src="tailles.js?v=64"></script>
+  <script src="app.js?v=64"></script>
 </body>
 </html>
