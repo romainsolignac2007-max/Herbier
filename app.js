@@ -854,9 +854,10 @@ function afficherClassement() {
   const acc = document.getElementById("vue-accueil");
   if (!acc) return;
   const heroSec = document.getElementById("nw-hero");
-  const heroBg = document.getElementById("nw-hero-bg");
+  const heroPanLayers = heroSec ? [...heroSec.querySelectorAll(".hero-pan-layer")] : [];
   const heroInner = acc.querySelector(".nw-hero-inner");
   const hint = document.getElementById("acc-hint");
+  const clampN = (v) => Math.min(1, Math.max(0, v));
 
   // Grille "Plantes à la une" : 6 plantes (tirées au hasard) avec photo réelle
   const grid = document.getElementById("nw-featured");
@@ -878,14 +879,22 @@ function afficherClassement() {
   function majAccueil() {
     if (!acc.classList.contains("active")) return;
     const vh = window.innerHeight;
-    // Travelling vertical : on part du HAUT de la photo et on descend vers le BAS au scroll
-    if (heroSec && heroBg) {
+    // Travelling vertical (haut → bas) + fondu de la 1re photo vers la 2e, sur la même scène
+    if (heroSec && heroPanLayers.length) {
       const r = heroSec.getBoundingClientRect();
       const total = heroSec.offsetHeight - vh;
       const p = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
-      const extra = Math.max(0, heroBg.offsetHeight - vh); // partie de l'image qui dépasse l'écran
-      heroBg.style.transform = "translateY(" + (-p * extra).toFixed(1) + "px)";
-      if (heroInner) heroInner.style.opacity = Math.max(0, 1 - Math.max(0, p - 0.72) / 0.28).toFixed(3);
+      heroPanLayers.forEach(el => {
+        const extra = Math.max(0, el.offsetHeight - vh);
+        el.style.transform = "translateY(" + (-p * extra).toFixed(1) + "px)";
+      });
+      // Fondu : 1re photo visible d'abord, 2e à partir du milieu
+      if (heroPanLayers.length > 1) {
+        const t = clampN((p - 0.48) / 0.14);
+        heroPanLayers[0].style.opacity = (1 - t).toFixed(3);
+        heroPanLayers[1].style.opacity = t.toFixed(3);
+      }
+      if (heroInner) heroInner.style.opacity = Math.max(0, 1 - Math.max(0, p - 0.78) / 0.22).toFixed(3);
     }
     if (hint) hint.style.opacity = window.scrollY > 40 ? "0" : "";
   }
