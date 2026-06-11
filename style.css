@@ -594,6 +594,8 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .filtres-panel {
   flex: 0 0 250px; background: #fff; border-radius: var(--radius);
   box-shadow: var(--ombre); padding: 8px 4px; position: sticky; top: 14px;
+  /* le panneau défile tout seul s'il dépasse la hauteur de l'écran */
+  max-height: calc(100dvh - 40px); overflow-y: auto; overscroll-behavior: contain;
 }
 .recherche-resultats { flex: 1; min-width: 0; }
 .recherche-corps .grille { max-width: none; margin: 0; padding: 6px 0 0; }
@@ -639,7 +641,8 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 /* Sur téléphone : le panneau passe au-dessus de la grille */
 @media (max-width: 720px) {
   .recherche-corps { flex-direction: column; gap: 16px; }
-  .filtres-panel { flex: none; width: 100%; position: static; }
+  /* Sur mobile : boîte de filtres compacte qui défile toute seule */
+  .filtres-panel { flex: none; width: 100%; position: static; max-height: 48vh; overflow-y: auto; }
 }
 
 /* Texte de présentation (swipe + fiche) */

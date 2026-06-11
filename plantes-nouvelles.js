@@ -120,6 +120,21 @@
   const G_RUS = "Rustique (−10 à −15 °C)";
   const G_TRES = "Très rustique (−15 à −25 °C)";
 
+  // Feuillage (persistant / semi-persistant / caduc) déduit du texte et du type de plante
+  const PERSIST = ["olivier","olea","laurier","buis","buxus","eucalyptus","houx","ilex","fusain","euonymus","skimmia","piéris","pieris","rhododendron","mahonia","lierre","hedera","jasmin","romarin","rosmarinus","thym","thymus","lavande","lavandula","santoline","photinia","pittosporum","phormium","yucca","palmier","arecac","howea","dypsis","trachycarpus","pinus","taxus","if commun","cyprès","cupressus","cedrus","abies","picea","thuya","thuja","genévrier","juniperus","agave","aloe","cactus","cactée","crassula","echeveria","kalanchoe","haworthia","aeonium","sansevieria","aspidistra","camélia","camellia","bambou","calluna","bruyère","sempervivum","agrume","citrus","arbousier","céanothe","ceanothus","choisya"];
+  const SEMI = ["troène","ligustrum","eleagnus","chèvrefeuille","lonicera","abélia","abelia"];
+  function feuillageDe(p) {
+    const t = [p.saison, p.reconnaitre, p.entretien, p.presentation].join(" ").toLowerCase();
+    if (t.includes("semi-persistant") || t.includes("semi persistant")) return "Semi-persistant";
+    if (t.includes("persistant") || t.includes("persistante")) return "Persistant";
+    if (t.includes("caduc")) return "Caduc";
+    const id = ((p.nom || "") + " " + (p.latin || "") + " " + (p.famille || "")).toLowerCase();
+    if (SEMI.some(k => id.includes(k))) return "Semi-persistant";
+    if (p.lieu === "Intérieur") return "Persistant";
+    if (PERSIST.some(k => id.includes(k))) return "Persistant";
+    return "Caduc";
+  }
+
   // [nom, latin, famille, emoji, lieu, soleil, eau, floraison, terreau, gel, saison, presentation, reconnaitre, entretien]
   const data = [
     // ---------- Plantes d'intérieur ----------
@@ -239,6 +254,7 @@
       lieu: d[4], soleil: d[5], eau: d[6], floraison: d[7], terreau: d[8], gel: d[9],
       saison: d[10], presentation: d[11], reconnaitre: d[12], entretien: d[13],
     };
+    o.feuillage = feuillageDe(o);
     const ph = PHOTOS_NOUVELLES[d[0]];
     if (ph) { o.photo = ph; o.photoGrande = ph; }
     PLANTES.push(o);

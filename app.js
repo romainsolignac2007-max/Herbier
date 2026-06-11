@@ -37,6 +37,9 @@ const GEL_COURT = {
   "Rustique (−10 à −15 °C)": "−10 à −15 °C",
   "Très rustique (−15 à −25 °C)": "−15 à −25 °C",
 };
+// Feuillage : la plante garde-t-elle ses feuilles ?
+const FEUILLAGE = ["Persistant", "Semi-persistant", "Caduc"];
+const ICONE_FEUILLAGE = { "Persistant": "🌿", "Semi-persistant": "🍃", "Caduc": "🍂" };
 
 // Source d'image (gère le fichier intégré OU le dossier images/)
 function chemin(nom) {
@@ -100,12 +103,14 @@ const CATEGORIES = [
     { val: "Intérieur", ico: "🏠" }, { val: "Extérieur", ico: "🌳" } ] },
   { cle: "floraison", titre: "Floraison", options:
     FLORAISONS.map(f => ({ val: f, ico: ICONE_FLORAISON[f] || "🌸" })) },
+  { cle: "feuillage", titre: "Feuillage", options:
+    FEUILLAGE.map(f => ({ val: f, ico: ICONE_FEUILLAGE[f] })) },
   { cle: "gel", titre: "Résistance au froid", options:
     GEL.map(g => ({ val: g, ico: g.indexOf("Craint") === 0 ? "🏠" : "❄️", label: GEL_COURT[g] })) },
 ];
 const recherche = { texte: "" };
-const selections = { soleil: new Set(), eau: new Set(), lieu: new Set(), floraison: new Set(), gel: new Set() };
-const sectionsOuvertes = { soleil: true, eau: true, lieu: true, floraison: false, gel: false };
+const selections = { soleil: new Set(), eau: new Set(), lieu: new Set(), floraison: new Set(), feuillage: new Set(), gel: new Set() };
+const sectionsOuvertes = { soleil: true, eau: true, lieu: true, floraison: false, feuillage: false, gel: false };
 
 // Une plante a-t-elle la valeur d'une option ? (le lieu "Les deux" compte pour Intérieur ET Extérieur)
 function plantePossede(cle, val, p) {
@@ -228,6 +233,7 @@ function ouvrirFiche(p) {
         <div class="info-box"><div class="ico">${ICONE_EAU[p.eau] || "🌿"}</div><div class="lib">Arrosage</div><div class="val">${p.eau}</div></div>
         ${p.floraison ? `<div class="info-box"><div class="ico">${ICONE_FLORAISON[p.floraison] || "🌸"}</div><div class="lib">Floraison</div><div class="val">${p.floraison}</div></div>` : ""}
         ${p.terreau ? `<div class="info-box"><div class="ico">${ICONE_TERREAU[p.terreau] || "🪴"}</div><div class="lib">Terreau</div><div class="val">${TERREAU_COURT[p.terreau] || p.terreau}</div></div>` : ""}
+        ${p.feuillage ? `<div class="info-box"><div class="ico">${ICONE_FEUILLAGE[p.feuillage] || "🍃"}</div><div class="lib">Feuillage</div><div class="val">${p.feuillage}</div></div>` : ""}
         ${p.gel ? `<div class="info-box"><div class="ico">❄️</div><div class="lib">Résiste au froid</div><div class="val">${GEL_COURT[p.gel] || p.gel}</div></div>` : ""}
       </div>
       <div class="bloc"><h3>👁️ Comment la reconnaître</h3><p>${p.reconnaitre}</p></div>
@@ -351,6 +357,7 @@ function slideHTML(p) {
           <span class="tag">${ICONE_EAU[p.eau] || ""} ${p.eau}</span>
           ${p.floraison ? `<span class="tag">${ICONE_FLORAISON[p.floraison] || "🌸"} ${p.floraison}</span>` : ""}
           ${p.terreau ? `<span class="tag">${ICONE_TERREAU[p.terreau] || "🪴"} ${TERREAU_COURT[p.terreau] || p.terreau}</span>` : ""}
+          ${p.feuillage ? `<span class="tag">${ICONE_FEUILLAGE[p.feuillage] || "🍃"} ${p.feuillage}</span>` : ""}
           ${p.gel ? `<span class="tag">❄️ ${GEL_COURT[p.gel] || p.gel}</span>` : ""}
         </div>
         <div class="swipe-bloc"><h3>👁️ Reconnaître</h3><p>${p.reconnaitre}</p></div>
@@ -482,6 +489,8 @@ const QUIZZ_THEMES = [
     champ: "lieu",     options: ["Intérieur", "Extérieur", "Les deux"],   question: p => `Où cultive-t-on plutôt « ${p.nom} » ?` },
   { id: "gel",       emoji: "❄️", titre: "Résistance au froid",  sous: "Jusqu'à quelle température ?",       couleur: "#4a90c2",
     champ: "gel",      options: GEL,                                      question: p => `Jusqu'à quel froid « ${p.nom} » résiste-t-elle ?` },
+  { id: "feuillage", emoji: "🍃", titre: "Feuillage",            sous: "Persistant ou caduc ?",             couleur: "#6a9c3a",
+    champ: "feuillage",options: FEUILLAGE,                                question: p => `Le feuillage de « ${p.nom} » est…` },
   { id: "latin",     emoji: "🔬", titre: "Nom latin",            sous: "Trouvez le nom scientifique",       couleur: "#7b61a8",
     champ: "latin",    poolFrom: "latin",                                 question: p => `Quel est le nom latin de « ${p.nom} » ?` },
   { id: "famille",   emoji: "🌿", titre: "Famille botanique",    sous: "À quelle famille appartient-elle ?",couleur: "#3a8f6f",
