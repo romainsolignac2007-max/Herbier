@@ -853,36 +853,48 @@ function afficherClassement() {
 (function () {
   const acc = document.getElementById("vue-accueil");
   if (!acc) return;
-  const bgs = [...acc.querySelectorAll(".cine-bg")];
+  const zoomSec = document.getElementById("cine-zoomsec");
+  const z1 = zoomSec ? zoomSec.querySelector(".cine-z1") : null;   // fougère
+  const z2 = zoomSec ? zoomSec.querySelector(".cine-z2") : null;   // image suivante
+  // Images en parallaxe = toutes sauf celles de la section de zoom
+  const bgs = [...acc.querySelectorAll(".cine-bg")].filter(b => !zoomSec || !zoomSec.contains(b));
   const wordsSection = document.getElementById("cine-words");
   const words = wordsSection ? [...wordsSection.querySelectorAll(".cine-word")] : [];
   const hint = document.getElementById("acc-hint");
-  const heroScene = acc.querySelector(".cine-hero");
   const heroCopy = acc.querySelector(".cine-hero-copy");
+  const clamp = (v) => Math.min(1, Math.max(0, v));
 
   function majAccueil() {
     if (!acc.classList.contains("active")) return;
     const vh = window.innerHeight;
-    // Parallaxe (et zoom droit pour l'image marquée .cine-zoom)
+
+    // 1) Zoom COMPLET dans la fougère, puis fondu vers l'image suivante
+    if (zoomSec && z1 && z2) {
+      const r = zoomSec.getBoundingClientRect();
+      const total = zoomSec.offsetHeight - vh;
+      const p = total > 0 ? clamp(-r.top / total) : 0;
+      z1.style.transform = "scale(" + (1 + p * 2.2).toFixed(3) + ")";          // on plonge à fond
+      z1.style.opacity = (p < 0.8 ? 1 : Math.max(0, 1 - (p - 0.8) / 0.2)).toFixed(3);
+      const rev = clamp((p - 0.7) / 0.25);                                      // l'image suivante se révèle
+      z2.style.opacity = rev.toFixed(3);
+      z2.style.transform = "scale(" + (1.25 - 0.25 * rev).toFixed(3) + ")";
+      if (heroCopy) {
+        const f = Math.max(0, 1 - p / 0.22);
+        heroCopy.style.opacity = f.toFixed(3);
+        heroCopy.style.transform = "translateY(" + (-p * 60).toFixed(0) + "px)";
+      }
+    }
+
+    // 2) Parallaxe des autres images
     bgs.forEach(bg => {
       const sc = bg.closest(".cine-scene") || bg.closest(".cine-sticky");
       if (!sc) return;
       const r = sc.getBoundingClientRect();
-      if (bg.classList.contains("cine-zoom")) {
-        const prog = Math.min(1, Math.max(0, -r.top / vh));   // 0 → 1 sur la 1re scène
-        bg.style.transform = "scale(" + (1 + prog * 0.8).toFixed(4) + ")"; // zoom droit dans la fougère
-      } else {
-        const off = (r.top + r.height / 2 - vh / 2) * -0.12;
-        bg.style.transform = "translateY(" + off.toFixed(1) + "px) scale(1.18)";
-      }
+      const off = (r.top + r.height / 2 - vh / 2) * -0.12;
+      bg.style.transform = "translateY(" + off.toFixed(1) + "px) scale(1.18)";
     });
-    // Le texte du hero s'estompe pendant le zoom
-    if (heroScene && heroCopy) {
-      const prog = Math.min(1, Math.max(0, -heroScene.getBoundingClientRect().top / vh));
-      heroCopy.style.opacity = Math.max(0, 1 - prog * 1.4).toFixed(3);
-      heroCopy.style.transform = "translateY(" + (-prog * 40).toFixed(1) + "px)";
-    }
-    // Mots qui s'enchaînent selon la progression de la section
+
+    // 3) Mots qui s'enchaînent selon la progression de la section
     if (wordsSection && words.length) {
       const r = wordsSection.getBoundingClientRect();
       const total = wordsSection.offsetHeight - vh;
