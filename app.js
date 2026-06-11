@@ -523,7 +523,15 @@ function genererQuizz(theme) {
   const plantes = melanger(PLANTES).slice(0, NB_QUESTIONS);
   if (theme.mix) {
     const sous = themesDeBase();
-    return plantes.map(p => questionPourTheme(sous[Math.floor(Math.random() * sous.length)], p));
+    return plantes.map(p => {
+      let st;
+      do { st = sous[Math.floor(Math.random() * sous.length)]; } while (st.photoSeule && !srcImageGrande(p));
+      return questionPourTheme(st, p);
+    });
+  }
+  if (theme.photoSeule) {
+    // Le quizz photo n'utilise que les plantes qui ont une image
+    return melanger(PLANTES.filter(p => srcImageGrande(p))).slice(0, NB_QUESTIONS).map(p => questionPourTheme(theme, p));
   }
   return plantes.map(p => questionPourTheme(theme, p));
 }
