@@ -854,7 +854,7 @@ function afficherClassement() {
   const acc = document.getElementById("vue-accueil");
   if (!acc) return;
   const heroSec = document.getElementById("nw-hero");
-  const heroTrack = document.getElementById("nw-hero-track");
+  const heroImg2 = document.getElementById("nw-img2");
   const heroInner = acc.querySelector(".nw-hero-inner");
   const nwWords = document.getElementById("nw-words");
   const nwWordEls = nwWords ? [...nwWords.querySelectorAll(".cine-word")] : [];
@@ -882,29 +882,33 @@ function afficherClassement() {
     if (!acc.classList.contains("active")) return;
     const vh = window.innerHeight;
     // Colonne d'images empilées : on descend en continu à travers les deux photos
-    if (heroSec && heroTrack) {
+    if (heroSec) {
       const r = heroSec.getBoundingClientRect();
       const total = heroSec.offsetHeight - vh;
       const p = total > 0 ? Math.min(1, Math.max(0, -r.top / total)) : 0;
-      const extra = Math.max(0, heroTrack.offsetHeight - vh); // hauteur totale des images qui dépasse
-      heroTrack.style.transform = "translateY(" + (-p * extra).toFixed(1) + "px)";
 
-      // Position (dans la colonne d'images) du centre du viewport
-      const center = p * extra + vh / 2;
-      // Frontière entre la 1re et la 2e image = hauteur de la 1re image
-      const img1 = heroTrack.children[0];
-      const img2 = heroTrack.children[1];
-      const b = img1 ? img1.offsetHeight : vh;
-      const h2 = img2 ? img2.offsetHeight : vh;
+      // Déroulé (la fenêtre reste figée tant qu'on n'a pas tout vu) :
+      //   0.00 → 0.12  image 1 + titre
+      //   0.12 → 0.26  fondu enchaîné vers l'image 2
+      //   0.26 → 1.00  image 2 figée, les mots apparaissent un par un au centre
+      const PHASE = 0.26;
 
-      // 1re image : le titre (disparaît juste avant la frontière).
-      if (heroInner) heroInner.style.opacity = clampN((b - center) / (0.45 * vh)).toFixed(3);
-      // 2e image : les mots qui défilent (apparaissent dès qu'on entre dans l'image 2).
+      // Titre sur l'image 1 (disparaît pendant le fondu)
+      if (heroInner) heroInner.style.opacity = clampN((0.14 - p) / 0.10).toFixed(3);
+      // Fondu vers l'image 2
+      if (heroImg2) heroImg2.style.opacity = clampN((p - 0.12) / 0.14).toFixed(3);
+
+      // Mots au centre de l'image 2, apparition progressive un par un
       if (nwWords && nwWordEls.length) {
-        nwWords.style.opacity = clampN((center - b) / (0.35 * vh)).toFixed(3);
-        const wp = clampN((center - b) / Math.max(1, h2 - vh * 0.5)); // progression dans l'image 2
-        const idx = Math.min(nwWordEls.length - 1, Math.floor(wp * nwWordEls.length));
-        nwWordEls.forEach((w, i) => w.classList.toggle("on", i === idx));
+        nwWords.style.opacity = clampN((p - 0.22) / 0.06).toFixed(3);
+        const n = nwWordEls.length;
+        const wp = clampN((p - PHASE) / (1 - PHASE)); // 0 → 1 sur la durée du « pin »
+        nwWordEls.forEach((w, i) => {
+          // Centre du créneau de chaque mot ; fondu triangulaire (apparaît puis s'efface)
+          const c = (i + 0.5) / n;
+          const d = Math.abs(wp - c) / (0.62 / n);
+          w.style.opacity = clampN(1 - d).toFixed(3);
+        });
       }
     }
     if (hint) hint.style.opacity = window.scrollY > 40 ? "0" : "";

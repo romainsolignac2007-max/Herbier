@@ -865,11 +865,13 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .hero-pan-layer { position: absolute; left: 0; right: 0; top: 0; bottom: auto; height: 250vh; background-size: cover; background-position: center top; transform: none; will-change: transform, opacity; }
 #nw-hero-bg2 { opacity: 0; }
 /* Colonne d'images empilées (haut → bas) qui défile au scroll */
-.nw-hero-track { position: absolute; top: 0; left: 0; width: 100%; will-change: transform; }
-/* Hauteur fixe par image => géométrie déterministe : 2 × 170vh = 340vh (= hauteur du hero) */
-.nw-stack-img { display: block; width: 100%; height: 170vh; object-fit: cover; }
+/* Les deux images se superposent en plein écran ; la 2e apparaît en fondu */
+.nw-stack-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.nw-img2 { opacity: 0; will-change: opacity; }
 .nw-hero .nw-hero-inner { position: relative; z-index: 3; max-width: 1000px; padding: 0 clamp(20px, 6vw, 90px); }
 .nw-hero .nw-hero-veil { z-index: 2; }
 
-/* Mots qui défilent sur la 2e image du hero */
+/* Mots qui apparaissent au centre de la 2e image du hero */
 .nw-words { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; text-align: center; opacity: 0; pointer-events: none; }
+/* Chaque mot reste centré ; son opacité est pilotée image par image en JS (apparition progressive) */
+.nw-words .cine-word { transform: translate(-50%, -50%) !important; transition: none; }

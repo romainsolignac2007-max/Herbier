@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=70" />
+  <link rel="stylesheet" href="style.css?v=71" />
 </head>
 <body>
 
@@ -15,26 +15,24 @@
   <section class="vue active" id="vue-accueil">
     <div class="nw">
 
-      <!-- HERO : travelling vertical dans la photo (haut → bas) au scroll -->
+      <!-- HERO : image 1 (titre) → fondu vers image 2 (figée) → mots qui apparaissent au centre -->
       <header class="nw-hero" id="nw-hero">
         <div class="nw-hero-pan">
-          <div class="nw-hero-track" id="nw-hero-track">
-            <img class="nw-stack-img" src="images/hero-jungle.jpg" alt="" />
-            <img class="nw-stack-img" src="images/hero-jungle-2.jpg" alt="" />
-          </div>
+          <img class="nw-stack-img nw-img1" id="nw-img1" src="images/hero-jungle.jpg" alt="" />
+          <img class="nw-stack-img nw-img2" id="nw-img2" src="images/hero-jungle-2.jpg" alt="" />
           <div class="nw-hero-veil"></div>
-          <div class="nw-hero-inner">
+          <div class="nw-hero-inner" id="nw-hero-inner">
             <span class="nw-eyebrow">🌿 Herbier — encyclopédie vivante</span>
             <h1 class="nw-h1">Des expériences<br />végétales immersives</h1>
             <p class="nw-lead">Un herbier qui vous fait aimer les plantes : identifier, apprendre et cultiver — en beauté.</p>
             <button class="nw-cta" data-aller="vue-recherche">Explorer l'herbier →</button>
           </div>
           <div class="acc-hint" id="acc-hint">scroll ↓</div>
-          <!-- Mots qui défilent sur la 2e image -->
+          <!-- Mots qui apparaissent au centre de la 2e image -->
           <div class="nw-words" id="nw-words">
             <span class="cine-pre">Avec l'Herbier, vous allez…</span>
             <div class="cine-words-wrap">
-              <span class="cine-word on">Identifier.</span>
+              <span class="cine-word">Identifier.</span>
               <span class="cine-word">Reconnaître.</span>
               <span class="cine-word">Apprendre.</span>
               <span class="cine-word">Retenir.</span>
@@ -168,9 +166,9 @@
     </button>
   </nav>
 
-  <script src="plantes.js?v=70"></script>
-  <script src="plantes-nouvelles.js?v=70"></script>
-  <script src="tailles.js?v=70"></script>
-  <script src="app.js?v=70"></script>
+  <script src="plantes.js?v=71"></script>
+  <script src="plantes-nouvelles.js?v=71"></script>
+  <script src="tailles.js?v=71"></script>
+  <script src="app.js?v=71"></script>
 </body>
 </html>
