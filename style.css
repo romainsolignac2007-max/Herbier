@@ -858,3 +858,11 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 @media (min-width: 640px) { .nw-final .acc-cta { flex-direction: row; } }
 .nw-foot { margin-top: clamp(50px, 10vw, 110px); display: flex; flex-direction: column; gap: 8px; color: rgba(246,244,236,0.6); font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 28px; }
 .nw-foot-logo { font-family: "Fraunces", serif; color: #fff; font-size: 1.2rem; }
+
+/* Hero en fondu enchaîné (sticky) — remplace le hero plein écran simple */
+.nw-hero { position: relative; height: 250vh; padding: 0 !important; color: #fff; }
+.nw-hero-sticky { position: sticky; top: 0; height: 100dvh; overflow: hidden; display: flex; align-items: center; }
+.nw-hero .nw-hero-inner { position: relative; z-index: 3; max-width: 1000px; padding: 0 clamp(20px, 6vw, 90px); }
+.hero-layer { position: absolute; inset: 0; background-size: cover; background-position: center; opacity: 0; will-change: opacity, transform; }
+.hero-layer:first-child { opacity: 1; }
+.nw-hero .nw-hero-veil { z-index: 2; }
