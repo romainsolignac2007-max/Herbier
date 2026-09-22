@@ -1,0 +1,13 @@
+{
+  "name": "herbier-preparation-commandes",
+  "version": "1.0.0",
+  "description": "Logiciel de préparation de commandes : la comptabilité envoie la commande au dépôt, le cariste obtient sa liste de picking et le plan du dépôt.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "engines": { "node": ">=18" },
+  "private": true,
+  "license": "MIT"
+}

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Préparation de commandes — Dépôt Herbier</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><text y='52' font-size='52'>📦</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="barre no-print">
+  <div class="marque">Herbier <span>Préparation de commandes</span></div>
+  <nav class="onglets" id="onglets">
+    <button data-vue="compta">Comptabilité</button>
+    <button data-vue="cariste">Dépôt — préparation <span class="pastille" id="pastille-file" hidden>0</span></button>
+    <button data-vue="plan">Plan du dépôt</button>
+    <button data-vue="catalogue">Catalogue &amp; emplacements</button>
+  </nav>
+  <div class="identite">
+    <input id="acteur" placeholder="Votre nom" autocomplete="off" aria-label="Votre nom">
+    <span class="sync" id="sync">connecté</span>
+  </div>
+</header>
+
+<main>
+  <section id="vue-compta" class="vue"></section>
+  <section id="vue-cariste" class="vue"></section>
+  <section id="vue-plan" class="vue"></section>
+  <section id="vue-catalogue" class="vue"></section>
+</main>
+
+<div class="impression" id="impression"></div>
+<div id="toasts"></div>
+
+<script src="js/app.js"></script>
+<script src="js/plan.js"></script>
+<script src="js/impression.js"></script>
+<script src="js/compta.js"></script>
+<script src="js/cariste.js"></script>
+<script src="js/vue-plan.js"></script>
+<script src="js/catalogue.js"></script>
+<script>App.demarrer();</script>
+</body>
+</html>

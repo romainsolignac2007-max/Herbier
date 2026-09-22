@@ -1,0 +1,18 @@
+{
+  "nom": "Dépôt Herbier — Site Sud",
+  "largeur": 42,
+  "hauteur": 26,
+  "hauteurTravee": 1.6,
+  "vitesseMarche": 0.9,
+  "tempsPrelevement": 25,
+  "depart": { "x": 3, "y": 23, "libelle": "Poste de préparation" },
+  "expedition": { "x": 39, "y": 23, "libelle": "Quai d'expédition" },
+  "allees": [
+    { "code": "A", "nom": "Plantes vertes d'intérieur", "x": 5,  "y": 3, "profondeur": 2.4, "travees": 11, "niveaux": 3, "couloir": "droite", "couleur": "#2f855a" },
+    { "code": "B", "nom": "Plantes fleuries & orchidées", "x": 11, "y": 3, "profondeur": 2.4, "travees": 11, "niveaux": 3, "couloir": "gauche", "couleur": "#b7791f" },
+    { "code": "C", "nom": "Arbustes & haies", "x": 17, "y": 3, "profondeur": 2.4, "travees": 11, "niveaux": 3, "couloir": "droite", "couleur": "#2b6cb0" },
+    { "code": "D", "nom": "Vivaces & aromatiques", "x": 23, "y": 3, "profondeur": 2.4, "travees": 11, "niveaux": 3, "couloir": "gauche", "couleur": "#6b46c1" },
+    { "code": "E", "nom": "Terreaux, paillages & engrais", "x": 29, "y": 3, "profondeur": 2.4, "travees": 11, "niveaux": 2, "couloir": "droite", "couleur": "#9b2c2c" },
+    { "code": "F", "nom": "Poterie, outillage & accessoires", "x": 35, "y": 3, "profondeur": 2.4, "travees": 11, "niveaux": 2, "couloir": "gauche", "couleur": "#4a5568" }
+  ]
+}
