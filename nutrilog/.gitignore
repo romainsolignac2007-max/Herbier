@@ -1,0 +1,3 @@
+# Données de production (base + journal d'audit) : jamais dans le dépôt
+data/
+*.log
