@@ -11,6 +11,7 @@ const S = {
   recherche: "",
   filtre: "",
   modale: null,       // fonction qui (re)dessine la modale ouverte
+  modaleFormulaire: false, // true = formulaire de saisie : on ne le redessine jamais automatiquement
   minuteur: null,
   horsLigne: false,
 };
@@ -18,6 +19,7 @@ const S = {
 const LIB_STATUT = { brouillon: "Brouillon", a_preparer: "À préparer", en_preparation: "En préparation", preparee: "Préparée", expediee: "Expédiée", annulee: "Annulée" };
 const LIB_ROLE = { admin: "Administrateur", secretariat: "Secrétariat", preparateur: "Préparateur" };
 const LIB_CONS = { ambiant: "Ambiant", frais: "Frais (0–4 °C)", surgele: "Surgelé (−18 °C)" };
+const LIB_CAT = { chien: "🐕 Chien", chat: "🐈 Chat", rongeur: "🐹 Rongeur", oiseau: "🐦 Oiseau", poisson: "🐟 Poisson", reptile: "🦎 Reptile", cheval: "🐴 Cheval", autre: "Autre" };
 const badgeCons = (c) => (c && c !== "ambiant" ? `<span class="pastille cons-${h(c)}">${c === "frais" ? "❄ FRAIS" : "🧊 SURGELÉ"}</span>` : "");
 
 /* ---------- Utilitaires ---------- */
@@ -98,7 +100,25 @@ async function rafraichir(force) {
   const change = force || !S.etat || etat.derniereMaj !== S.etat.derniereMaj;
   S.etat = etat; S.moi = etat.moi;
   $("#qui").textContent = `${S.moi.nom} · ${LIB_ROLE[S.moi.role]}${S.moi.role === "preparateur" ? " (" + (S.moi.postes.map(nomPoste).join(", ") || "aucun poste") + ")" : ""}`;
-  if (change && !force) { dessiner(); if (S.modale) S.modale(); }
+  if (change && !force) { dessiner(); redessinerModale(); }
+}
+
+/* Redessine la modale ouverte SANS perdre ce que l'utilisateur est en train de saisir
+   (remarque, transporteur, message, lot/DLC) ni le focus. Un formulaire de saisie n'est jamais
+   redessiné automatiquement : il sera simplement validé sur des données à jour côté serveur. */
+function redessinerModale() {
+  if (!S.modale || S.modaleFormulaire) return;
+  const cont = $("#modale-contenu");
+  const actif = document.activeElement;
+  const cle = (el) => el.id || (el.dataset.lot !== undefined ? "lot" + el.dataset.lot : el.dataset.dlc !== undefined ? "dlc" + el.dataset.dlc : el.name);
+  const sauve = new Map();
+  cont.querySelectorAll("input:not([type=checkbox]),textarea").forEach((el) => sauve.set(cle(el), { v: el.value, focus: el === actif, s: el.selectionStart, e: el.selectionEnd }));
+  S.modale();
+  cont.querySelectorAll("input:not([type=checkbox]),textarea").forEach((el) => {
+    const s = sauve.get(cle(el)); if (!s) return;
+    if (s.focus || (s.v && !el.value)) el.value = s.v;
+    if (s.focus) { el.focus(); try { el.setSelectionRange(s.s, s.e); } catch (e) { /* type=date */ } }
+  });
 }
 
 /* ---------- Navigation ---------- */
@@ -185,13 +205,13 @@ function vueProduits() {
       <input type="search" placeholder="Rechercher un produit…" value="${h(S.recherche)}" data-recherche />
     </div>
     <p class="aide">Une commande ne peut partir en préparation que si chaque produit a sa fiche de préparation complète (instructions générales + consigne pour chaque poste du circuit).</p>
-    <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Réf.</th><th>Conservation</th><th>Stock</th><th>Empl.</th><th>Fiche générale</th>${postes.map((p) => `<th>${h(p.nom)}</th>`).join("")}</tr></thead><tbody>
+    <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Réf.</th><th>Animal</th><th>Conservation</th><th>Stock</th><th>Empl.</th><th>Fiche générale</th>${postes.map((p) => `<th>${h(p.nom)}</th>`).join("")}</tr></thead><tbody>
       ${ps.map((p) => `<tr class="cliquable" data-produit="${p.id}">
-        <td><b>${h(p.nom)}</b></td><td>${h(p.reference)}</td><td>${h(LIB_CONS[p.conservation] || "Ambiant")}</td>
+        <td><b>${h(p.nom)}</b></td><td>${h(p.reference)}</td><td>${h(LIB_CAT[p.categorie] || "—")}</td><td>${h(LIB_CONS[p.conservation] || "Ambiant")}</td>
         <td class="${p.stock <= 5 ? "stock-bas" : ""}">${p.stock} ${h(p.unite)}</td><td>${h(p.emplacement)}</td>
         <td class="${p.preparation.instructions ? "fiche-ok" : "fiche-ko"}">${p.preparation.instructions ? "✔ complète" : "✘ manquante"}</td>
         ${postes.map((po) => `<td class="${p.preparation.parPoste?.[po.id] ? "fiche-ok" : "fiche-ko"}">${p.preparation.parPoste?.[po.id] ? "✔" : "✘"}</td>`).join("")}
-      </tr>`).join("") || '<tr><td colspan="10" class="vide">Aucun produit</td></tr>'}
+      </tr>`).join("") || '<tr><td colspan="11" class="vide">Aucun produit</td></tr>'}
     </tbody></table></div>`;
 }
 
@@ -290,11 +310,11 @@ function vueAudit() {
 /* =====================================================================
    MODALES
    ===================================================================== */
-function ouvrirModale(fn) {
-  S.modale = fn; $("#voile").hidden = false; fn();
+function ouvrirModale(fn, formulaire) {
+  S.modale = fn; S.modaleFormulaire = !!formulaire; $("#voile").hidden = false; fn();
 }
 function fermerModale() {
-  S.modale = null; $("#voile").hidden = true; $("#modale-contenu").innerHTML = "";
+  S.modale = null; S.modaleFormulaire = false; $("#voile").hidden = true; $("#modale-contenu").innerHTML = "";
 }
 function modale(html) { $("#modale-contenu").innerHTML = html; }
 
@@ -339,10 +359,10 @@ function ouvrirCommande(id) {
         const fait = e.coches[i];
         return `<div class="ligne-prep${fait ? " faite" : ""}">
           <div class="haut">
-            <label><input type="checkbox" data-coche="${i}" ${fait ? "checked" : ""} /> ${h(p.nom)} ${p.reference ? `<small>(${h(p.reference)})</small>` : ""} ${p.emplacement ? `<span class="emplacement">${h(p.emplacement)}</span>` : ""} ${badgeCons(p.conservation)}</label>
+            <label><input type="checkbox" data-coche="${i}" ${fait ? "checked" : ""} /> ${h(p.nom)} ${p.reference ? `<small>(${h(p.reference)})</small>` : ""} ${p.emplacement ? `<span class="emplacement">${h(p.emplacement)}</span>` : ""} ${badgeCons(p.conservation)} ${p.categorie && p.categorie !== "autre" ? `<small>${h(LIB_CAT[p.categorie])}</small>` : ""}</label>
             <div class="qte">× ${l.quantite} ${h(p.unite)}</div>
           </div>
-          <div class="lot-dlc"><label>N° de lot<input data-lot="${i}" maxlength="40" value="${h(l.lot)}" placeholder="lot" /></label><label>DLC<input type="date" data-dlc="${i}" value="${h(l.dlc)}" /></label></div>
+          <div class="lot-dlc"><label>N° de lot<input data-lot="${i}" maxlength="40" value="${h(l.lot)}" placeholder="lot" /></label><label>DDM / DLC<input type="date" data-dlc="${i}" value="${h(l.dlc)}" /></label></div>
           <div class="instr">
             <p><span class="cle">Consigne ${h(nomPoste(e.posteId))}</span><br />${h(p.preparation.parPoste?.[e.posteId] || "—")}</p>
             ${p.preparation.instructions ? `<p><span class="cle">Général</span><br />${h(p.preparation.instructions)}</p>` : ""}
@@ -352,7 +372,7 @@ function ouvrirCommande(id) {
         </div>`;
       }).join("");
     } else {
-      lignes = `<div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Qté</th><th>Empl.</th><th>Lot / DLC</th>${secretariat ? "<th>Stock</th>" : ""}${c.etapes.map((et) => `<th>${h(nomPoste(et.posteId))}</th>`).join("")}</tr></thead><tbody>
+      lignes = `<div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Qté</th><th>Empl.</th><th>Lot / DDM</th>${secretariat ? "<th>Stock</th>" : ""}${c.etapes.map((et) => `<th>${h(nomPoste(et.posteId))}</th>`).join("")}</tr></thead><tbody>
         ${c.lignes.map((l) => { const p = produit(l.produitId) || { nom: "?", preparation: {} }; return `<tr><td><b>${h(p.nom)}</b> ${badgeCons(p.conservation)}</td><td>${l.quantite} ${h(p.unite || "")}</td><td>${h(p.emplacement || "")}</td><td>${h(l.lot || "—")} / ${fmtJour(l.dlc)}</td>${secretariat ? `<td class="${(p.stock ?? 0) < l.quantite ? "stock-bas" : ""}">${p.stock ?? "?"}</td>` : ""}${c.etapes.map((et) => `<td class="${p.preparation.parPoste?.[et.posteId] ? "" : "fiche-ko"}">${h(p.preparation.parPoste?.[et.posteId] || "✘ manquante")}</td>`).join("")}</tr>`; }).join("")}
       </tbody></table></div>`;
     }
@@ -445,7 +465,7 @@ function formulaireCommande(c) {
       brouillon.clientId = f.clientId.value; brouillon.priorite = f.priorite.value; brouillon.dateMail = f.dateMail.value; brouillon.dateLivraisonSouhaitee = f.dateLivraisonSouhaitee.value; brouillon.sourceMail = f.sourceMail.value; brouillon.note = f.note.value;
       postesChoisis.clear(); f.querySelectorAll("input[name=poste]:checked").forEach((x) => postesChoisis.add(x.value));
     }
-  });
+  }, true);
 }
 
 /* ---------- Formulaire produit ---------- */
@@ -460,8 +480,9 @@ function formulaireProduit(p) {
         <label>Stock<input type="number" name="stock" min="0" value="${p ? p.stock : 0}" /></label>
         <label>Emplacement<input name="emplacement" maxlength="40" value="${h(p?.emplacement)}" placeholder="ex. A1" /></label>
         <label>Durée indicative (min / ligne)<input type="number" name="dureeMin" min="0" max="600" value="${pr.dureeMin || 0}" /></label>
+        <label>Animal<select name="categorie">${Object.entries(LIB_CAT).map(([k, v]) => `<option value="${k}" ${(p?.categorie || "autre") === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
         <label>Conservation<select name="conservation">${Object.entries(LIB_CONS).map(([k, v]) => `<option value="${k}" ${(p?.conservation || "ambiant") === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
-        <label>DLC habituelle (jours)<input type="number" name="dlcJours" min="0" max="3650" value="${p?.dlcJours || 0}" /></label>
+        <label>DDM / DLC habituelle (jours, 0 = sans date)<input type="number" name="dlcJours" min="0" max="3650" value="${p?.dlcJours || 0}" /></label>
       </div></div>
       <div class="bloc"><h3>Fiche de préparation</h3>
         <p class="aide">Obligatoire pour qu'une commande contenant ce produit puisse être envoyée aux préparateurs.</p>
@@ -475,7 +496,7 @@ function formulaireProduit(p) {
       <div class="ligne-boutons">
         ${p && S.moi.role === "admin" ? `<button class="btn btn-danger" type="button" data-action="supprimer-produit" data-id="${p.id}">Supprimer</button>` : ""}
         <button class="btn btn-secondaire" type="button" data-action="fermer">Annuler</button><button class="btn btn-primaire" type="submit">Enregistrer</button></div>
-    </form>`));
+    </form>`), true);
 }
 
 /* ---------- Formulaire client ---------- */
@@ -488,7 +509,7 @@ function formulaireClient(c) {
       <div class="ligne-boutons">
         ${c && S.moi.role === "admin" ? `<button class="btn btn-danger" type="button" data-action="supprimer-client" data-id="${c.id}">Supprimer</button>` : ""}
         <button class="btn btn-secondaire" type="button" data-action="fermer">Annuler</button><button class="btn btn-primaire" type="submit">Enregistrer</button></div>
-    </form>`));
+    </form>`), true);
 }
 
 /* ---------- Formulaire utilisateur (admin) ---------- */
@@ -507,7 +528,7 @@ function formulaireUtilisateur(u) {
     <div class="ligne-boutons">
       ${u && u.id !== S.moi.id ? `<button class="btn btn-danger" type="button" data-action="supprimer-utilisateur" data-id="${u.id}">Supprimer</button><button class="btn btn-secondaire" type="button" data-action="reinit-mdp" data-id="${u.id}">Réinitialiser le mot de passe</button>` : ""}
       <button class="btn btn-secondaire" type="button" data-action="fermer">Annuler</button><button class="btn btn-primaire" type="submit">Enregistrer</button></div>
-    </form>`));
+    </form>`), true);
 }
 
 /* ---------- Formulaire poste (admin) ---------- */
@@ -519,7 +540,7 @@ function formulairePoste(p) {
       <div class="ligne-boutons">
         ${p ? `<button class="btn btn-danger" type="button" data-action="supprimer-poste" data-id="${p.id}">Supprimer</button>` : ""}
         <button class="btn btn-secondaire" type="button" data-action="fermer">Annuler</button><button class="btn btn-primaire" type="submit">Enregistrer</button></div>
-    </form>`));
+    </form>`), true);
 }
 
 /* ---------- Renvoi à un poste (secrétariat) ---------- */
@@ -530,14 +551,14 @@ function formulaireRenvoi(c) {
       <label>Raison *<input name="remarque" required maxlength="500" placeholder="ex. mauvaise quantité sur la ligne 2" /></label>
       <p class="aide">Les étapes à partir de celle-ci seront à refaire ; le préparateur du poste verra la raison dans l'historique et les messages.</p></div>
       <div class="ligne-boutons"><button class="btn btn-secondaire" type="button" data-action="fermer">Annuler</button><button class="btn btn-primaire" type="submit">Renvoyer</button></div>
-    </form>`));
+    </form>`), true);
 }
 
 /* =====================================================================
    ACTIONS
    ===================================================================== */
 async function agir(fn, msgOk) {
-  try { await fn(); if (msgOk) toast(msgOk); await rafraichir(true); dessiner(); if (S.modale) S.modale(); }
+  try { await fn(); if (msgOk) toast(msgOk); await rafraichir(true); dessiner(); redessinerModale(); }
   catch (e) {
     if (e.data && e.data.blocages) toast(e.message + " " + e.data.blocages.join(" "), true);
     else toast(e.message, true);
@@ -580,7 +601,7 @@ const FORMULAIRES = {
   },
   async produit(f, id) {
     const parPoste = {}; S.etat.postes.forEach((p) => (parPoste[p.id] = f[`poste_${p.id}`].value));
-    const corps = { nom: f.nom.value, reference: f.reference.value, unite: f.unite.value, stock: Number(f.stock.value), emplacement: f.emplacement.value, conservation: f.conservation.value, dlcJours: Number(f.dlcJours.value), preparation: { instructions: f.instructions.value, conditionnement: f.conditionnement.value, vigilance: f.vigilance.value, dureeMin: Number(f.dureeMin.value), parPoste } };
+    const corps = { nom: f.nom.value, reference: f.reference.value, unite: f.unite.value, stock: Number(f.stock.value), emplacement: f.emplacement.value, categorie: f.categorie.value, conservation: f.conservation.value, dlcJours: Number(f.dlcJours.value), preparation: { instructions: f.instructions.value, conditionnement: f.conditionnement.value, vigilance: f.vigilance.value, dureeMin: Number(f.dureeMin.value), parPoste } };
     await (id ? api("PUT", `/api/produits/${id}`, corps) : api("POST", "/api/produits", corps));
     fermerModale(); return "Produit enregistré";
   },
@@ -663,7 +684,7 @@ document.addEventListener("submit", async (ev) => {
   try {
     const msg = await FORMULAIRES[f.dataset.form](f, f.dataset.id);
     if (msg) toast(msg);
-    await rafraichir(true); dessiner(); if (S.modale) S.modale();
+    await rafraichir(true); dessiner(); redessinerModale();
   } catch (e) { toast(e.message, true); }
   finally { if (btn) btn.disabled = false; }
 });

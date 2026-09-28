@@ -1,5 +1,7 @@
 /* ============================================================
    NutriLog — serveur (Node.js ≥ 18, sans dépendance externe)
+   Logistique d'un dépôt de distribution d'aliments pour animaux
+   (croquettes, pâtées, friandises, litière, produits frais / surgelés)
    ------------------------------------------------------------
    Lancer :  node server.js
    Variables d'environnement (toutes optionnelles) :
@@ -52,6 +54,7 @@ const ROLES = ["admin", "secretariat", "preparateur"];
 const STATUTS = ["brouillon", "a_preparer", "en_preparation", "preparee", "expediee", "annulee"];
 const CLOS = ["expediee", "annulee"];
 const CONSERVATIONS = ["ambiant", "frais", "surgele"]; // chaîne du froid
+const CATEGORIES = ["chien", "chat", "rongeur", "oiseau", "poisson", "reptile", "cheval", "autre"]; // animal de destination
 
 /* =====================================================================
    1. Base de données (fichier JSON, écriture atomique)
@@ -202,33 +205,44 @@ function donneesInitiales() {
 
   db.produits = [
     {
-      id: id(), nom: "Lait demi-écrémé 1 L (pack de 6)", reference: "LAIT-DE-6", unite: "pack", stock: 80, emplacement: "A1", conservation: "ambiant", dlcJours: 60,
+      id: id(), nom: "Croquettes chien adulte poulet 12 kg", reference: "CRO-CHI-12", unite: "sac", stock: 80, emplacement: "A1", categorie: "chien", conservation: "ambiant", dlcJours: 540,
       preparation: {
-        instructions: "Vérifier la DLC (au moins 15 jours restants). Packs intacts, sans fuite.",
-        conditionnement: "Sur palette ou carton renforcé, 4 packs max par carton",
-        vigilance: "Lourd : ne pas empiler plus de 3 cartons.",
+        instructions: "Vérifier la DDM (au moins 3 mois restants). Sac intact, sans déchirure ni odeur de rance.",
+        conditionnement: "Sac seul filmé, ou 2 sacs max par carton renforcé",
+        vigilance: "Lourd (12 kg) : porter à deux au-delà de 2 sacs, ne pas empiler plus de 4.",
         dureeMin: 2,
-        parPoste: { [picking.id]: "Allée A1, palette du bas. Prendre les DLC les plus courtes en premier (FIFO).", [emballage.id]: "Carton renforcé, cornières.", [controle.id]: "Compter les packs, vérifier la DLC notée sur le bon." },
+        parPoste: { [picking.id]: "Allée A1, palette du bas. Prendre les DDM les plus courtes en premier (FIFO). Noter le n° de lot imprimé au dos du sac.", [emballage.id]: "Film étirable + cornières. Étiquette « lourd ».", [controle.id]: "Compter les sacs, vérifier lot et DDM reportés sur le bon." },
       },
     },
     {
-      id: id(), nom: "Yaourts nature (×12)", reference: "YAO-NAT-12", unite: "carton", stock: 150, emplacement: "F2 (chambre froide)", conservation: "frais", dlcJours: 21,
+      id: id(), nom: "Pâtée chat sachets fraîcheur 85 g (×48)", reference: "PAT-CHA-48", unite: "carton", stock: 150, emplacement: "B3", categorie: "chat", conservation: "ambiant", dlcJours: 365,
       preparation: {
-        instructions: "Produit frais : rester sous 4 °C. Sortir de la chambre froide au dernier moment.",
-        conditionnement: "Caisse isotherme + pain de glace",
-        vigilance: "CHAÎNE DU FROID — pas plus de 10 min hors chambre froide.",
-        dureeMin: 3,
-        parPoste: { [picking.id]: "Chambre froide F2, étagère 3. Noter le numéro de lot.", [emballage.id]: "Caisse isotherme, 2 pains de glace, fermer immédiatement.", [controle.id]: "Température de la caisse < 4 °C, lot reporté sur le bon." },
+        instructions: "Carton fermé d'origine. Vérifier qu'aucun sachet n'est gonflé ou percé.",
+        conditionnement: "Carton d'origine, 6 cartons max par colis",
+        vigilance: "Ne pas stocker près des produits d'hygiène (litière parfumée) : odeurs.",
+        dureeMin: 2,
+        parPoste: { [picking.id]: "Allée B3, étagère 2. Relever le n° de lot sur le côté du carton.", [emballage.id]: "Colis carton, calage papier, fermeture double bande.", [controle.id]: "Nombre de cartons, lot et DDM sur le bon, colis fermé." },
       },
     },
     {
-      id: id(), nom: "Filets de poulet surgelés 2,5 kg", reference: "POU-SUR-25", unite: "sachet", stock: 8, emplacement: "S1 (congélateur)", conservation: "surgele", dlcJours: 365,
+      id: id(), nom: "Viande BARF surgelée bœuf 10 kg", reference: "BARF-BOE-10", unite: "carton", stock: 8, emplacement: "S1 (congélateur)", categorie: "chien", conservation: "surgele", dlcJours: 365,
       preparation: { instructions: "", conditionnement: "", vigilance: "", dureeMin: 0, parPoste: {} },
+    },
+    {
+      id: id(), nom: "Litière agglomérante 10 L", reference: "LIT-AGG-10", unite: "sac", stock: 200, emplacement: "C2", categorie: "chat", conservation: "ambiant", dlcJours: 0,
+      preparation: {
+        instructions: "Sac intact (fuite de granulés = sac à écarter).",
+        conditionnement: "Sac seul filmé",
+        vigilance: "Lourd et poussiéreux : à placer en bas du colis / de la palette.",
+        dureeMin: 1,
+        parPoste: { [picking.id]: "Allée C2, palette.", [emballage.id]: "Film étirable, toujours en dessous des aliments.", [controle.id]: "Compter les sacs." },
+      },
     },
   ];
   db.clients = [
-    { id: id(), nom: "Cantine scolaire Jules-Ferry", email: "cantine@ecole-julesferry.fr", adresse: "12 rue des Lilas, 69003 Lyon", telephone: "04 72 00 00 00" },
-    { id: id(), nom: "Restaurant Le Potager", email: "commande@lepotager.fr", adresse: "3 place de la Mairie, 38000 Grenoble", telephone: "04 76 00 00 00" },
+    { id: id(), nom: "Animalerie Les 4 Pattes", email: "commande@les4pattes.fr", adresse: "12 rue des Lilas, 69003 Lyon", telephone: "04 72 00 00 00" },
+    { id: id(), nom: "Clinique vétérinaire du Parc", email: "accueil@veto-duparc.fr", adresse: "3 place de la Mairie, 38000 Grenoble", telephone: "04 76 00 00 00" },
+    { id: id(), nom: "Élevage canin du Val", email: "contact@elevage-duval.fr", adresse: "Lieu-dit Le Val, 01500 Ambérieu", telephone: "04 74 00 00 00" },
   ];
   return db;
 }
@@ -280,6 +294,7 @@ function validerProduit(db, corps, existant) {
   if ("unite" in corps || !existant) p.unite = texte(corps.unite, 20, false) || "unité";
   if ("stock" in corps || !existant) p.stock = entier(corps.stock ?? 0, 0, 1e7);
   if ("emplacement" in corps || !existant) p.emplacement = texte(corps.emplacement, 40, false);
+  if ("categorie" in corps || !existant) p.categorie = choix(corps.categorie || "autre", CATEGORIES);
   if ("conservation" in corps || !existant) p.conservation = choix(corps.conservation || "ambiant", CONSERVATIONS);
   if ("dlcJours" in corps || !existant) p.dlcJours = entier(corps.dlcJours ?? 0, 0, 3650);
   const pr = corps.preparation || {};
@@ -754,7 +769,7 @@ async function api(req, res, route) {
           const i = entier(corps.index, 0, cmd.lignes.length - 1);
           e.coches[i] = !!corps.fait;
           if ("lot" in corps) cmd.lignes[i].lot = texte(corps.lot, 40, false);       // traçabilité : n° de lot
-          if ("dlc" in corps) cmd.lignes[i].dlc = dateIso(corps.dlc);                // date limite de consommation
+          if ("dlc" in corps) cmd.lignes[i].dlc = dateIso(corps.dlc);                // DDM (croquettes) ou DLC (frais / surgelé)
           break;
         }
         /* Étape terminée → poste suivant, ou retour secrétariat si c'était la dernière */
@@ -852,4 +867,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { blocages, ficheComplete, hacherMdp, verifierMdp, mdpValide, STATUTS, ROLES, CONSERVATIONS };
+module.exports = { blocages, ficheComplete, hacherMdp, verifierMdp, mdpValide, STATUTS, ROLES, CONSERVATIONS, CATEGORIES };

@@ -1,7 +1,8 @@
-# NutriLog — logistique des commandes d'un dépôt de distribution alimentaire
+# NutriLog — logistique des commandes d'un dépôt de distribution d'aliments pour animaux
 
-Logiciel interne qui suit une commande client de la réception du mail jusqu'à l'expédition, en passant
-par les tablettes des préparateurs, poste par poste.
+Logiciel interne qui suit une commande client (animalerie, vétérinaire, éleveur…) de la réception du mail
+jusqu'à l'expédition, en passant par les tablettes des préparateurs, poste par poste. Produits : croquettes,
+pâtées, friandises, litière, aliments frais ou surgelés (BARF), avec traçabilité lot + DDM/DLC.
 
 > Ce dossier est **indépendant** du site Herbier : il ne partage ni code ni données avec lui et peut être
 > déplacé tel quel dans un dépôt dédié.
@@ -136,6 +137,6 @@ nutrilog/
 
 ## Évolutions prévues
 
-- **Référencement produits** : import du catalogue complet (CSV / lien avec le site) — à venir.
+- **Référencement produits** : import du catalogue complet (CSV / lien avec le site, marques, gammes, poids) — à venir.
 - Impression du bon de préparation / étiquettes colis.
 - Notifications (son sur la tablette quand une commande arrive à son poste, e-mail au client à l'expédition).
