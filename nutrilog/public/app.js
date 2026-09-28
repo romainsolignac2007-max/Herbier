@@ -38,6 +38,9 @@ const nomPoste = (id) => (poste(id) ? poste(id).nom : "?");
 const etapeCourante = (c) => (c.etapes && c.etapes[c.etapeIndex]) || null;
 const estClos = (c) => c.statut === "expediee" || c.statut === "annulee";
 const aujourdhui = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }; // date LOCALE
+/* Quantité d'un produit réservée par les commandes envoyées en préparation et pas encore expédiées */
+const reserve = (pid) => (S.etat.commandes || []).filter((c) => c.stockReserve && ["a_preparer", "en_preparation", "preparee"].includes(c.statut))
+  .reduce((t, c) => t + c.lignes.filter((l) => l.produitId === pid).reduce((u, l) => u + l.quantite, 0), 0);
 const pastille = (statut) => `<span class="pastille p-${h(statut)}">${h(LIB_STATUT[statut] || statut)}</span>`;
 
 function toast(msg, erreur) {
@@ -254,13 +257,13 @@ function vueProduits() {
       <input type="search" placeholder="Rechercher un produit…" value="${h(S.recherche)}" data-recherche />
     </div>
     <p class="aide">Une commande ne peut partir en préparation que si chaque produit a sa fiche de préparation complète (instructions générales + consigne pour chaque poste du circuit). Le stock affiché est le stock <b>disponible</b> : les quantités des commandes envoyées en préparation sont déjà réservées.</p>
-    <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Réf.</th><th>Animal</th><th>Conservation</th><th title="Stock physique moins les commandes en préparation">Stock dispo.</th><th>Empl.</th><th>Fiche générale</th>${postes.map((p) => `<th>${h(p.nom)}</th>`).join("")}</tr></thead><tbody>
+    <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Réf.</th><th>Animal</th><th>Conservation</th><th title="Stock physique moins les commandes en préparation">Stock dispo.</th><th>Réservé</th><th>Empl.</th><th>Fiche générale</th>${postes.map((p) => `<th>${h(p.nom)}</th>`).join("")}</tr></thead><tbody>
       ${ps.map((p) => `<tr class="cliquable" data-produit="${p.id}">
         <td><b>${h(p.nom)}</b></td><td>${h(p.reference)}</td><td>${h(LIB_CAT[p.categorie] || "—")}</td><td>${h(LIB_CONS[p.conservation] || "Ambiant")}</td>
-        <td class="${p.stock <= 5 ? "stock-bas" : ""}">${p.stock} ${h(p.unite)}</td><td>${h(p.emplacement)}</td>
+        <td class="${p.stock <= 5 ? "stock-bas" : ""}">${p.stock} ${h(p.unite)}</td><td>${reserve(p.id) || "—"}</td><td>${h(p.emplacement)}</td>
         <td class="${p.preparation.instructions ? "fiche-ok" : "fiche-ko"}">${p.preparation.instructions ? "✔ complète" : "✘ manquante"}</td>
         ${postes.map((po) => `<td class="${p.preparation.parPoste?.[po.id] ? "fiche-ok" : "fiche-ko"}">${p.preparation.parPoste?.[po.id] ? "✔" : "✘"}</td>`).join("")}
-      </tr>`).join("") || '<tr><td colspan="11" class="vide">Aucun produit</td></tr>'}
+      </tr>`).join("") || '<tr><td colspan="12" class="vide">Aucun produit</td></tr>'}
     </tbody></table></div>`;
 }
 
@@ -535,7 +538,8 @@ function formulaireProduit(p) {
         <label>Nom<input name="nom" required maxlength="120" value="${h(p?.nom)}" /></label>
         <label>Référence<input name="reference" maxlength="40" value="${h(p?.reference)}" /></label>
         <label>Unité<input name="unite" maxlength="20" value="${h(p?.unite || "unité")}" /></label>
-        <label>Stock<input type="number" name="stock" min="0" value="${p ? p.stock : 0}" /></label>
+        <label>Stock disponible<input type="number" name="stock" min="0" value="${p ? p.stock : 0}" /></label>
+        ${p && reserve(p.id) ? `<p class="aide">+ ${reserve(p.id)} ${h(p.unite)} réservés par des commandes en préparation → stock physique attendu : <b>${p.stock + reserve(p.id)}</b>. Après un inventaire, saisissez ici le compté <b>moins</b> ${reserve(p.id)}.</p>` : ""}
         <label>Emplacement<input name="emplacement" maxlength="40" value="${h(p?.emplacement)}" placeholder="ex. A1" /></label>
         <label>Durée indicative (min / ligne)<input type="number" name="dureeMin" min="0" max="600" value="${pr.dureeMin || 0}" /></label>
         <label>Animal<select name="categorie">${Object.entries(LIB_CAT).map(([k, v]) => `<option value="${k}" ${(p?.categorie || "autre") === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
