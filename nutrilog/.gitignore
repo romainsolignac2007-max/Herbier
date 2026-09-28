@@ -1,3 +1,6 @@
 # Données de production (base + journal d'audit) : jamais dans le dépôt
 data/
 *.log
+
+# Démo générée par demo/construire.mjs
+demo/nutrilog-demo.html
