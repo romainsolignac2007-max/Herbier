@@ -132,6 +132,7 @@ r = await admin("POST", `/api/commandes/${cmd.id}/ligne`, { index: 0, fait: true
 r = await pick("POST", `/api/commandes/${cmd.id}/terminer`); ok(r.status === 409, "impossible de terminer sans tout cocher");
 r = await pick("POST", `/api/commandes/${cmd.id}/ligne`, { index: 0, fait: true, lot: "L2409-A", dlc: "2027-03-15" }); ok(r.status === 200 && r.data.lignes[0].lot === "L2409-A", "ligne 1 cochée avec lot + DDM");
 r = await pick("POST", `/api/commandes/${cmd.id}/ligne`, { index: 0, fait: true, lot: "L2409-B" }); ok(r.status === 200 && r.data.historique.some((h) => h.texte.includes("L2409-A → L2409-B")), "changement de lot tracé dans l'historique (ancien → nouveau)");
+r = await pick("POST", `/api/commandes/${cmd.id}/ligne`, { index: 0, dlc: "2027-03-16" }); ok(r.status === 200 && r.data.etapes[0].coches[0] === true, "saisir seulement une DDM ne décoche pas la ligne");
 r = await pick("POST", `/api/commandes/${cmd.id}/ligne`, { index: 0, fait: true, dlc: "2027-02-31" }); ok(r.status === 400, "DDM inexistante refusée");
 r = await pick("POST", `/api/commandes/${cmd.id}/message`, { texte: "Il ne reste que 9 sacs du lot B, j'en prends 1 du lot C" }); ok(r.status === 200, "message du préparateur");
 r = await pick("POST", `/api/commandes/${cmd.id}/ligne`, { index: 1, fait: true, lot: "Y-118" }); ok(r.status === 200, "ligne 2 cochée");
@@ -194,6 +195,9 @@ r = await secr("GET", "/api/etat"); ok(r.data.produits.find((p) => p.id === barf
 r = await secr("PUT", `/api/produits/${croq.id}`, { nom: "Nom modifié", stock: -1 }); ok(r.status === 400, "fiche produit invalide refusée…");
 r = await secr("GET", "/api/etat"); ok(r.data.produits.find((p) => p.id === croq.id).nom === croq.nom, "…sans modification partielle du nom");
 r = await secr("PUT", `/api/produits/${croq.id}`, { preparation: "texte" }); ok(r.status === 400, "format de fiche invalide → 400 (pas 500)");
+r = await secr("PUT", `/api/produits/${croq.id}`, { emplacement: "A2", stock: 80, stockAvant: 80 }); ok(r.status === 409, "stock saisi sur une valeur périmée (une réservation l'a changé) → 409, rien d'écrasé");
+r = await secr("PUT", `/api/produits/${croq.id}`, { emplacement: "A2" }); ok(r.status === 200 && r.data.stock === 70 && r.data.emplacement === "A2", "modifier la fiche sans toucher au stock ne l'écrase pas");
+r = await secr("PUT", `/api/produits/${croq.id}`, { stock: 75, stockAvant: 70 }); ok(r.status === 200 && r.data.stock === 75, "correction de stock sur la valeur à jour acceptée");
 
 console.log("8. Audit, verrouillages");
 r = await secr("GET", "/api/audit"); ok(r.status === 403, "le secrétariat n'a pas accès à l'audit");
@@ -223,8 +227,15 @@ console.log("9. Anti-force-brute derrière un reverse proxy (TRUST_PROXY)");
   const auditApres = readFileSync(join(dir, "audit.log"), "utf8").trim().split("\n").length;
   ok(auditApres === auditAvant, `les 40 tentatives refusées pendant le blocage n'inondent pas le journal (${auditAvant} → ${auditApres} lignes)`);
   ok(readFileSync(join(dir, "audit.log"), "utf8").includes('"ip":"10.0.0.1"'), "l'audit enregistre l'adresse réelle du poste, pas celle du proxy");
+  const c = depuis("10.0.0.4");
+  for (let i = 0; i < 4; i++) await c("POST", "/api/connexion", { login: "zz", mdp: "faux" });
+  r = await c("POST", "/api/connexion", { login: "admin", mdp: "AdminInitial123" }); ok(r.status === 200, "4 échecs puis une connexion réussie depuis le même poste…");
+  await c("POST", "/api/connexion", { login: "zz", mdp: "faux" });
+  r = await c("POST", "/api/connexion", { login: "zz", mdp: "faux" }); ok(r.status === 429, "…ne remet pas à zéro le compteur de l'adresse (blocage non contournable)");
   for (let i = 0; i < 20; i++) await depuis("10.1.0." + i)("POST", "/api/connexion", { login: "admin", mdp: "faux" });
   r = await depuis("10.0.0.3")("POST", "/api/connexion", { login: "admin", mdp: "AdminInitial123" }); ok(r.status === 429, "20 échecs sur un compte depuis de nombreux postes → compte bloqué");
+  r = await depuis("10.0.0.2")("POST", "/api/connexion", { login: "admin", mdp: "AdminInitial123" }); ok(r.status === 200, "…mais le titulaire se connecte toujours depuis son poste habituel");
+  r = await session("http://127.0.0.1:3998")("GET", "/api/etat"); ok(r.status === 400, "proxy sans X-Forwarded-For → refus (pas d'adresse partagée par tous)");
   srv.p.kill(); await srv.fin;
   const refus = await demarrer(3997, { TRUST_PROXY: "1", HOST: "0.0.0.0" }, dir);
   ok((await refus.fin) === 1 && refus.sortie().includes("HOST=127.0.0.1"), "TRUST_PROXY refusé si le serveur écoute sur tout le réseau");

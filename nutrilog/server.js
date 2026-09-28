@@ -67,23 +67,34 @@ const CATEGORIES = ["chien", "chat", "rongeur", "oiseau", "poisson", "reptile", 
    1. Base de données (fichier JSON, écriture atomique)
    ===================================================================== */
 let dbCache = null;
+let demarre = false; // après le démarrage, un échec de lecture ne doit JAMAIS arrêter le serveur
 function lireDb() {
   if (dbCache) return dbCache;
   let brut;
   try {
     brut = fs.readFileSync(DB_FILE, "utf8");
   } catch (e) {
-    if (e.code !== "ENOENT") arretBaseIllisible(e);
+    if (e.code !== "ENOENT" || demarre) lectureImpossible(e); // en cours de route : fichier momentanément inaccessible
     dbCache = donneesInitiales(); // vrai premier lancement uniquement : aucun fichier
     ecrireDb(dbCache);
     return dbCache;
   }
   let db;
-  try { db = JSON.parse(brut); } catch (e) { arretBaseIllisible(e); }
+  try { db = JSON.parse(brut); } catch (e) { lectureImpossible(e); }
   if (!db || !["utilisateurs", "postes", "produits", "clients", "commandes"].every((k) => Array.isArray(db[k])) || !Number.isInteger(db.prochainNumero))
-    arretBaseIllisible(new Error("structure inattendue"));
+    lectureImpossible(new Error("structure inattendue"));
+  // Migration : commandes créées avant la réservation de stock. Une commande « preparee » de l'ancienne version
+  // a déjà sorti son stock ; celles encore en préparation le sortiront à la fin (voir « terminer »).
+  db.commandes.forEach((c) => { if (c.stockReserve === undefined && c.envoyeeLe && c.statut === "preparee") c.stockReserve = true; });
   dbCache = db;
   return dbCache;
+}
+
+/* Au démarrage : arrêt sans rien écraser. En fonctionnement : la requête échoue (503), le serveur reste en service. */
+function lectureImpossible(e) {
+  if (!demarre) arretBaseIllisible(e);
+  console.error(`Lecture de ${DB_FILE} impossible (${e.message}) : requête refusée, serveur maintenu.`);
+  throw new ErreurHttp(503, "Service momentanément indisponible, réessayez dans un instant.");
 }
 
 /* Une base présente mais illisible n'est JAMAIS remplacée : on garde une copie et on s'arrête. */
@@ -177,6 +188,7 @@ setInterval(() => { // nettoyage périodique des sessions et compteurs expirés
    confondues → compte bloqué ; un seul poste ne peut donc pas verrouiller le compte d'un collègue),
    "mdp:<id>" (5 mauvais « ancien mot de passe » depuis une session). Fenêtre de comptage = BLOCAGE_MS. */
 const tentatives = new Map(); // clé → { echecs, dernier, jusqua }
+const adressesConnues = new Map(); // compte → adresses d'où il s'est déjà connecté (exemptées du blocage du compte)
 function bloque(cle) {
   const t = tentatives.get(cle);
   if (!t || !t.jusqua) return false;
@@ -206,7 +218,7 @@ function audit(req, utilisateur, action, details) {
     date: new Date().toISOString(),
     utilisateur: utilisateur ? utilisateur.login : "-",
     role: utilisateur ? utilisateur.role : "-",
-    ip: ipDe(req),
+    ip: (() => { try { return ipDe(req); } catch (e) { return "?"; } })(),
     action,
     details: details || {},
   });
@@ -237,7 +249,10 @@ function ipDe(req) {
   if (!TRUST_PROXY) return directe; // sans opt-in, X-Forwarded-For est ignoré (forgeable par le client)
   // Dernier élément = adresse vue par NOTRE proxy (les précédents peuvent être forgés par le client)
   const xff = String(req.headers["x-forwarded-for"] || "").split(",").map((x) => x.trim()).filter(Boolean);
-  return xff.length ? xff[xff.length - 1].slice(0, 64) : directe;
+  if (xff.length) return xff[xff.length - 1].slice(0, 64);
+  // Proxy mal configuré (en-tête absent) : tous les postes partageraient la même adresse → on refuse
+  if (!ipDe.averti) { ipDe.averti = true; console.error("TRUST_PROXY=1 mais X-Forwarded-For absent : configurez le proxy (nginx : proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;)."); }
+  throw new ErreurHttp(400, "Configuration du proxy incomplète (X-Forwarded-For absent).");
 }
 
 /* =====================================================================
@@ -632,6 +647,7 @@ function reinitEtape(cmd, e) {
 async function api(req, res, route) {
   const segments = route.split("/").filter(Boolean); // ["commandes", ":id", "envoyer"]
   const [ressource, idRes, action] = segments;
+  ipDe(req); // proxy mal configuré : refus immédiat, avant toute lecture ou modification
   verifierCsrf(req);
   const corps = req.method === "GET" ? {} : await lireCorps(req);
   // Plus aucun « await » après cette ligne : chaque requête lit, valide, modifie et enregistre d'un seul tenant.
@@ -645,7 +661,10 @@ async function api(req, res, route) {
     const login = texte(corps.login, 40, false).toLowerCase();
     const mdp = typeof corps.mdp === "string" ? corps.mdp.slice(0, 128) : "";
     // Les requêtes refusées pendant un blocage ne sont PAS journalisées une à une (sinon le journal serait inondable).
-    if (bloque("ip:" + ip) || bloque("login:" + login)) throw new ErreurHttp(429, "Trop de tentatives. Réessayez dans 15 minutes.");
+    // Le blocage d'un COMPTE ne s'applique pas aux adresses d'où ce compte s'est déjà connecté avec succès :
+    // un tiers ne peut pas empêcher le titulaire de se connecter depuis son poste habituel.
+    const posteConnu = (adressesConnues.get(login) || new Set()).has(ip);
+    if (bloque("ip:" + ip) || (!posteConnu && bloque("login:" + login))) throw new ErreurHttp(429, "Trop de tentatives. Réessayez dans 15 minutes.");
     const u = db.utilisateurs.find((x) => x.login === login);
     // Exactement un calcul scrypt que le compte existe ou non : le temps de réponse ne révèle rien.
     const ok = verifierMdp(mdp, u ? u.mdp : HASH_FACTICE) && !!u;
@@ -655,7 +674,12 @@ async function api(req, res, route) {
       audit(req, null, ipBloquee || compteBloque ? "connexion.bloquee" : "connexion.echec", { login, ...(ipBloquee ? { blocage: "adresse" } : {}), ...(compteBloque ? { blocage: "compte" } : {}) });
       throw new ErreurHttp(401, "Identifiant ou mot de passe incorrect.");
     }
-    succes("ip:" + ip); succes("login:" + login);
+    // Pas de remise à zéro du compteur de l'ADRESSE : sinon il suffirait d'intercaler une connexion réussie
+    // (avec son propre compte) entre deux séries d'essais pour contourner le blocage.
+    succes("login:" + login);
+    if (!adressesConnues.has(login)) adressesConnues.set(login, new Set());
+    const connues = adressesConnues.get(login);
+    connues.add(ip); if (connues.size > 20) connues.delete(connues.values().next().value);
     const jeton = creerSession(u.id);
     audit(req, u, "connexion.ok");
     res.setHeader("Set-Cookie", cookieSession(jeton));
@@ -798,7 +822,11 @@ async function api(req, res, route) {
     if (!p) throw new ErreurHttp(404, "Produit introuvable.");
     if (req.method === "PUT") {
       const stockAvant = p.stock;
-      Object.assign(p, validerProduit(db, corps, p));
+      const nouveau = validerProduit(db, corps, p);
+      // Le stock disponible bouge à chaque envoi / rappel / annulation : on n'écrase pas une valeur qui a changé entre-temps
+      if ("stock" in corps && corps.stockAvant !== stockAvant)
+        throw new ErreurHttp(409, `Le stock disponible a changé entre-temps (${stockAvant} ${p.unite} maintenant). Rouvrez la fiche et ressaisissez-le.`);
+      Object.assign(p, nouveau);
       sauver(); audit(req, moi, "produit.modifie", { nom: p.nom, ...(stockAvant !== p.stock ? { stockAvant, stockApres: p.stock } : {}) });
       return json(res, 200, p);
     }
@@ -937,7 +965,7 @@ async function api(req, res, route) {
           const lot = "lot" in corps ? texte(corps.lot, 40, false) : l.lot || "";
           const dlc = "dlc" in corps ? dateIso(corps.dlc) : l.dlc || "";
           const ancienLot = l.lot || "", ancienneDlc = l.dlc || "";
-          e.coches[i] = !!corps.fait;
+          if ("fait" in corps) e.coches[i] = !!corps.fait; // saisie d'un lot seule : la case n'est pas touchée
           l.lot = lot; l.dlc = dlc;
           if (lot !== ancienLot || dlc !== ancienneDlc) {
             const p = db.produits.find((x) => x.id === l.produitId);
@@ -960,7 +988,11 @@ async function api(req, res, route) {
             cmd.etapeIndex++; cmd.statut = "a_preparer";
             journal(cmd, moi, `Étape terminée${remarque ? " — " + remarque : ""}. Transmise au poste ${nomPoste(db, cmd.etapes[cmd.etapeIndex].posteId)}.`, posteFini);
           } else {
-            if (!cmd.stockReserve) { details.stock = mouvementStock(db, cmd, -1, moi, "Stock sorti"); cmd.stockReserve = true; } // commande antérieure à la réservation
+            if (!cmd.stockReserve) { // commande envoyée avant la réservation de stock (ancienne version)
+              details.stock = mouvementStock(db, cmd, -1, moi, "Stock sorti");
+              cmd.stockReserve = true;
+              db.produits.forEach((p) => { if (p.stock < 0) { journal(cmd, moi, `⚠ Stock de « ${p.nom} » négatif (${p.stock}) : remis à 0, inventaire à vérifier.`); p.stock = 0; } });
+            }
             cmd.statut = "preparee"; cmd.prepareeLe = new Date().toISOString();
             journal(cmd, moi, `Dernière étape terminée${remarque ? " — " + remarque : ""}. Retour au secrétariat.`, posteFini);
           }
@@ -1028,7 +1060,9 @@ function gerer(req, res) {
     const route = req.url.split("?")[0];
     if (route.startsWith("/api/")) {
       api(req, res, route.slice(4)).catch((e) => {
-        dbCache = null; // requête refusée : toute modification partielle en mémoire est abandonnée
+        // Requête modifiante refusée : toute modification partielle en mémoire est abandonnée (relecture du fichier).
+        // Les lectures (GET) ne modifient rien : pas de relecture, qu'un client ne pourrait donc pas provoquer en boucle.
+        if (req.method !== "GET") dbCache = null;
         if (res.headersSent) return;
         if (e instanceof ErreurHttp) return json(res, e.code, { erreur: e.message, ...(e.extra || {}) });
         console.error(e);
@@ -1063,6 +1097,7 @@ if (require.main === module) {
   }
   if (process.env.ADMIN_RESET_PASSWORD) reinitialiserAdmin(process.env.ADMIN_RESET_PASSWORD);
   lireDb();
+  demarre = true;
   const serveur = TLS ? https.createServer(TLS, gerer) : http.createServer(gerer);
   serveur.headersTimeout = 15000;
   serveur.requestTimeout = 30000;

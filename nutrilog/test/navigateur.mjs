@@ -106,6 +106,17 @@ await a.click("[data-onglet=audit]"); await a.waitForSelector("table tbody tr");
 await A("POST", `/api/commandes/${cmd.id}/message`, { texte: "x" }); await attendre(4500);
 ok(appelsAudit === 1, `le journal n'est pas rechargé à chaque rafraîchissement (${appelsAudit} chargement)`);
 
+console.log("Tablette partagée : rien ne passe d'une personne à la suivante");
+await a.click("[data-onglet=utilisateurs]"); await a.waitForSelector("table tbody tr");
+await a.click("#btn-deconnexion"); await a.waitForSelector("#ecran-connexion:not([hidden])");
+ok((await a.innerHTML("#contenu")) === "" && (await a.textContent("#qui")) === "" && (await a.innerHTML("#onglets")) === "", "déconnexion : l'écran de l'admin est effacé");
+await a.route("**/api/etat", async (r) => { await attendre(1500); await r.continue(); });
+await a.fill("input[name=login]", "karim"); await a.fill("input[name=mdp]", "MonMdpPerso2026"); await a.click("#form-connexion button[type=submit]");
+await attendre(700);
+ok(!(await a.isVisible("[data-onglet=utilisateurs]")) && !(await a.textContent("body")).includes("Administrateur ·"), "pendant le chargement, Karim ne voit rien de la session admin");
+await a.waitForSelector("#app:not([hidden])"); await a.unroute("**/api/etat");
+ok((await a.textContent("#qui")).startsWith("karim"), "puis son propre écran s'affiche");
+
 ok(erreursJs.length === 0, "aucune erreur JavaScript" + (erreursJs.length ? " : " + erreursJs.join(" | ") : ""));
 await b.close(); srv.kill(); rmSync(dir, { recursive: true, force: true });
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT EST OK");

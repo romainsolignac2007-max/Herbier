@@ -78,14 +78,15 @@ Variables d'environnement :
 | `ADMIN_PASSWORD` | mot de passe initial du compte admin (1er lancement seulement) | généré |
 | `TLS_KEY`, `TLS_CERT` | chemins clé + certificat → active HTTPS | — |
 | `DATA_DIR` | dossier des données | `./data` |
-| `TRUST_PROXY` | `1` uniquement derrière un reverse proxy HTTPS (nginx : `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`, Caddy : par défaut). Active cookie `Secure` + HSTS et lit l'adresse réelle des postes. Exige `HOST=127.0.0.1` (refus de démarrer sinon). | — |
+| `TRUST_PROXY` | `1` uniquement derrière un reverse proxy HTTPS (nginx : `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`, Caddy : par défaut). Active cookie `Secure` + HSTS et lit l'adresse réelle des postes. Exige `HOST=127.0.0.1` (refus de démarrer sinon) ; toute requête sans `X-Forwarded-For` est refusée (proxy mal configuré). | — |
 | `SESSION_INACTIVITE_MIN` | minutes sans action avant déconnexion (le rafraîchissement automatique des écrans ne compte pas) — ex. `30` pour des tablettes partagées | `480` |
 | `ADMIN_RESET_PASSWORD` | **récupération** du compte `admin` (mot de passe oublié) : réinitialisé au démarrage, à changer à la connexion, tracé dans l'audit. **À retirer ensuite.** | — |
 
 Les données sont dans `data/db.json` (écrit de façon atomique) et le journal d'audit dans
 `data/audit.log` (ajout seul). **Sauvegardez ce dossier** régulièrement. Si `db.json` devient illisible
 (disque, édition manuelle…), le serveur **refuse de démarrer** plutôt que de repartir d'une base vide : il
-garde une copie `db.json.illisible-<date>` et demande de restaurer la dernière sauvegarde.
+garde une copie `db.json.illisible-<date>` et demande de restaurer la dernière sauvegarde. Une fois démarré,
+un incident de lecture passager renvoie « service momentanément indisponible » sans jamais arrêter le serveur.
 
 ## Sécurité : ce qui est intégré
 
@@ -100,8 +101,9 @@ garde une copie `db.json.illisible-<date>` et demande de restaurer la dernière 
   clients (il reçoit « introuvable » pour toute commande qui ne le concerne pas) ; même l'admin ne peut pas
   agir sous le nom d'un préparateur ; le secrétariat n'a pas accès à l'audit.
 - **Anti-force-brute** : 5 échecs en 15 min depuis une adresse → adresse bloquée 15 min ; 20 échecs sur un
-  même compte (toutes adresses) → compte bloqué 15 min, déblocable par l'admin. Un seul poste ne peut donc
-  pas verrouiller le compte d'un collègue. Même limite sur l'« ancien mot de passe » depuis une session
+  même compte (toutes adresses) → compte bloqué 15 min, déblocable par l'admin — sauf depuis les postes
+  d'où ce compte s'est déjà connecté : un tiers ne peut pas empêcher le titulaire de travailler. Une
+  connexion réussie ne remet pas à zéro le compteur d'une adresse (blocage non contournable). Même limite sur l'« ancien mot de passe » depuis une session
   ouverte. Temps de réponse identique que le compte existe ou non (pas d'énumération des identifiants).
 - **Anti-CSRF** (en-tête personnalisé + contrôle d'origine + SameSite) ; en-têtes de sécurité
   (Content-Security-Policy stricte, X-Frame-Options DENY, nosniff, Referrer-Policy, HSTS en HTTPS).

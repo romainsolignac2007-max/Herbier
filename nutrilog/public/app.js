@@ -85,8 +85,14 @@ function setHorsLigne(v) {
 function montrerConnexion(motif) {
   clearInterval(S.minuteur);
   S.ancienId = motif && S.moi ? S.moi.id : null;
-  if (motif && S.modaleFormulaire) $("#voile").hidden = true; else fermerModale();
+  // Fenêtre à garder pour la même personne : formulaire, ou fiche commande avec une saisie non enregistrée
+  const saisieEnCours = S.modaleFormulaire || $("#modale-contenu [data-non-sauve]")
+    || ["#prep-remarque", "#exp-transporteur", "#exp-suivi", "#modale-contenu form[data-form=message] input"].some((sel) => $(sel)?.value);
+  if (motif && S.modale && saisieEnCours) $("#voile").hidden = true; else fermerModale();
+  if (!motif) { S.recherche = ""; S.onglet = ""; } // déconnexion volontaire : rien ne passe à la personne suivante
   S.moi = null; S.etat = null; S.audit = null;
+  // L'écran de la session précédente est effacé : la personne suivante ne doit rien en voir
+  $("#contenu").innerHTML = ""; $("#onglets").innerHTML = ""; $("#qui").textContent = "";
   $("#app").hidden = true; $("#ecran-mdp").hidden = true; $("#ecran-connexion").hidden = false;
   $("#form-connexion").reset();
   $("#erreur-connexion").textContent = motif || ""; $("#erreur-connexion").hidden = !motif;
@@ -104,10 +110,20 @@ function montrerMdp(obligatoire) {
 }
 
 async function montrerApp() {
+  const reprise = !!S.modale;
+  try {
+    await rafraichir(true); // l'application n'est affichée qu'une fois les données de CETTE personne reçues
+  } catch (e) {
+    if (!S.moi) return; // déjà renvoyé à la connexion (session refusée)
+    montrerConnexion(); $("#erreur-connexion").textContent = e.message; $("#erreur-connexion").hidden = false;
+    return;
+  }
   $("#ecran-connexion").hidden = true; $("#ecran-mdp").hidden = true; $("#app").hidden = false;
-  const reprise = S.modale && S.modaleFormulaire;
-  await rafraichir(true);
-  if (reprise) { if (S.moi.id === S.ancienId) $("#voile").hidden = false; else fermerModale(); }
+  if (reprise) {
+    if (S.moi.id === S.ancienId) { $("#voile").hidden = false; redessinerModale(); }
+    else fermerModale();
+  }
+  if (S.ancienId && S.moi.id !== S.ancienId) { S.recherche = ""; S.onglet = ""; } // autre personne : on repart de zéro
   S.ancienId = null;
   if (!onglets().some(([id]) => id === S.onglet)) S.onglet = S.moi.role === "preparateur" ? "afaire" : "commandes";
   dessiner();
@@ -157,10 +173,8 @@ function marquerNonSauve(el, oui) {
 
 /* Envoie une saisie lot / DDM ; en cas d'échec le champ reste marqué et sera renvoyé avant « Terminer ». */
 async function envoyerLotDlc(id, el) {
-  const c = S.etat.commandes.find((x) => x.id === id); const e = c && etapeCourante(c);
-  if (!e) return;
   const i = Number(el.dataset.lot ?? el.dataset.dlc);
-  const corps = { index: i, fait: !!e.coches[i] };
+  const corps = { index: i }; // pas de « fait » : la case de la ligne n'est pas touchée par une saisie de lot
   if (el.dataset.lot !== undefined) corps.lot = el.value; else corps.dlc = el.value;
   marquerNonSauve(el, true);
   await api("POST", `/api/commandes/${id}/ligne`, corps);
@@ -668,7 +682,10 @@ const FORMULAIRES = {
   },
   async produit(f, id) {
     const parPoste = {}; S.etat.postes.forEach((p) => (parPoste[p.id] = f[`poste_${p.id}`].value));
-    const corps = { nom: f.nom.value, reference: f.reference.value, unite: f.unite.value, stock: Number(f.stock.value), emplacement: f.emplacement.value, categorie: f.categorie.value, conservation: f.conservation.value, dlcJours: Number(f.dlcJours.value), preparation: { instructions: f.instructions.value, conditionnement: f.conditionnement.value, vigilance: f.vigilance.value, dureeMin: Number(f.dureeMin.value), parPoste } };
+    const corps = { nom: f.nom.value, reference: f.reference.value, unite: f.unite.value, emplacement: f.emplacement.value, categorie: f.categorie.value, conservation: f.conservation.value, dlcJours: Number(f.dlcJours.value), preparation: { instructions: f.instructions.value, conditionnement: f.conditionnement.value, vigilance: f.vigilance.value, dureeMin: Number(f.dureeMin.value), parPoste } };
+    // Stock envoyé seulement s'il a été modifié, avec la valeur lue : le serveur refuse s'il a bougé entre-temps
+    if (!id) corps.stock = Number(f.stock.value);
+    else if (f.stock.value !== f.stock.defaultValue) { corps.stock = Number(f.stock.value); corps.stockAvant = Number(f.stock.defaultValue); }
     await (id ? api("PUT", `/api/produits/${id}`, corps) : api("POST", "/api/produits", corps));
     fermerModale(); return "Produit enregistré";
   },
