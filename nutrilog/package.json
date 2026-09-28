@@ -2,7 +2,7 @@
   "name": "nutrilog",
   "version": "0.1.0",
   "private": true,
-  "description": "Logistique des commandes d'un dépôt de distribution alimentaire : secrétariat → postes de préparation (tablettes) → expédition",
+  "description": "Logistique des commandes d'un dépôt de distribution d'aliments pour animaux : secrétariat → postes de préparation (tablettes) → expédition",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
