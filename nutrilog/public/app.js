@@ -14,6 +14,10 @@ const S = {
   modaleFormulaire: false, // true = formulaire de saisie : on ne le redessine jamais automatiquement
   minuteur: null,
   horsLigne: false,
+  seqEnvoi: 0,        // numéro de la dernière demande d'état envoyée…
+  seqApplique: 0,     // …et de la dernière appliquée : une réponse en retard n'écrase jamais un état plus récent
+  audit: null,        // journal d'audit chargé (rechargé seulement sur demande)
+  ancienId: null,     // utilisateur dont la session a expiré (pour lui rendre sa saisie après reconnexion)
 };
 
 const LIB_STATUT = { brouillon: "Brouillon", a_preparer: "À préparer", en_preparation: "En préparation", preparee: "Préparée", expediee: "Expédiée", annulee: "Annulée" };
@@ -33,6 +37,7 @@ const poste = (id) => (S.etat.postes || []).find((p) => p.id === id);
 const nomPoste = (id) => (poste(id) ? poste(id).nom : "?");
 const etapeCourante = (c) => (c.etapes && c.etapes[c.etapeIndex]) || null;
 const estClos = (c) => c.statut === "expediee" || c.statut === "annulee";
+const aujourdhui = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }; // date LOCALE
 const pastille = (statut) => `<span class="pastille p-${h(statut)}">${h(LIB_STATUT[statut] || statut)}</span>`;
 
 function toast(msg, erreur) {
@@ -56,7 +61,10 @@ async function api(methode, url, corps) {
   }
   setHorsLigne(false);
   const data = await rep.json().catch(() => ({}));
-  if (rep.status === 401 && !url.endsWith("/connexion")) { montrerConnexion(); throw new Error(data.erreur || "Connexion requise."); }
+  if (rep.status === 401 && !url.endsWith("/connexion")) {
+    if (S.moi) montrerConnexion("Votre session a expiré ou a été fermée : reconnectez-vous. Votre saisie en cours est conservée.");
+    throw new Error(data.erreur || "Connexion requise.");
+  }
   if (rep.status === 403 && data.doitChangerMdp) { montrerMdp(true); throw new Error(data.erreur); }
   if (!rep.ok) { const e = new Error(data.erreur || "Erreur " + rep.status); e.data = data; throw e; }
   return data;
@@ -69,10 +77,16 @@ function setHorsLigne(v) {
 }
 
 /* ---------- Écrans ---------- */
-function montrerConnexion() {
-  clearInterval(S.minuteur); S.moi = null; S.etat = null; fermerModale();
+/* motif : message affiché (session expirée). Un formulaire en cours de saisie n'est pas détruit :
+   il est masqué et rendu à la MÊME personne si elle se reconnecte (jamais à un autre compte). */
+function montrerConnexion(motif) {
+  clearInterval(S.minuteur);
+  S.ancienId = motif && S.moi ? S.moi.id : null;
+  if (motif && S.modaleFormulaire) $("#voile").hidden = true; else fermerModale();
+  S.moi = null; S.etat = null; S.audit = null;
   $("#app").hidden = true; $("#ecran-mdp").hidden = true; $("#ecran-connexion").hidden = false;
-  $("#form-connexion").reset(); $("#erreur-connexion").hidden = true;
+  $("#form-connexion").reset();
+  $("#erreur-connexion").textContent = motif || ""; $("#erreur-connexion").hidden = !motif;
   setTimeout(() => $("#form-connexion input[name=login]").focus(), 50);
 }
 
@@ -88,15 +102,21 @@ function montrerMdp(obligatoire) {
 
 async function montrerApp() {
   $("#ecran-connexion").hidden = true; $("#ecran-mdp").hidden = true; $("#app").hidden = false;
+  const reprise = S.modale && S.modaleFormulaire;
   await rafraichir(true);
-  S.onglet = S.onglet || (S.moi.role === "preparateur" ? "afaire" : "commandes");
+  if (reprise) { if (S.moi.id === S.ancienId) $("#voile").hidden = false; else fermerModale(); }
+  S.ancienId = null;
+  if (!onglets().some(([id]) => id === S.onglet)) S.onglet = S.moi.role === "preparateur" ? "afaire" : "commandes";
   dessiner();
   clearInterval(S.minuteur);
   S.minuteur = setInterval(() => rafraichir(false).catch(() => {}), 4000);
 }
 
 async function rafraichir(force) {
+  const seq = ++S.seqEnvoi;
   const etat = await api("GET", "/api/etat");
+  if (seq < S.seqApplique) return; // réponse dépassée par une demande plus récente : ignorée
+  S.seqApplique = seq;
   const change = force || !S.etat || etat.derniereMaj !== S.etat.derniereMaj;
   S.etat = etat; S.moi = etat.moi;
   $("#qui").textContent = `${S.moi.nom} · ${LIB_ROLE[S.moi.role]}${S.moi.role === "preparateur" ? " (" + (S.moi.postes.map(nomPoste).join(", ") || "aucun poste") + ")" : ""}`;
@@ -112,13 +132,36 @@ function redessinerModale() {
   const actif = document.activeElement;
   const cle = (el) => el.id || (el.dataset.lot !== undefined ? "lot" + el.dataset.lot : el.dataset.dlc !== undefined ? "dlc" + el.dataset.dlc : el.name);
   const sauve = new Map();
-  cont.querySelectorAll("input:not([type=checkbox]),textarea").forEach((el) => sauve.set(cle(el), { v: el.value, focus: el === actif, s: el.selectionStart, e: el.selectionEnd }));
+  const saisieLibre = (el) => !el.dataset.lot && !el.dataset.dlc; // remarque, transporteur, message…
+  cont.querySelectorAll("input:not([type=checkbox]),textarea").forEach((el) => sauve.set(cle(el), { v: el.value, focus: el === actif, nonSauve: !!el.dataset.nonSauve, libre: saisieLibre(el), s: el.selectionStart, e: el.selectionEnd }));
+  const defilement = cont.parentElement.scrollTop;
   S.modale();
+  cont.parentElement.scrollTop = defilement;
   cont.querySelectorAll("input:not([type=checkbox]),textarea").forEach((el) => {
     const s = sauve.get(cle(el)); if (!s) return;
-    if (s.focus || (s.v && !el.value)) el.value = s.v;
+    // Lot / DDM : la valeur du serveur fait foi, sauf saisie en cours ou pas encore enregistrée (réseau coupé)
+    if (s.focus || s.nonSauve || (s.libre && s.v && !el.value)) el.value = s.v;
+    if (s.nonSauve) marquerNonSauve(el, true);
     if (s.focus) { el.focus(); try { el.setSelectionRange(s.s, s.e); } catch (e) { /* type=date */ } }
   });
+}
+
+function marquerNonSauve(el, oui) {
+  if (oui) el.dataset.nonSauve = "1"; else delete el.dataset.nonSauve;
+  el.classList.toggle("non-sauve", oui);
+  el.title = oui ? "Pas encore enregistré (réseau ?) — sera renvoyé automatiquement" : "";
+}
+
+/* Envoie une saisie lot / DDM ; en cas d'échec le champ reste marqué et sera renvoyé avant « Terminer ». */
+async function envoyerLotDlc(id, el) {
+  const c = S.etat.commandes.find((x) => x.id === id); const e = c && etapeCourante(c);
+  if (!e) return;
+  const i = Number(el.dataset.lot ?? el.dataset.dlc);
+  const corps = { index: i, fait: !!e.coches[i] };
+  if (el.dataset.lot !== undefined) corps.lot = el.value; else corps.dlc = el.value;
+  marquerNonSauve(el, true);
+  await api("POST", `/api/commandes/${id}/ligne`, corps);
+  marquerNonSauve(el, false);
 }
 
 /* ---------- Navigation ---------- */
@@ -137,11 +180,16 @@ function onglets() {
 }
 
 function dessiner() {
+  // Le champ de recherche est reconstruit : on lui rend le focus et le curseur
+  const a = document.activeElement;
+  const garde = a && a.matches && a.matches("#contenu [data-recherche]") ? { s: a.selectionStart, e: a.selectionEnd } : null;
+  const defilement = window.scrollY;
   $("#onglets").innerHTML = onglets().map(([id, lib, n]) => `<button class="onglet${S.onglet === id ? " actif" : ""}" data-onglet="${id}">${h(lib)}${n ? `<span class="compteur">${n}</span>` : ""}</button>`).join("");
   const vues = { commandes: vueCommandes, produits: vueProduits, clients: vueClients, utilisateurs: vueUtilisateurs, postes: vuePostes, audit: vueAudit, afaire: vueAFaire, encours: vueEnCours, terminees: vueTerminees };
   const f = vues[S.onglet] || vueCommandes;
-  const r = f();
-  if (typeof r === "string") $("#contenu").innerHTML = r;
+  $("#contenu").innerHTML = f();
+  window.scrollTo(0, defilement);
+  if (garde) { const i = $("#contenu [data-recherche]"); if (i) { i.focus(); try { i.setSelectionRange(garde.s, garde.e); } catch (e) { /* */ } } }
 }
 
 /* =====================================================================
@@ -172,12 +220,13 @@ function filtrerCommandes(liste) {
 }
 
 function vueCommandes() {
-  const cs = filtrerCommandes(S.etat.commandes).slice().sort((a, b) => (a.priorite === "urgente") - (b.priorite === "urgente") * 1 || b.numero - a.numero).reverse();
+  const cs = filtrerCommandes(S.etat.commandes).slice().sort((a, b) => (b.priorite === "urgente") - (a.priorite === "urgente") || a.numero - b.numero);
   const col = (statut, titre) => {
     const l = cs.filter((c) => c.statut === statut);
     return `<div class="colonne"><h3><span>${h(titre)}</span><span>${l.length}</span></h3><div class="pile">${l.length ? l.map(carteCmd).join("") : '<div class="vide">Aucune</div>'}</div></div>`;
   };
-  const closes = cs.filter(estClos).slice(0, 30);
+  const dateClot = (c) => c.expedieeLe || (c.historique[c.historique.length - 1] || {}).date || "";
+  const closes = cs.filter(estClos).sort((a, b) => dateClot(b).localeCompare(dateClot(a)) || b.numero - a.numero).slice(0, 30); // les 30 plus récentes
   return `
     <div class="barre-outils">
       <button class="btn btn-primaire" data-action="nouvelle-commande">＋ Nouvelle commande (mail reçu)</button>
@@ -189,7 +238,7 @@ function vueCommandes() {
       ${col("en_preparation", "En préparation")}
       ${col("preparee", "Préparées → à expédier")}
     </div>
-    <h2 class="mt">Historique des commandes closes</h2>
+    <h2 class="mt">Commandes closes — les 30 plus récentes</h2>
     <div class="tableau-scroll"><table class="tableau"><thead><tr><th>N°</th><th>Client</th><th>Statut</th><th>Créée</th><th>Clôturée</th><th>Transporteur / suivi</th></tr></thead><tbody>
       ${closes.length ? closes.map((c) => `<tr class="cliquable" data-ouvrir="${c.id}"><td>${c.numero}</td><td>${h(client(c.clientId)?.nom || "—")}</td><td>${pastille(c.statut)}</td><td>${fmtDate(c.creeLe)}</td><td>${fmtDate(c.expedieeLe || (c.historique[c.historique.length - 1] || {}).date)}</td><td>${h(c.transporteur || "")} ${h(c.suivi || "")}</td></tr>`).join("") : '<tr><td colspan="6" class="vide">Aucune commande close</td></tr>'}
     </tbody></table></div>`;
@@ -204,8 +253,8 @@ function vueProduits() {
       <button class="btn btn-primaire" data-action="nouveau-produit">＋ Nouveau produit</button>
       <input type="search" placeholder="Rechercher un produit…" value="${h(S.recherche)}" data-recherche />
     </div>
-    <p class="aide">Une commande ne peut partir en préparation que si chaque produit a sa fiche de préparation complète (instructions générales + consigne pour chaque poste du circuit).</p>
-    <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Réf.</th><th>Animal</th><th>Conservation</th><th>Stock</th><th>Empl.</th><th>Fiche générale</th>${postes.map((p) => `<th>${h(p.nom)}</th>`).join("")}</tr></thead><tbody>
+    <p class="aide">Une commande ne peut partir en préparation que si chaque produit a sa fiche de préparation complète (instructions générales + consigne pour chaque poste du circuit). Le stock affiché est le stock <b>disponible</b> : les quantités des commandes envoyées en préparation sont déjà réservées.</p>
+    <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Réf.</th><th>Animal</th><th>Conservation</th><th title="Stock physique moins les commandes en préparation">Stock dispo.</th><th>Empl.</th><th>Fiche générale</th>${postes.map((p) => `<th>${h(p.nom)}</th>`).join("")}</tr></thead><tbody>
       ${ps.map((p) => `<tr class="cliquable" data-produit="${p.id}">
         <td><b>${h(p.nom)}</b></td><td>${h(p.reference)}</td><td>${h(LIB_CAT[p.categorie] || "—")}</td><td>${h(LIB_CONS[p.conservation] || "Ambiant")}</td>
         <td class="${p.stock <= 5 ? "stock-bas" : ""}">${p.stock} ${h(p.unite)}</td><td>${h(p.emplacement)}</td>
@@ -298,13 +347,19 @@ function vuePostes() {
 }
 
 function vueAudit() {
-  api("GET", "/api/audit").then((lignes) => {
-    $("#contenu").innerHTML = `<h2>Journal d'audit (300 dernières actions)</h2>
-      <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Date</th><th>Utilisateur</th><th>Rôle</th><th>IP</th><th>Action</th><th>Détails</th></tr></thead><tbody>
-      ${lignes.map((l) => `<tr><td>${fmtDate(l.date)}</td><td>${h(l.utilisateur)}</td><td>${h(l.role)}</td><td>${h(l.ip)}</td><td>${h(l.action)}</td><td>${h(JSON.stringify(l.details))}</td></tr>`).join("")}
-      </tbody></table></div>`;
-  }).catch((e) => toast(e.message, true));
-  return `<p class="aide">Chargement du journal…</p>`;
+  if (!S.audit) {
+    if (!S.auditEnCours) {
+      S.auditEnCours = true;
+      api("GET", "/api/audit").then((l) => { S.audit = l; if (S.onglet === "audit") dessiner(); })
+        .catch((e) => toast(e.message, true)).finally(() => { S.auditEnCours = false; });
+    }
+    return `<p class="aide">Chargement du journal…</p>`;
+  }
+  return `<div class="barre-outils"><button class="btn btn-secondaire" data-action="actualiser-audit">↻ Actualiser</button></div>
+    <h2>Journal d'audit (300 dernières actions)</h2>
+    <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Date</th><th>Utilisateur</th><th>Rôle</th><th>IP</th><th>Action</th><th>Détails</th></tr></thead><tbody>
+    ${S.audit.map((l) => `<tr><td>${fmtDate(l.date)}</td><td>${h(l.utilisateur)}</td><td>${h(l.role)}</td><td>${h(l.ip)}</td><td>${h(l.action)}</td><td>${h(JSON.stringify(l.details))}</td></tr>`).join("") || '<tr><td colspan="6" class="vide">Journal vide</td></tr>'}
+    </tbody></table></div>`;
 }
 
 /* =====================================================================
@@ -315,6 +370,7 @@ function ouvrirModale(fn, formulaire) {
 }
 function fermerModale() {
   S.modale = null; S.modaleFormulaire = false; $("#voile").hidden = true; $("#modale-contenu").innerHTML = "";
+  delete $("#modale-contenu").dataset.commande;
 }
 function modale(html) { $("#modale-contenu").innerHTML = html; }
 
@@ -329,8 +385,10 @@ function blocagesClient(c) { // même logique que le serveur, pour afficher en d
     if (!p) { b.push("Produit inconnu."); return; }
     if (!p.preparation.instructions) b.push(`Fiche de préparation manquante : « ${p.nom} ».`);
     c.etapes.forEach((e) => { if (!p.preparation.parPoste?.[e.posteId]) b.push(`« ${p.nom} » : pas d'instruction pour le poste ${nomPoste(e.posteId)}.`); });
-    if (p.stock < l.quantite) b.push(`Stock insuffisant pour « ${p.nom} » (${p.stock} en stock, ${l.quantite} demandés).`);
   });
+  const demande = new Map();
+  c.lignes.forEach((l) => demande.set(l.produitId, (demande.get(l.produitId) || 0) + l.quantite));
+  demande.forEach((q, pid) => { const p = produit(pid); if (p && p.stock < q) b.push(`Stock disponible insuffisant pour « ${p.nom} » (${p.stock} disponibles, ${q} demandés).`); });
   c.etapes.forEach((e) => { if (!(S.etat.utilisateurs || []).some((u) => u.actif !== false && u.role === "preparateur" && (u.postes || []).includes(e.posteId))) b.push(`Aucun préparateur actif n'est affecté au poste ${nomPoste(e.posteId)}.`); });
   return b;
 }
@@ -339,9 +397,10 @@ function ouvrirCommande(id) {
   ouvrirModale(() => {
     const c = S.etat.commandes.find((x) => x.id === id);
     if (!c) { fermerModale(); return; }
+    $("#modale-contenu").dataset.commande = c.id;
     const r = S.moi.role, cl = client(c.clientId), e = etapeCourante(c);
     const secretariat = r === "admin" || r === "secretariat";
-    const monEtape = e && c.statut === "en_preparation" && (e.preparateurId === S.moi.id || (r === "admin" && e.statut === "en_cours"));
+    const monEtape = e && c.statut === "en_preparation" && e.statut === "en_cours" && e.preparateurId === S.moi.id; // seul celui qui tient l'étape agit
     const peutPrendre = e && c.statut === "a_preparer" && (S.moi.postes.includes(e.posteId) || r === "admin") && r !== "secretariat";
 
     /* Circuit */
@@ -372,8 +431,8 @@ function ouvrirCommande(id) {
         </div>`;
       }).join("");
     } else {
-      lignes = `<div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Qté</th><th>Empl.</th><th>Lot / DDM</th>${secretariat ? "<th>Stock</th>" : ""}${c.etapes.map((et) => `<th>${h(nomPoste(et.posteId))}</th>`).join("")}</tr></thead><tbody>
-        ${c.lignes.map((l) => { const p = produit(l.produitId) || { nom: "?", preparation: {} }; return `<tr><td><b>${h(p.nom)}</b> ${badgeCons(p.conservation)}</td><td>${l.quantite} ${h(p.unite || "")}</td><td>${h(p.emplacement || "")}</td><td>${h(l.lot || "—")} / ${fmtJour(l.dlc)}</td>${secretariat ? `<td class="${(p.stock ?? 0) < l.quantite ? "stock-bas" : ""}">${p.stock ?? "?"}</td>` : ""}${c.etapes.map((et) => `<td class="${p.preparation.parPoste?.[et.posteId] ? "" : "fiche-ko"}">${h(p.preparation.parPoste?.[et.posteId] || "✘ manquante")}</td>`).join("")}</tr>`; }).join("")}
+      lignes = `<div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Qté</th><th>Empl.</th><th>Lot / DDM</th>${secretariat ? "<th>Stock dispo.</th>" : ""}${c.etapes.map((et) => `<th>${h(nomPoste(et.posteId))}</th>`).join("")}</tr></thead><tbody>
+        ${c.lignes.map((l) => { const p = produit(l.produitId) || { nom: "?", preparation: {} }; return `<tr><td><b>${h(p.nom)}</b> ${badgeCons(p.conservation)}</td><td>${l.quantite} ${h(p.unite || "")}</td><td>${h(p.emplacement || "")}</td><td>${h(l.lot || "—")} / ${fmtJour(l.dlc)}</td>${secretariat ? `<td class="${c.statut === "brouillon" && (p.stock ?? 0) < l.quantite ? "stock-bas" : ""}">${p.stock ?? "?"}</td>` : ""}${c.etapes.map((et) => `<td class="${p.preparation.parPoste?.[et.posteId] ? "" : "fiche-ko"}">${h(p.preparation.parPoste?.[et.posteId] || "✘ manquante")}</td>`).join("")}</tr>`; }).join("")}
       </tbody></table></div>`;
     }
 
@@ -384,7 +443,7 @@ function ouvrirCommande(id) {
         const b = blocagesClient(c);
         A.push(`<div class="bloc"><h3>Contrôle avant envoi aux préparateurs</h3>${b.length ? `<ul class="blocages">${b.map((x) => `<li>⛔ ${h(x)}</li>`).join("")}</ul>` : '<div class="ok-envoi">✔ Tout est prêt : la commande peut partir en préparation.</div>'}
           <div class="ligne-boutons">
-            <button class="btn btn-danger" data-action="supprimer-commande" data-id="${c.id}">Supprimer</button>
+            ${c.envoyeeLe ? "" : `<button class="btn btn-danger" data-action="supprimer-commande" data-id="${c.id}">Supprimer</button>`}
             <button class="btn btn-secondaire" data-action="modifier-commande" data-id="${c.id}">Modifier</button>
             <button class="btn btn-primaire" data-action="envoyer" data-id="${c.id}" ${b.length ? "disabled" : ""}>Envoyer au poste ${h(c.etapes[0] ? nomPoste(c.etapes[0].posteId) : "")} →</button>
           </div></div>`);
@@ -392,7 +451,7 @@ function ouvrirCommande(id) {
       if (c.statut === "a_preparer" && c.etapeIndex === 0) A.push(`<div class="ligne-boutons"><button class="btn btn-secondaire" data-action="rappeler" data-id="${c.id}">↩ Rappeler au secrétariat</button></div>`);
       if (["a_preparer", "en_preparation", "preparee"].includes(c.statut)) A.push(`<div class="ligne-boutons"><button class="btn btn-secondaire" data-action="renvoyer" data-id="${c.id}">↩ Renvoyer à un poste…</button></div>`);
       if (c.statut === "preparee") A.push(`<div class="bloc"><h3>Expédition</h3>
-        <div class="deux-col"><label>Transporteur<input id="exp-transporteur" placeholder="Colissimo, Chronopost, coursier…" /></label><label>N° de suivi<input id="exp-suivi" /></label></div>
+        <div class="deux-col"><label>Transporteur<input id="exp-transporteur" maxlength="80" placeholder="Geodis, DB Schenker, coursier…" /></label><label>N° de suivi<input id="exp-suivi" maxlength="80" placeholder="numéro seul, pas l'URL" /></label></div>
         <div class="ligne-boutons"><button class="btn btn-succes" data-action="expedier" data-id="${c.id}">✔ Valider l'expédition</button></div></div>`);
       if (!estClos(c)) A.push(`<div class="ligne-boutons"><button class="btn btn-lien" data-action="annuler" data-id="${c.id}">Annuler la commande</button></div>`);
     }
@@ -409,7 +468,7 @@ function ouvrirCommande(id) {
     /* Messages & historique */
     const messages = `<div class="bloc"><h3>💬 Messages (secrétariat ↔ préparateurs)</h3>
       <div class="fil">${(c.messages || []).length ? c.messages.map((m) => `<div class="msg${m.auteurId === S.moi.id ? " moi" : ""}"><div class="entete-msg"><b>${h(m.auteur)}</b> · ${h(LIB_ROLE[m.role] || m.role)} · ${fmtDate(m.date)}</div>${h(m.texte)}</div>`).join("") : '<div class="vide">Aucun message</div>'}</div>
-      <form class="msg-form" data-form="message" data-id="${c.id}"><input name="texte" maxlength="1000" placeholder="Écrire un message visible par tous les intervenants…" required autocomplete="off" /><button class="btn btn-primaire" type="submit">Envoyer</button></form></div>`;
+      ${estClos(c) ? '<p class="aide">Commande close : le fil est fermé.</p>' : `<form class="msg-form" data-form="message" data-id="${c.id}"><input name="texte" maxlength="1000" placeholder="Écrire un message visible par tous les intervenants…" required autocomplete="off" /><button class="btn btn-primaire" type="submit">Envoyer</button></form>`}</div>`;
     const historique = `<div class="bloc"><h3>🕓 Historique</h3><ul class="historique">${c.historique.slice().reverse().map((x) => `<li><span class="date">${fmtDate(x.date)}</span><span>${x.poste ? `<span class="poste-h">[${h(x.poste)}]</span> ` : ""}<b>${h(x.qui)}</b> — ${h(x.texte)}</span></li>`).join("")}</ul></div>`;
 
     modale(`
@@ -420,9 +479,8 @@ function ouvrirCommande(id) {
         <div><dt>Créée</dt><dd>${fmtDate(c.creeLe)} par ${h(c.creePar)}</dd></div>
         ${cl && cl.adresse ? `<div><dt>Adresse</dt><dd>${h(cl.adresse)}</dd></div>` : ""}
         ${secretariat && cl && cl.email ? `<div><dt>Contact</dt><dd>${h(cl.email)} ${h(cl.telephone || "")}</dd></div>` : ""}
-        ${c.note ? `<div><dt>Note</dt><dd class="pre">${h(c.note)}</dd></div>` : ""}
+        ${c.note ? `<div><dt>Note (visible par les préparateurs)</dt><dd class="pre">${h(c.note)}</dd></div>` : ""}
         ${secretariat && c.sourceMail ? `<div><dt>Extrait du mail</dt><dd class="pre">${h(c.sourceMail)}</dd></div>` : ""}
-        ${c.remarquePreparateur || (c.etapes || []).some((x) => x.remarque) ? "" : ""}
       </dl></div>
       <div class="bloc"><h3>Circuit de préparation</h3>${circuit}</div>
       <div class="bloc"><h3>Produits (${c.lignes.length})</h3>${lignes}</div>
@@ -434,7 +492,7 @@ function ouvrirCommande(id) {
 
 /* ---------- Formulaire commande ---------- */
 function formulaireCommande(c) {
-  const brouillon = c ? JSON.parse(JSON.stringify(c)) : { clientId: "", sourceMail: "", dateMail: new Date().toISOString().slice(0, 10), dateLivraisonSouhaitee: "", priorite: "normale", note: "", lignes: [{ produitId: "", quantite: 1 }], etapes: S.etat.postes.map((p) => ({ posteId: p.id })) };
+  const brouillon = c ? JSON.parse(JSON.stringify(c)) : { clientId: "", sourceMail: "", dateMail: aujourdhui(), dateLivraisonSouhaitee: "", priorite: "normale", note: "", lignes: [{ produitId: "", quantite: 1 }], etapes: S.etat.postes.map((p) => ({ posteId: p.id })) };
   const postesChoisis = new Set(brouillon.etapes.map((e) => e.posteId));
   ouvrirModale(() => {
     const optProduits = (sel) => `<option value="">— produit —</option>` + S.etat.produits.map((p) => `<option value="${p.id}" ${p.id === sel ? "selected" : ""}>${h(p.nom)} (${p.stock} ${h(p.unite)}${p.preparation.instructions ? "" : " · fiche manquante"})</option>`).join("");
@@ -447,7 +505,7 @@ function formulaireCommande(c) {
           <label>Livraison souhaitée<input type="date" name="dateLivraisonSouhaitee" value="${h(brouillon.dateLivraisonSouhaitee)}" /></label>
         </div>
         <label>Extrait / copie du mail (traçabilité)<textarea name="sourceMail" maxlength="3000" placeholder="Collez ici l'objet et le contenu utile du mail du client">${h(brouillon.sourceMail)}</textarea></label>
-        <label>Note interne<input name="note" maxlength="1000" value="${h(brouillon.note)}" placeholder="ex. livrer avant 10h, prévenir à l'arrivée…" /></label></div>
+        <label>Note (visible par les préparateurs)<input name="note" maxlength="1000" value="${h(brouillon.note)}" placeholder="ex. livrer avant 10h, prévenir à l'arrivée…" /></label></div>
         <div class="bloc"><h3>Produits commandés</h3><div class="lignes-edit" id="lignes-edit">
           ${brouillon.lignes.map((l, i) => `<div class="ligne-edit"><select name="p${i}" required>${optProduits(l.produitId)}</select><input type="number" name="q${i}" min="1" max="1000000" value="${l.quantite}" required /><button class="btn btn-petit" type="button" data-suppr-ligne="${i}">✕</button></div>`).join("")}
         </div><button class="btn btn-secondaire btn-petit" type="button" data-action="ajouter-ligne">＋ Ajouter un produit</button></div>
@@ -526,7 +584,7 @@ function formulaireUtilisateur(u) {
       ${u ? "" : `<label>Mot de passe initial *<input type="password" name="mdp" required minlength="12" autocomplete="new-password" /></label><p class="aide">12 caractères minimum, lettres et chiffres. La personne devra le changer à sa première connexion.</p>`}
     </div>
     <div class="ligne-boutons">
-      ${u && u.id !== S.moi.id ? `<button class="btn btn-danger" type="button" data-action="supprimer-utilisateur" data-id="${u.id}">Supprimer</button><button class="btn btn-secondaire" type="button" data-action="reinit-mdp" data-id="${u.id}">Réinitialiser le mot de passe</button>` : ""}
+      ${u && u.id !== S.moi.id ? `<button class="btn btn-danger" type="button" data-action="supprimer-utilisateur" data-id="${u.id}">Supprimer</button><button class="btn btn-secondaire" type="button" data-action="reinit-mdp" data-id="${u.id}">Réinitialiser le mot de passe</button><button class="btn btn-secondaire" type="button" data-action="debloquer" data-id="${u.id}">Débloquer la connexion</button>` : ""}
       <button class="btn btn-secondaire" type="button" data-action="fermer">Annuler</button><button class="btn btn-primaire" type="submit">Enregistrer</button></div>
     </form>`), true);
 }
@@ -547,7 +605,7 @@ function formulairePoste(p) {
 function formulaireRenvoi(c) {
   ouvrirModale(() => modale(`<h2>Renvoyer la commande n° ${c.numero} à un poste</h2>
     <form data-form="renvoyer" data-id="${c.id}"><div class="bloc">
-      <label>Reprendre à partir du poste<select name="etape">${c.etapes.map((e, i) => `<option value="${i}">${i + 1}. ${h(nomPoste(e.posteId))}</option>`).join("")}</select></label>
+      <label>Reprendre à partir du poste<select name="etape">${c.etapes.slice(0, c.etapeIndex + 1).map((e, i) => `<option value="${i}" ${i === c.etapeIndex ? "selected" : ""}>${i + 1}. ${h(nomPoste(e.posteId))}${i === c.etapeIndex ? " (étape actuelle)" : ""}</option>`).join("")}</select></label>
       <label>Raison *<input name="remarque" required maxlength="500" placeholder="ex. mauvaise quantité sur la ligne 2" /></label>
       <p class="aide">Les étapes à partir de celle-ci seront à refaire ; le préparateur du poste verra la raison dans l'historique et les messages.</p></div>
       <div class="ligne-boutons"><button class="btn btn-secondaire" type="button" data-action="fermer">Annuler</button><button class="btn btn-primaire" type="submit">Renvoyer</button></div>
@@ -575,7 +633,12 @@ const ACTIONS = {
   "renvoyer": (id) => formulaireRenvoi(S.etat.commandes.find((c) => c.id === id)),
   "prendre": (id) => agir(() => api("POST", `/api/commandes/${id}/prendre`), "Commande prise en charge"),
   "rendre": (id) => confirm("Remettre cette commande dans la file de votre poste ?") && agir(() => api("POST", `/api/commandes/${id}/rendre`, { remarque: $("#prep-remarque")?.value || "" }), "Commande remise dans la file"),
-  "terminer": (id) => agir(() => api("POST", `/api/commandes/${id}/terminer`, { remarque: $("#prep-remarque")?.value || "" }), "Étape terminée"),
+  "terminer": (id) => agir(async () => {
+    for (const el of document.querySelectorAll("#modale-contenu [data-non-sauve]")) await envoyerLotDlc(id, el); // rien ne se perd
+    await api("POST", `/api/commandes/${id}/terminer`, { remarque: $("#prep-remarque")?.value || "" });
+  }, "Étape terminée"),
+  "actualiser-audit": () => { S.audit = null; dessiner(); },
+  "debloquer": (id) => agir(() => api("POST", `/api/utilisateurs/${id}/debloquer`), "Compte débloqué"),
   "expedier": (id) => agir(() => api("POST", `/api/commandes/${id}/expedier`, { transporteur: $("#exp-transporteur").value, suivi: $("#exp-suivi").value }), "Commande expédiée"),
   "annuler": (id) => { const r = prompt("Raison de l'annulation ?"); if (r !== null) agir(() => api("POST", `/api/commandes/${id}/annuler`, { remarque: r }), "Commande annulée"); },
   "nouveau-produit": () => formulaireProduit(null),
@@ -644,8 +707,15 @@ document.addEventListener("click", (ev) => {
   const el = ev.target.closest("[data-onglet],[data-action],[data-ouvrir],[data-produit],[data-client],[data-utilisateur],[data-poste],[data-poste-monter],[data-poste-descendre]");
   if (!el) return;
   const d = el.dataset;
-  if (d.onglet) { S.onglet = d.onglet; S.recherche = ""; dessiner(); return; }
-  if (d.action) { if (el.dataset.action === "ajouter-ligne") return; const f = ACTIONS[d.action]; if (f) f(d.id); return; }
+  if (d.onglet) { S.onglet = d.onglet; S.recherche = ""; if (d.onglet === "audit") S.audit = null; dessiner(); return; }
+  if (d.action) {
+    if (d.action === "ajouter-ligne") return;
+    const f = ACTIONS[d.action];
+    if (!f || el.disabled || el.dataset.enCours) return;
+    const p = f(d.id);
+    if (p && typeof p.then === "function") { el.disabled = true; el.dataset.enCours = "1"; p.finally(() => { el.disabled = false; delete el.dataset.enCours; }); }
+    return;
+  }
   if (d.ouvrir) return ouvrirCommande(d.ouvrir);
   if (d.produit) return formulaireProduit(produit(d.produit));
   if (d.client) return formulaireClient(client(d.client));
@@ -654,25 +724,35 @@ document.addEventListener("click", (ev) => {
   if (d.posteMonter || d.posteDescendre) {
     const ids = S.etat.postes.map((p) => p.id); const pid = d.posteMonter || d.posteDescendre; const i = ids.indexOf(pid); const j = d.posteMonter ? i - 1 : i + 1;
     [ids[i], ids[j]] = [ids[j], ids[i]];
-    agir(() => api("PUT", "/api/postes/ordre", { ordre: ids }), "Ordre modifié");
+    if (el.dataset.enCours) return;
+    el.dataset.enCours = "1";
+    agir(() => api("PUT", "/api/postes/ordre", { ordre: ids }), "Ordre modifié").finally(() => delete el.dataset.enCours);
   }
 });
 
 document.addEventListener("input", (ev) => {
-  if (ev.target.matches("[data-recherche]")) { S.recherche = ev.target.value; const pos = ev.target.selectionStart; dessiner(); const i = $("[data-recherche]"); i.focus(); i.setSelectionRange(pos, pos); }
+  if (ev.target.matches("[data-recherche]")) { S.recherche = ev.target.value; dessiner(); }
 });
 
-document.addEventListener("change", (ev) => {
-  const id = S.modale && $("#modale-contenu form[data-form=message]")?.dataset.id;
+document.addEventListener("change", async (ev) => {
+  const id = S.modale && $("#modale-contenu").dataset.commande;
   if (!id) return;
-  const c = S.etat.commandes.find((x) => x.id === id); const e = c && etapeCourante(c);
-  if (ev.target.matches("[data-coche]")) {
-    agir(() => api("POST", `/api/commandes/${id}/ligne`, { index: Number(ev.target.dataset.coche), fait: ev.target.checked }));
-  } else if (ev.target.matches("[data-lot],[data-dlc]") && e) {
-    const i = Number(ev.target.dataset.lot ?? ev.target.dataset.dlc);
-    const corps = { index: i, fait: !!e.coches[i] };
-    if ("lot" in ev.target.dataset) corps.lot = ev.target.value; else corps.dlc = ev.target.value;
-    agir(() => api("POST", `/api/commandes/${id}/ligne`, corps));
+  const el = ev.target;
+  if (el.matches("[data-coche]")) {
+    const i = Number(el.dataset.coche);
+    const corps = { index: i, fait: el.checked };
+    // on joint le lot / la DDM affichés : ce qui est à l'écran est ce qui est enregistré
+    const lot = $(`#modale-contenu [data-lot="${i}"]`), dlc = $(`#modale-contenu [data-dlc="${i}"]`);
+    if (lot && lot.dataset.nonSauve) corps.lot = lot.value;
+    if (dlc && dlc.dataset.nonSauve) corps.dlc = dlc.value;
+    try {
+      await api("POST", `/api/commandes/${id}/ligne`, corps);
+      if (lot) marquerNonSauve(lot, false); if (dlc && "dlc" in corps) marquerNonSauve(dlc, false);
+      await rafraichir(true); dessiner(); redessinerModale();
+    } catch (e) { el.checked = !el.checked; toast("Case non enregistrée : " + e.message, true); } // l'écran reflète le serveur
+  } else if (el.matches("[data-lot],[data-dlc]")) {
+    try { await envoyerLotDlc(id, el); await rafraichir(true); dessiner(); redessinerModale(); }
+    catch (e) { toast("Lot / DDM non enregistré : " + e.message + " — il sera renvoyé automatiquement.", true); }
   }
 });
 
@@ -691,7 +771,7 @@ document.addEventListener("submit", async (ev) => {
 
 $("#fermer-modale").onclick = fermerModale;
 $("#voile").addEventListener("click", (ev) => { if (ev.target === $("#voile")) fermerModale(); });
-document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && S.modale) fermerModale(); });
+document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && S.modale && !$("#voile").hidden) fermerModale(); });
 
 $("#form-connexion").onsubmit = async (ev) => {
   ev.preventDefault();
@@ -714,7 +794,7 @@ $("#form-mdp").onsubmit = async (ev) => {
 };
 $("#mdp-annuler").onclick = () => { $("#ecran-mdp").hidden = true; $("#app").hidden = false; };
 $("#btn-mdp").onclick = () => montrerMdp(false);
-$("#btn-deconnexion").onclick = () => api("POST", "/api/deconnexion").catch(() => {}).finally(montrerConnexion);
+$("#btn-deconnexion").onclick = () => api("POST", "/api/deconnexion").catch(() => {}).finally(() => montrerConnexion());
 
 /* Reconnexion automatique si la session est encore valide (rechargement de page) */
-api("GET", "/api/moi").then(({ moi }) => { S.moi = moi; return moi.doitChangerMdp ? montrerMdp(true) : montrerApp(); }).catch(() => montrerConnexion());
+api("GET", "/api/moi").then(({ moi }) => { S.moi = moi; return moi.doitChangerMdp ? montrerMdp(true) : montrerApp(); }).catch(() => { if (!S.moi) montrerConnexion(); });

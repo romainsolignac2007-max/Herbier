@@ -178,3 +178,4 @@ input[type="checkbox"] { display: inline-block; width: auto; margin: 0 8px 0 0; 
   .btn { min-height: 50px; }
   .ligne-prep .haut label { font-size: 1.15rem; }
 }
+.non-sauve { border-color: var(--rouge) !important; background: var(--rouge-clair) !important; }

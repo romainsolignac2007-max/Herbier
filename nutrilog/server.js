@@ -10,6 +10,10 @@
      ADMIN_PASSWORD  mot de passe du compte « admin » créé au 1er lancement
      TLS_KEY / TLS_CERT  chemins vers la clé et le certificat → serveur HTTPS
      DATA_DIR        dossier des données (./data)
+     TRUST_PROXY=1   derrière un reverse proxy (nginx/Caddy) qui termine HTTPS : IP réelle lue dans
+                     X-Forwarded-For, cookie Secure + HSTS. Exige HOST=127.0.0.1.
+     ADMIN_RESET_PASSWORD  réinitialise le compte « admin » au démarrage (à retirer après usage)
+     SESSION_INACTIVITE_MIN  minutes sans action avant déconnexion (480 = 8 h ; ex. 30 pour des tablettes partagées)
 
    Circuit d'une commande :
      Secrétariat (mail client → saisie)  →  contrôle (fiches, stock)
@@ -43,12 +47,15 @@ const DB_FILE = path.join(DATA_DIR, "db.json");
 const AUDIT_FILE = path.join(DATA_DIR, "audit.log");
 const PUBLIC = path.join(__dirname, "public");
 const TLS = process.env.TLS_KEY && process.env.TLS_CERT ? { key: fs.readFileSync(process.env.TLS_KEY), cert: fs.readFileSync(process.env.TLS_CERT) } : null;
+const TRUST_PROXY = process.env.TRUST_PROXY === "1";
+const SECURE = !!TLS || TRUST_PROXY; // HTTPS local ou terminé par le proxy → cookie Secure + HSTS
 
-const SESSION_INACTIVITE_MS = 8 * 60 * 60 * 1000;   // déconnexion après 8 h sans activité
+const SESSION_INACTIVITE_MS = (Number(process.env.SESSION_INACTIVITE_MIN) || 8 * 60) * 60 * 1000; // déconnexion après 8 h sans action
 const SESSION_MAX_MS = 24 * 60 * 60 * 1000;         // reconnexion obligatoire toutes les 24 h
 const MDP_MIN = 12;                                  // longueur minimale des mots de passe
-const TENTATIVES_MAX = 5;                            // échecs de connexion avant blocage
-const BLOCAGE_MS = 15 * 60 * 1000;                   // durée du blocage
+const TENTATIVES_MAX = 5;                            // échecs depuis une même adresse avant blocage de l'adresse
+const TENTATIVES_COMPTE_MAX = 20;                    // échecs sur un même compte (toutes adresses) avant blocage du compte
+const BLOCAGE_MS = 15 * 60 * 1000;                   // durée du blocage (et fenêtre de comptage des échecs)
 
 const ROLES = ["admin", "secretariat", "preparateur"];
 const STATUTS = ["brouillon", "a_preparer", "en_preparation", "preparee", "expediee", "annulee"];
@@ -62,20 +69,41 @@ const CATEGORIES = ["chien", "chat", "rongeur", "oiseau", "poisson", "reptile", 
 let dbCache = null;
 function lireDb() {
   if (dbCache) return dbCache;
+  let brut;
   try {
-    dbCache = JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
+    brut = fs.readFileSync(DB_FILE, "utf8");
   } catch (e) {
-    dbCache = donneesInitiales();
+    if (e.code !== "ENOENT") arretBaseIllisible(e);
+    dbCache = donneesInitiales(); // vrai premier lancement uniquement : aucun fichier
     ecrireDb(dbCache);
+    return dbCache;
   }
+  let db;
+  try { db = JSON.parse(brut); } catch (e) { arretBaseIllisible(e); }
+  if (!db || !["utilisateurs", "postes", "produits", "clients", "commandes"].every((k) => Array.isArray(db[k])) || !Number.isInteger(db.prochainNumero))
+    arretBaseIllisible(new Error("structure inattendue"));
+  dbCache = db;
   return dbCache;
 }
 
+/* Une base présente mais illisible n'est JAMAIS remplacée : on garde une copie et on s'arrête. */
+function arretBaseIllisible(e) {
+  const copie = DB_FILE + ".illisible-" + new Date().toISOString().replace(/[:.]/g, "-");
+  try { fs.copyFileSync(DB_FILE, copie); } catch (_) { /* fichier inaccessible : rien à copier */ }
+  console.error(`\n⛔ ${DB_FILE} est illisible (${e.message}).\n   Copie conservée : ${copie}\n   Restaurez la dernière sauvegarde de data/ puis relancez. Le serveur ne démarre pas pour ne rien écraser.\n`);
+  process.exit(1);
+}
+
 function ecrireDb(db) {
-  fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
-  const tmp = DB_FILE + ".tmp";
-  fs.writeFileSync(tmp, JSON.stringify(db, null, 2), { mode: 0o600 });
-  fs.renameSync(tmp, DB_FILE); // atomique : jamais de fichier à moitié écrit
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
+    const tmp = DB_FILE + ".tmp";
+    fs.writeFileSync(tmp, JSON.stringify(db, null, 2), { mode: 0o600 });
+    fs.renameSync(tmp, DB_FILE); // atomique : jamais de fichier à moitié écrit
+  } catch (e) {
+    dbCache = null; // l'état en mémoire n'a pas pu être enregistré : on repartira du fichier
+    throw e;
+  }
 }
 
 function id() {
@@ -103,6 +131,7 @@ function mdpValide(mdp) {
   return typeof mdp === "string" && mdp.length >= MDP_MIN && mdp.length <= 128 && /[a-zà-ÿ]/i.test(mdp) && /\d/.test(mdp);
 }
 const MSG_MDP = `Mot de passe : ${MDP_MIN} caractères minimum, avec au moins une lettre et un chiffre.`;
+const HASH_FACTICE = hacherMdp(crypto.randomBytes(16).toString("hex")); // compte inexistant : même temps de calcul
 
 const sessions = new Map(); // jeton → { utilisateurId, creeLe, vuLe }
 
@@ -113,7 +142,9 @@ function creerSession(utilisateurId) {
   return jeton;
 }
 
-function sessionDepuisRequete(req, db) {
+/* prolonger = false pour le rafraîchissement automatique des écrans : seule une action réelle
+   (clic, saisie, chargement de page) compte comme activité pour le délai d'inactivité. */
+function sessionDepuisRequete(req, db, prolonger) {
   const cookie = (req.headers.cookie || "").split(";").map((s) => s.trim()).find((s) => s.startsWith("nutrilog="));
   if (!cookie) return null;
   const jeton = cookie.slice("nutrilog=".length);
@@ -123,7 +154,7 @@ function sessionDepuisRequete(req, db) {
   if (t - s.creeLe > SESSION_MAX_MS || t - s.vuLe > SESSION_INACTIVITE_MS) { sessions.delete(jeton); return null; }
   const u = db.utilisateurs.find((x) => x.id === s.utilisateurId);
   if (!u || !u.actif) { sessions.delete(jeton); return null; }
-  s.vuLe = t;
+  if (prolonger) s.vuLe = t;
   return { jeton, utilisateur: u };
 }
 
@@ -131,25 +162,39 @@ function fermerSessionsDe(utilisateurId) {
   for (const [j, s] of sessions) if (s.utilisateurId === utilisateurId) sessions.delete(j);
 }
 
-setInterval(() => { // nettoyage périodique des sessions expirées
+function fermerAutresSessionsDe(utilisateurId, jetonGarde) {
+  for (const [j, s] of sessions) if (s.utilisateurId === utilisateurId && j !== jetonGarde) sessions.delete(j);
+}
+
+setInterval(() => { // nettoyage périodique des sessions et compteurs expirés
   const t = Date.now();
   for (const [j, s] of sessions) if (t - s.creeLe > SESSION_MAX_MS || t - s.vuLe > SESSION_INACTIVITE_MS) sessions.delete(j);
-}, 10 * 60 * 1000).unref();
+  for (const [c, x] of tentatives) if (x.jusqua ? x.jusqua <= t : t - x.dernier > BLOCAGE_MS) tentatives.delete(c);
+}, 60 * 1000).unref();
 
 /* --- Limitation des tentatives de connexion --- */
-const tentatives = new Map(); // clé (ip ou compte) → { echecs, jusqua }
+/* Clés : "ip:<adresse>" (5 échecs → adresse bloquée), "login:<compte>" (20 échecs toutes adresses
+   confondues → compte bloqué ; un seul poste ne peut donc pas verrouiller le compte d'un collègue),
+   "mdp:<id>" (5 mauvais « ancien mot de passe » depuis une session). Fenêtre de comptage = BLOCAGE_MS. */
+const tentatives = new Map(); // clé → { echecs, dernier, jusqua }
 function bloque(cle) {
   const t = tentatives.get(cle);
-  if (!t) return false;
-  if (t.jusqua && t.jusqua > Date.now()) return true;
-  if (t.jusqua && t.jusqua <= Date.now()) tentatives.delete(cle);
+  if (!t || !t.jusqua) return false;
+  if (t.jusqua > Date.now()) return true;
+  tentatives.delete(cle);
   return false;
 }
-function echec(cle) {
-  const t = tentatives.get(cle) || { echecs: 0, jusqua: 0 };
-  t.echecs++;
-  if (t.echecs >= TENTATIVES_MAX) { t.jusqua = Date.now() + BLOCAGE_MS; t.echecs = 0; }
+/* Enregistre un échec ; renvoie true si cet échec vient de déclencher le blocage. */
+function echec(cle, max) {
+  const maintenant = Date.now();
+  let t = tentatives.get(cle);
+  if (!t || maintenant - t.dernier > BLOCAGE_MS) t = { echecs: 0, dernier: 0, jusqua: 0 };
+  t.echecs++; t.dernier = maintenant;
+  const vientDeBloquer = t.echecs >= max;
+  if (vientDeBloquer) { t.jusqua = maintenant + BLOCAGE_MS; t.echecs = 0; }
+  if (tentatives.size > 50000 && !tentatives.has(cle)) tentatives.delete(tentatives.keys().next().value); // plafond mémoire
   tentatives.set(cle, t);
+  return vientDeBloquer;
 }
 function succes(cle) { tentatives.delete(cle); }
 
@@ -170,14 +215,29 @@ function audit(req, utilisateur, action, details) {
 }
 
 function lireAudit(max) {
+  let fd;
   try {
-    const lignes = fs.readFileSync(AUDIT_FILE, "utf8").trim().split("\n");
+    fd = fs.openSync(AUDIT_FILE, "r");
+    const taille = fs.fstatSync(fd).size;
+    const n = Math.min(taille, 512 * 1024); // on ne lit que la fin du journal
+    const buf = Buffer.alloc(n);
+    fs.readSync(fd, buf, 0, n, taille - n);
+    let lignes = buf.toString("utf8").split("\n").filter(Boolean);
+    if (n < taille) lignes = lignes.slice(1); // première ligne peut-être tronquée
     return lignes.slice(-max).reverse().map((l) => { try { return JSON.parse(l); } catch (e) { return null; } }).filter(Boolean);
-  } catch (e) { return []; }
+  } catch (e) {
+    return [];
+  } finally {
+    if (fd !== undefined) fs.closeSync(fd);
+  }
 }
 
 function ipDe(req) {
-  return (req.socket && req.socket.remoteAddress) || "?";
+  const directe = (req.socket && req.socket.remoteAddress) || "?";
+  if (!TRUST_PROXY) return directe; // sans opt-in, X-Forwarded-For est ignoré (forgeable par le client)
+  // Dernier élément = adresse vue par NOTRE proxy (les précédents peuvent être forgés par le client)
+  const xff = String(req.headers["x-forwarded-for"] || "").split(",").map((x) => x.trim()).filter(Boolean);
+  return xff.length ? xff[xff.length - 1].slice(0, 64) : directe;
 }
 
 /* =====================================================================
@@ -271,7 +331,14 @@ function choix(v, liste) {
 }
 function dateIso(v) {
   v = texte(v, 10, false);
-  if (v && !/^\d{4}-\d{2}-\d{2}$/.test(v)) throw new ErreurHttp(400, "Date invalide (AAAA-MM-JJ).");
+  if (!v) return v;
+  const d = new Date(v + "T00:00:00Z");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== v) throw new ErreurHttp(400, "Date invalide (AAAA-MM-JJ).");
+  return v;
+}
+function objet(v) { // sous-objet JSON facultatif (ex. « preparation »)
+  if (v === undefined || v === null) return {};
+  if (typeof v !== "object" || Array.isArray(v)) throw new ErreurHttp(400, "Format invalide.");
   return v;
 }
 function loginValide(v) {
@@ -287,8 +354,9 @@ function listePostes(db, v) {
   return ids;
 }
 
+/* Renvoie un NOUVEL objet produit validé ; l'existant n'est modifié qu'une fois tout validé (par l'appelant). */
 function validerProduit(db, corps, existant) {
-  const p = existant || { id: id(), preparation: { parPoste: {} } };
+  const p = existant ? JSON.parse(JSON.stringify(existant)) : { id: id(), preparation: { parPoste: {} } };
   if ("nom" in corps || !existant) p.nom = texte(corps.nom, 120, true);
   if ("reference" in corps || !existant) p.reference = texte(corps.reference, 40, false);
   if ("unite" in corps || !existant) p.unite = texte(corps.unite, 20, false) || "unité";
@@ -297,11 +365,11 @@ function validerProduit(db, corps, existant) {
   if ("categorie" in corps || !existant) p.categorie = choix(corps.categorie || "autre", CATEGORIES);
   if ("conservation" in corps || !existant) p.conservation = choix(corps.conservation || "ambiant", CONSERVATIONS);
   if ("dlcJours" in corps || !existant) p.dlcJours = entier(corps.dlcJours ?? 0, 0, 3650);
-  const pr = corps.preparation || {};
+  const pr = objet(corps.preparation);
   const anc = p.preparation || {};
   const parPoste = { ...(anc.parPoste || {}) };
-  if (pr.parPoste && typeof pr.parPoste === "object") {
-    Object.keys(pr.parPoste).forEach((pid) => {
+  if (pr.parPoste !== undefined) {
+    Object.keys(objet(pr.parPoste)).forEach((pid) => {
       if (!db.postes.find((x) => x.id === pid)) throw new ErreurHttp(400, "Poste inconnu dans la fiche.");
       parPoste[pid] = texte(pr.parPoste[pid], 1000, false);
     });
@@ -317,7 +385,7 @@ function validerProduit(db, corps, existant) {
 }
 
 function validerClient(corps, existant) {
-  const c = existant || { id: id() };
+  const c = existant ? { ...existant } : { id: id() };
   if ("nom" in corps || !existant) c.nom = texte(corps.nom, 120, true);
   if ("email" in corps || !existant) {
     c.email = texte(corps.email, 120, false);
@@ -330,11 +398,20 @@ function validerClient(corps, existant) {
 
 function validerLignes(db, lignes) {
   if (!Array.isArray(lignes) || lignes.length > 200) throw new ErreurHttp(400, "Lignes invalides.");
+  const vus = new Set();
   return lignes.map((l) => {
     const produitId = texte(l && l.produitId, 40, true);
-    if (!db.produits.find((p) => p.id === produitId)) throw new ErreurHttp(400, "Produit inconnu.");
+    const p = db.produits.find((x) => x.id === produitId);
+    if (!p) throw new ErreurHttp(400, "Produit inconnu.");
+    if (vus.has(produitId)) throw new ErreurHttp(400, `« ${p.nom} » figure sur deux lignes : regroupez les quantités sur une seule.`);
+    vus.add(produitId);
     return { produitId, quantite: entier(l.quantite, 1, 1e6) };
   });
+}
+
+function verifierDates(cmd) {
+  if (cmd.dateMail && cmd.dateLivraisonSouhaitee && cmd.dateLivraisonSouhaitee < cmd.dateMail)
+    throw new ErreurHttp(400, "La livraison souhaitée ne peut pas précéder la date du mail.");
 }
 
 /* Étapes = postes par lesquels la commande doit passer, dans l'ordre */
@@ -347,7 +424,7 @@ function construireEtapes(db, posteIds, nbLignes) {
 /* =====================================================================
    6. Règles métier
    ===================================================================== */
-function ficheComplete(p, posteIds) {
+function ficheComplete(p) {
   if (!p || !p.preparation || !p.preparation.instructions || !p.preparation.instructions.trim()) return false;
   return true;
 }
@@ -367,8 +444,13 @@ function blocages(db, cmd) {
       if (poste && !(p.preparation.parPoste && p.preparation.parPoste[e.posteId] && p.preparation.parPoste[e.posteId].trim()))
         b.push(`« ${p.nom} » : pas d'instruction pour le poste ${poste.nom}.`);
     });
-    if (p.stock < l.quantite) b.push(`Stock insuffisant pour « ${p.nom} » (${p.stock} ${p.unite} en stock, ${l.quantite} demandés).`);
   });
+  const demande = new Map();
+  cmd.lignes.forEach((l) => demande.set(l.produitId, (demande.get(l.produitId) || 0) + l.quantite));
+  for (const [pid, q] of demande) {
+    const p = db.produits.find((x) => x.id === pid);
+    if (p && p.stock < q) b.push(`Stock disponible insuffisant pour « ${p.nom} » (${p.stock} ${p.unite} disponibles, ${q} demandés).`);
+  }
   (cmd.etapes || []).forEach((e) => {
     const poste = db.postes.find((x) => x.id === e.posteId);
     if (!poste) { b.push("Poste inconnu dans le circuit."); return; }
@@ -386,27 +468,62 @@ function journal(cmd, utilisateur, texteJournal, posteNom) {
   cmd.historique.push({ date: new Date().toISOString(), qui: utilisateur ? utilisateur.nom : "—", poste: posteNom || "", texte: texteJournal });
 }
 
+/* sens = -1 : réserver (envoi en préparation) ; +1 : libérer (rappel, annulation). Toujours journalisé. */
+function mouvementStock(db, cmd, sens, moi, motif) {
+  const detail = cmd.lignes.map((l) => {
+    const p = db.produits.find((x) => x.id === l.produitId);
+    if (!p) return { produitId: l.produitId, quantite: l.quantite, stockApres: null };
+    p.stock += sens * l.quantite;
+    return { produitId: p.id, nom: p.nom, quantite: l.quantite, stockApres: p.stock };
+  });
+  journal(cmd, moi, `${motif} : ` + detail.map((d) => `${d.nom || "?"} ${sens < 0 ? "−" : "+"}${d.quantite} (dispo ${d.stockApres ?? "?"})`).join(", ") + ".");
+  return detail;
+}
+
+/* Libère les étapes « en cours » tenues par un utilisateur qui n'y a plus droit (désactivé, supprimé, retiré du poste). */
+function libererEtapesDe(db, u, admin, motif, garderPostes) {
+  const liberees = [];
+  db.commandes.forEach((c) => {
+    const e = etapeCourante(c);
+    if (c.statut !== "en_preparation" || !e || e.statut !== "en_cours" || e.preparateurId !== u.id) return;
+    if (garderPostes && garderPostes.includes(e.posteId)) return;
+    Object.assign(e, { statut: "a_faire", preparateur: "", preparateurId: "", debut: "", coches: c.lignes.map(() => false) });
+    c.statut = "a_preparer";
+    journal(c, admin, `Étape reprise à ${u.nom} (${motif}) et remise dans la file.`, nomPoste(db, e.posteId));
+    liberees.push(c.numero);
+  });
+  return liberees;
+}
+
 function nomPoste(db, posteId) {
   const p = db.postes.find((x) => x.id === posteId);
   return p ? p.nom : "?";
+}
+
+/* Un préparateur n'a accès qu'aux commandes qui attendent son poste ou sur lesquelles il a travaillé. */
+function preparateurImplique(c, u) {
+  if (CLOS.includes(c.statut) || c.statut === "brouillon") return false;
+  const e = etapeCourante(c);
+  const attendMonPoste = e && ["a_preparer", "en_preparation"].includes(c.statut) && (u.postes || []).includes(e.posteId);
+  return attendMonPoste || (c.etapes || []).some((x) => x.preparateurId === u.id);
+}
+
+/* Ce que la tablette reçoit d'une commande : jamais l'extrait du mail client. */
+function commandePourPreparateur(c) {
+  const { sourceMail, ...reste } = c;
+  return reste;
 }
 
 /* Vue des données adaptée au rôle (on n'envoie jamais plus que nécessaire) */
 function vuePourRole(db, u) {
   const base = { moi: utilisateurPublic(u), postes: db.postes, produits: db.produits, derniereMaj: db.derniereMaj || null };
   if (u.role === "preparateur") {
-    const mesPostes = u.postes || [];
+    const commandes = db.commandes.filter((c) => preparateurImplique(c, u)).map(commandePourPreparateur);
+    const clientIds = new Set(commandes.map((c) => c.clientId));
     return {
       ...base,
-      clients: db.clients.map((c) => ({ id: c.id, nom: c.nom, adresse: c.adresse })),
-      commandes: db.commandes.filter((c) => {
-        if (CLOS.includes(c.statut) || c.statut === "brouillon") return false;
-        const e = etapeCourante(c);
-        const posteCourantAMoi = e && mesPostes.includes(e.posteId);
-        const jyAiTravaille = (c.etapes || []).some((x) => x.preparateurId === u.id);
-        return posteCourantAMoi || jyAiTravaille;
-      }),
-      utilisateurs: db.utilisateurs.filter((x) => x.actif).map((x) => ({ id: x.id, nom: x.nom, role: x.role, postes: x.postes || [] })),
+      clients: db.clients.filter((c) => clientIds.has(c.id)).map((c) => ({ id: c.id, nom: c.nom, adresse: c.adresse })),
+      commandes,
     };
   }
   const vue = { ...base, clients: db.clients, commandes: db.commandes };
@@ -428,7 +545,7 @@ function entetesSecurite(res) {
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
   res.setHeader("Cache-Control", "no-store");
   res.setHeader("Content-Security-Policy", "default-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
-  if (TLS) res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  if (SECURE) res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 }
 
 function json(res, code, data) {
@@ -451,20 +568,21 @@ function lireCorps(req) {
 
 function cookieSession(jeton, expirer) {
   const parts = [`nutrilog=${expirer ? "" : jeton}`, "Path=/", "HttpOnly", "SameSite=Strict"];
-  if (TLS) parts.push("Secure");
+  if (SECURE) parts.push("Secure");
   parts.push(expirer ? "Max-Age=0" : `Max-Age=${Math.floor(SESSION_MAX_MS / 1000)}`);
   return parts.join("; ");
 }
 
-/* Anti-CSRF : toute requête modifiante doit venir de notre propre page */
+/* Anti-CSRF : toute requête modifiante doit venir de notre propre page.
+   Une origine illisible (dont « null ») est traitée comme étrangère. */
 function verifierCsrf(req) {
   if (req.method === "GET") return;
   if (req.headers["x-requested-with"] !== "NutriLog") throw new ErreurHttp(403, "Requête refusée (CSRF).");
-  const origine = req.headers.origin || (req.headers.referer ? new URL(req.headers.referer).origin : "");
-  if (origine) {
-    const hote = req.headers.host || "";
-    if (new URL(origine).host !== hote) throw new ErreurHttp(403, "Origine non autorisée.");
-  }
+  const brut = req.headers.origin || req.headers.referer || "";
+  if (!brut) return;
+  let hote;
+  try { hote = new URL(brut).host; } catch (e) { throw new ErreurHttp(403, "Origine non autorisée."); }
+  if (hote !== (req.headers.host || "")) throw new ErreurHttp(403, "Origine non autorisée.");
 }
 
 const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".webmanifest": "application/manifest+json" };
@@ -473,13 +591,14 @@ function statique(req, res) {
   if (req.method !== "GET" && req.method !== "HEAD") return json(res, 405, { erreur: "Méthode non autorisée" });
   let fichier;
   try { fichier = decodeURIComponent(req.url.split("?")[0]); } catch (e) { return json(res, 400, { erreur: "URL invalide" }); }
+  if (fichier.includes("\u0000")) return json(res, 400, { erreur: "URL invalide" });
   if (fichier === "/") fichier = "/index.html";
   const abs = path.normalize(path.join(PUBLIC, fichier));
   if (!abs.startsWith(PUBLIC + path.sep)) return json(res, 403, { erreur: "Interdit" });
   fs.readFile(abs, (err, data) => {
     if (err) return json(res, 404, { erreur: "Introuvable" });
     res.writeHead(200, { "Content-Type": MIME[path.extname(abs)] || "application/octet-stream" });
-    res.end(data);
+    res.end(req.method === "HEAD" ? undefined : data);
   });
 }
 
@@ -490,24 +609,34 @@ function exiger(u, ...roles) {
   if (!roles.includes(u.role)) throw new ErreurHttp(403, "Action non autorisée pour votre rôle.");
 }
 
-/* Le préparateur connecté a-t-il le droit d'agir sur l'étape courante ? */
+/* Le préparateur connecté a-t-il le droit d'agir sur l'étape courante ?
+   - prendre : il faut appartenir au poste (l'admin peut dépanner n'importe quel poste) ;
+   - cocher / terminer / rendre : il faut TENIR l'étape (même un admin ne peut pas agir sous le nom d'un autre :
+     il la fait d'abord renvoyer, puis la prend à son nom). */
 function etapePour(db, cmd, moi, doitEtreEnCours) {
   const e = etapeCourante(cmd);
   if (!e) throw new ErreurHttp(400, "Aucune étape en cours sur cette commande.");
-  if (moi.role !== "admin" && !(moi.postes || []).includes(e.posteId)) throw new ErreurHttp(403, `Cette étape relève du poste ${nomPoste(db, e.posteId)}, pas du vôtre.`);
   if (doitEtreEnCours) {
     if (e.statut !== "en_cours" || cmd.statut !== "en_preparation") throw new ErreurHttp(400, "L'étape n'est pas en cours.");
-    if (e.preparateurId !== moi.id && moi.role !== "admin") throw new ErreurHttp(403, `Cette étape est en cours par ${e.preparateur}.`);
+    if (e.preparateurId !== moi.id) throw new ErreurHttp(403, `Cette étape est en cours par ${e.preparateur}.`);
+    return e;
   }
+  if (moi.role !== "admin" && !(moi.postes || []).includes(e.posteId)) throw new ErreurHttp(403, `Cette étape relève du poste ${nomPoste(db, e.posteId)}, pas du vôtre.`);
   return e;
 }
 
+function reinitEtape(cmd, e) {
+  Object.assign(e, { statut: "a_faire", preparateur: "", preparateurId: "", debut: "", fin: "", remarque: "", coches: cmd.lignes.map(() => false) });
+}
+
 async function api(req, res, route) {
-  const db = lireDb();
   const segments = route.split("/").filter(Boolean); // ["commandes", ":id", "envoyer"]
   const [ressource, idRes, action] = segments;
   verifierCsrf(req);
   const corps = req.method === "GET" ? {} : await lireCorps(req);
+  // Plus aucun « await » après cette ligne : chaque requête lit, valide, modifie et enregistre d'un seul tenant.
+  // En cas d'erreur, gerer() abandonne le cache mémoire → toute modification partielle est annulée.
+  const db = lireDb();
   const sauver = () => { db.derniereMaj = new Date().toISOString(); ecrireDb(db); };
 
   /* ---------- Connexion (sans session) ---------- */
@@ -515,16 +644,15 @@ async function api(req, res, route) {
     const ip = ipDe(req);
     const login = texte(corps.login, 40, false).toLowerCase();
     const mdp = typeof corps.mdp === "string" ? corps.mdp.slice(0, 128) : "";
-    if (bloque("ip:" + ip) || bloque("login:" + login)) {
-      audit(req, null, "connexion.bloquee", { login });
-      throw new ErreurHttp(429, "Trop de tentatives. Réessayez dans 15 minutes.");
-    }
+    // Les requêtes refusées pendant un blocage ne sont PAS journalisées une à une (sinon le journal serait inondable).
+    if (bloque("ip:" + ip) || bloque("login:" + login)) throw new ErreurHttp(429, "Trop de tentatives. Réessayez dans 15 minutes.");
     const u = db.utilisateurs.find((x) => x.login === login);
-    // On calcule toujours un hachage pour ne pas révéler si le compte existe (temps constant)
-    const ok = u ? verifierMdp(mdp, u.mdp) : (verifierMdp(mdp, hacherMdp("x")), false);
+    // Exactement un calcul scrypt que le compte existe ou non : le temps de réponse ne révèle rien.
+    const ok = verifierMdp(mdp, u ? u.mdp : HASH_FACTICE) && !!u;
     if (!ok || !u.actif) {
-      echec("ip:" + ip); echec("login:" + login);
-      audit(req, null, "connexion.echec", { login });
+      const ipBloquee = echec("ip:" + ip, TENTATIVES_MAX);
+      const compteBloque = echec("login:" + login, TENTATIVES_COMPTE_MAX);
+      audit(req, null, ipBloquee || compteBloque ? "connexion.bloquee" : "connexion.echec", { login, ...(ipBloquee ? { blocage: "adresse" } : {}), ...(compteBloque ? { blocage: "compte" } : {}) });
       throw new ErreurHttp(401, "Identifiant ou mot de passe incorrect.");
     }
     succes("ip:" + ip); succes("login:" + login);
@@ -535,7 +663,8 @@ async function api(req, res, route) {
   }
 
   /* ---------- Tout le reste exige une session valide ---------- */
-  const session = sessionDepuisRequete(req, db);
+  // Le rafraîchissement automatique (GET) ne compte pas comme activité ; le chargement de page (GET /moi) oui.
+  const session = sessionDepuisRequete(req, db, req.method !== "GET" || ressource === "moi");
   if (!session) throw new ErreurHttp(401, "Connexion requise.");
   const moi = session.utilisateur;
 
@@ -549,13 +678,19 @@ async function api(req, res, route) {
   if (ressource === "moi") {
     if (req.method === "GET") return json(res, 200, { moi: utilisateurPublic(moi) });
     if (req.method === "POST" && idRes === "motdepasse") {
-      if (!verifierMdp(typeof corps.ancien === "string" ? corps.ancien : "", moi.mdp)) throw new ErreurHttp(400, "Ancien mot de passe incorrect.");
+      const cle = "mdp:" + moi.id;
+      if (bloque(cle)) throw new ErreurHttp(429, "Trop de tentatives. Réessayez dans 15 minutes.");
+      if (!verifierMdp(typeof corps.ancien === "string" ? corps.ancien.slice(0, 128) : "", moi.mdp)) {
+        const vientDeBloquer = echec(cle, TENTATIVES_MAX);
+        audit(req, moi, vientDeBloquer ? "motdepasse.bloque" : "motdepasse.echec");
+        if (vientDeBloquer) { sessions.delete(session.jeton); res.setHeader("Set-Cookie", cookieSession("", true)); }
+        throw new ErreurHttp(400, "Ancien mot de passe incorrect.");
+      }
       if (!mdpValide(corps.nouveau)) throw new ErreurHttp(400, MSG_MDP);
       if (corps.nouveau === corps.ancien) throw new ErreurHttp(400, "Le nouveau mot de passe doit être différent.");
       moi.mdp = hacherMdp(corps.nouveau); moi.doitChangerMdp = false;
-      fermerSessionsDe(moi.id); // toutes les autres sessions sont fermées
-      const jeton = creerSession(moi.id);
-      res.setHeader("Set-Cookie", cookieSession(jeton));
+      succes(cle);
+      fermerAutresSessionsDe(moi.id, session.jeton); // les autres appareils sont déconnectés, pas celui-ci
       sauver(); audit(req, moi, "motdepasse.change");
       return json(res, 200, { ok: true });
     }
@@ -574,29 +709,44 @@ async function api(req, res, route) {
       if (db.utilisateurs.find((x) => x.login === login)) throw new ErreurHttp(409, "Cet identifiant existe déjà.");
       if (!mdpValide(corps.mdp)) throw new ErreurHttp(400, MSG_MDP);
       const u = { id: id(), login, nom: texte(corps.nom, 80, true), role: choix(corps.role, ROLES), postes: listePostes(db, corps.postes) || [], actif: true, mdp: hacherMdp(corps.mdp), doitChangerMdp: true, creeLe: new Date().toISOString() };
-      db.utilisateurs.push(u); sauver(); audit(req, moi, "utilisateur.cree", { login, role: u.role });
+      db.utilisateurs.push(u); sauver(); audit(req, moi, "utilisateur.cree", { login, role: u.role, postes: u.postes.map((x) => nomPoste(db, x)) });
       return json(res, 201, utilisateurPublic(u));
     }
     const u = db.utilisateurs.find((x) => x.id === idRes);
     if (!u) throw new ErreurHttp(404, "Utilisateur introuvable.");
     if (req.method === "PUT" && !action) {
-      if ("nom" in corps) u.nom = texte(corps.nom, 80, true);
-      if ("role" in corps) { if (u.id === moi.id) throw new ErreurHttp(400, "Vous ne pouvez pas changer votre propre rôle."); u.role = choix(corps.role, ROLES); }
-      if ("postes" in corps) u.postes = listePostes(db, corps.postes);
-      if ("actif" in corps) { if (u.id === moi.id) throw new ErreurHttp(400, "Vous ne pouvez pas vous désactiver vous-même."); u.actif = !!corps.actif; if (!u.actif) fermerSessionsDe(u.id); }
-      sauver(); audit(req, moi, "utilisateur.modifie", { login: u.login, role: u.role, actif: u.actif, postes: u.postes });
+      // Tout est validé avant la moindre modification
+      const nom = "nom" in corps ? texte(corps.nom, 80, true) : u.nom;
+      if ("role" in corps && u.id === moi.id && corps.role !== u.role) throw new ErreurHttp(400, "Vous ne pouvez pas changer votre propre rôle.");
+      const role = "role" in corps ? choix(corps.role, ROLES) : u.role;
+      const postes = "postes" in corps ? listePostes(db, corps.postes) : u.postes || [];
+      if ("actif" in corps && u.id === moi.id && !corps.actif) throw new ErreurHttp(400, "Vous ne pouvez pas vous désactiver vous-même.");
+      const actif = "actif" in corps ? !!corps.actif : u.actif;
+      Object.assign(u, { nom, role, postes, actif });
+      let liberees = [];
+      if (!actif) { fermerSessionsDe(u.id); liberees = libererEtapesDe(db, u, moi, "compte désactivé"); }
+      else if (role !== "preparateur" && role !== "admin") liberees = libererEtapesDe(db, u, moi, "rôle modifié");
+      else if (role === "preparateur") liberees = libererEtapesDe(db, u, moi, "retiré du poste", postes);
+      sauver(); audit(req, moi, "utilisateur.modifie", { login: u.login, role, actif, postes: postes.map((x) => nomPoste(db, x)), etapesLiberees: liberees });
       return json(res, 200, utilisateurPublic(u));
     }
     if (req.method === "POST" && action === "motdepasse") {
       if (!mdpValide(corps.mdp)) throw new ErreurHttp(400, MSG_MDP);
       u.mdp = hacherMdp(corps.mdp); u.doitChangerMdp = true; fermerSessionsDe(u.id);
+      succes("login:" + u.login); succes("mdp:" + u.id);
       sauver(); audit(req, moi, "utilisateur.mdp_reinitialise", { login: u.login });
+      return json(res, 200, { ok: true });
+    }
+    if (req.method === "POST" && action === "debloquer") {
+      succes("login:" + u.login); succes("mdp:" + u.id);
+      audit(req, moi, "utilisateur.debloque", { login: u.login });
       return json(res, 200, { ok: true });
     }
     if (req.method === "DELETE") {
       if (u.id === moi.id) throw new ErreurHttp(400, "Vous ne pouvez pas supprimer votre propre compte.");
+      const liberees = libererEtapesDe(db, u, moi, "compte supprimé");
       db.utilisateurs = db.utilisateurs.filter((x) => x.id !== u.id); fermerSessionsDe(u.id);
-      sauver(); audit(req, moi, "utilisateur.supprime", { login: u.login });
+      sauver(); audit(req, moi, "utilisateur.supprime", { login: u.login, etapesLiberees: liberees });
       return json(res, 200, { ok: true });
     }
   }
@@ -604,23 +754,25 @@ async function api(req, res, route) {
   /* ---------- Postes de préparation (admin) ---------- */
   if (ressource === "postes") {
     exiger(moi, "admin");
+    const nomLibre = (nom, sauf) => { if (db.postes.some((x) => x.id !== sauf && x.nom.toLowerCase() === nom.toLowerCase())) throw new ErreurHttp(409, "Ce poste existe déjà."); return nom; };
     if (req.method === "POST" && !idRes) {
-      const p = { id: id(), nom: texte(corps.nom, 40, true), description: texte(corps.description, 300, false) };
-      if (db.postes.some((x) => x.nom.toLowerCase() === p.nom.toLowerCase())) throw new ErreurHttp(409, "Ce poste existe déjà.");
+      const p = { id: id(), nom: nomLibre(texte(corps.nom, 40, true)), description: texte(corps.description, 300, false) };
       db.postes.push(p); sauver(); audit(req, moi, "poste.cree", { nom: p.nom }); return json(res, 201, p);
     }
     if (req.method === "PUT" && idRes === "ordre") {
       const ids = listePostes(db, corps.ordre) || [];
       if (ids.length !== db.postes.length) throw new ErreurHttp(400, "L'ordre doit contenir tous les postes.");
       db.postes = ids.map((pid) => db.postes.find((p) => p.id === pid));
-      sauver(); audit(req, moi, "poste.reordonne"); return json(res, 200, db.postes);
+      sauver(); audit(req, moi, "poste.reordonne", { ordre: db.postes.map((p) => p.nom) }); return json(res, 200, db.postes);
     }
     const p = db.postes.find((x) => x.id === idRes);
     if (!p) throw new ErreurHttp(404, "Poste introuvable.");
     if (req.method === "PUT") {
-      if ("nom" in corps) p.nom = texte(corps.nom, 40, true);
-      if ("description" in corps) p.description = texte(corps.description, 300, false);
-      sauver(); audit(req, moi, "poste.modifie", { nom: p.nom }); return json(res, 200, p);
+      const ancienNom = p.nom;
+      const nom = "nom" in corps ? nomLibre(texte(corps.nom, 40, true), p.id) : p.nom;
+      const description = "description" in corps ? texte(corps.description, 300, false) : p.description;
+      Object.assign(p, { nom, description });
+      sauver(); audit(req, moi, "poste.modifie", { id: p.id, ancienNom, nom }); return json(res, 200, p);
     }
     if (req.method === "DELETE") {
       if (db.commandes.some((c) => !CLOS.includes(c.statut) && (c.etapes || []).some((e) => e.posteId === p.id))) throw new ErreurHttp(409, "Poste utilisé par une commande en cours.");
@@ -640,15 +792,20 @@ async function api(req, res, route) {
     exiger(moi, "admin", "secretariat");
     if (req.method === "POST" && !idRes) {
       const p = validerProduit(db, corps); db.produits.push(p); sauver();
-      audit(req, moi, "produit.cree", { nom: p.nom }); return json(res, 201, p);
+      audit(req, moi, "produit.cree", { nom: p.nom, stock: p.stock }); return json(res, 201, p);
     }
     const p = db.produits.find((x) => x.id === idRes);
     if (!p) throw new ErreurHttp(404, "Produit introuvable.");
-    if (req.method === "PUT") { validerProduit(db, corps, p); sauver(); audit(req, moi, "produit.modifie", { nom: p.nom }); return json(res, 200, p); }
+    if (req.method === "PUT") {
+      const stockAvant = p.stock;
+      Object.assign(p, validerProduit(db, corps, p));
+      sauver(); audit(req, moi, "produit.modifie", { nom: p.nom, ...(stockAvant !== p.stock ? { stockAvant, stockApres: p.stock } : {}) });
+      return json(res, 200, p);
+    }
     if (req.method === "DELETE") {
       exiger(moi, "admin");
       if (db.commandes.some((c) => !CLOS.includes(c.statut) && c.lignes.some((l) => l.produitId === p.id))) throw new ErreurHttp(409, "Produit utilisé dans une commande en cours.");
-      db.produits = db.produits.filter((x) => x.id !== p.id); sauver(); audit(req, moi, "produit.supprime", { nom: p.nom }); return json(res, 200, { ok: true });
+      db.produits = db.produits.filter((x) => x.id !== p.id); sauver(); audit(req, moi, "produit.supprime", { nom: p.nom, stock: p.stock }); return json(res, 200, { ok: true });
     }
   }
 
@@ -661,7 +818,7 @@ async function api(req, res, route) {
     }
     const c = db.clients.find((x) => x.id === idRes);
     if (!c) throw new ErreurHttp(404, "Client introuvable.");
-    if (req.method === "PUT") { validerClient(corps, c); sauver(); audit(req, moi, "client.modifie", { nom: c.nom }); return json(res, 200, c); }
+    if (req.method === "PUT") { Object.assign(c, validerClient(corps, c)); sauver(); audit(req, moi, "client.modifie", { nom: c.nom }); return json(res, 200, c); }
     if (req.method === "DELETE") {
       exiger(moi, "admin");
       if (db.commandes.some((x) => x.clientId === c.id && !CLOS.includes(x.statut))) throw new ErreurHttp(409, "Client avec une commande en cours.");
@@ -675,7 +832,7 @@ async function api(req, res, route) {
       exiger(moi, "admin", "secretariat");
       const lignes = validerLignes(db, corps.lignes || []);
       const cmd = {
-        id: id(), numero: db.prochainNumero++, statut: "brouillon",
+        id: id(), numero: 0, statut: "brouillon",
         clientId: texte(corps.clientId, 40, false),
         sourceMail: texte(corps.sourceMail, 3000, false),      // objet / extrait du mail du client
         dateMail: dateIso(corps.dateMail),
@@ -687,6 +844,8 @@ async function api(req, res, route) {
         etapeIndex: 0,
         creePar: moi.nom, creeLe: new Date().toISOString(), historique: [], messages: [],
       };
+      verifierDates(cmd);
+      cmd.numero = db.prochainNumero++; // attribué seulement une fois tout validé : numérotation sans trou
       journal(cmd, moi, "Commande créée depuis le mail du client.");
       db.commandes.push(cmd); sauver(); audit(req, moi, "commande.creee", { numero: cmd.numero });
       return json(res, 201, cmd);
@@ -694,61 +853,67 @@ async function api(req, res, route) {
 
     const cmd = db.commandes.find((x) => x.id === idRes);
     if (!cmd) throw new ErreurHttp(404, "Commande introuvable.");
+    // Un préparateur n'a accès qu'aux commandes qui le concernent (même réponse que si elle n'existait pas)
+    if (moi.role === "preparateur" && !preparateurImplique(cmd, moi)) throw new ErreurHttp(404, "Commande introuvable.");
 
     if (req.method === "PUT" && !action) {
       exiger(moi, "admin", "secretariat");
       if (cmd.statut !== "brouillon") throw new ErreurHttp(400, "Seul un brouillon peut être modifié (rappelez d'abord la commande).");
-      if ("clientId" in corps) cmd.clientId = texte(corps.clientId, 40, false);
-      if ("sourceMail" in corps) cmd.sourceMail = texte(corps.sourceMail, 3000, false);
-      if ("dateMail" in corps) cmd.dateMail = dateIso(corps.dateMail);
-      if ("dateLivraisonSouhaitee" in corps) cmd.dateLivraisonSouhaitee = dateIso(corps.dateLivraisonSouhaitee);
-      if ("priorite" in corps) cmd.priorite = choix(corps.priorite, ["normale", "urgente"]);
-      if ("note" in corps) cmd.note = texte(corps.note, 1000, false);
-      if ("lignes" in corps) cmd.lignes = validerLignes(db, corps.lignes);
-      if ("postes" in corps || "lignes" in corps) cmd.etapes = construireEtapes(db, "postes" in corps ? corps.postes : cmd.etapes.map((e) => e.posteId), cmd.lignes.length);
+      const t = {}; // validation complète avant modification
+      if ("clientId" in corps) t.clientId = texte(corps.clientId, 40, false);
+      if ("sourceMail" in corps) t.sourceMail = texte(corps.sourceMail, 3000, false);
+      if ("dateMail" in corps) t.dateMail = dateIso(corps.dateMail);
+      if ("dateLivraisonSouhaitee" in corps) t.dateLivraisonSouhaitee = dateIso(corps.dateLivraisonSouhaitee);
+      if ("priorite" in corps) t.priorite = choix(corps.priorite, ["normale", "urgente"]);
+      if ("note" in corps) t.note = texte(corps.note, 1000, false);
+      if ("lignes" in corps) t.lignes = validerLignes(db, corps.lignes);
+      if ("postes" in corps || "lignes" in corps) t.etapes = construireEtapes(db, "postes" in corps ? corps.postes : cmd.etapes.map((e) => e.posteId), (t.lignes || cmd.lignes).length);
+      verifierDates({ ...cmd, ...t });
+      Object.assign(cmd, t);
       journal(cmd, moi, "Commande modifiée.");
-      sauver(); audit(req, moi, "commande.modifiee", { numero: cmd.numero });
+      sauver(); audit(req, moi, "commande.modifiee", { numero: cmd.numero, champs: Object.keys(t) });
       return json(res, 200, cmd);
     }
 
     if (req.method === "DELETE") {
       exiger(moi, "admin", "secretariat");
       if (cmd.statut !== "brouillon") throw new ErreurHttp(400, "Seul un brouillon peut être supprimé.");
+      if (cmd.envoyeeLe) throw new ErreurHttp(400, "Cette commande est déjà passée en préparation : annulez-la plutôt (l'historique est conservé).");
       db.commandes = db.commandes.filter((x) => x.id !== cmd.id); sauver(); audit(req, moi, "commande.supprimee", { numero: cmd.numero });
       return json(res, 200, { ok: true });
     }
 
     if (req.method === "POST" && action) {
       const remarque = texte(corps.remarque, 500, false);
+      let details = {};
       switch (action) {
-        /* Fil de discussion : tout le monde impliqué peut écrire */
+        /* Fil de discussion : tout le monde impliqué peut écrire (accès préparateur vérifié plus haut) */
         case "message": {
+          if (CLOS.includes(cmd.statut)) throw new ErreurHttp(400, "Commande close : le fil de discussion est fermé.");
           const contenu = texte(corps.texte, 1000, true);
-          if (moi.role === "preparateur") {
-            const e = etapeCourante(cmd);
-            const implique = (e && (moi.postes || []).includes(e.posteId)) || (cmd.etapes || []).some((x) => x.preparateurId === moi.id);
-            if (!implique) throw new ErreurHttp(403, "Vous n'intervenez pas sur cette commande.");
-          }
           if (cmd.messages.length >= 500) throw new ErreurHttp(409, "Trop de messages sur cette commande.");
           cmd.messages.push({ id: id(), date: new Date().toISOString(), auteurId: moi.id, auteur: moi.nom, role: moi.role, texte: contenu });
           break;
         }
-        /* Secrétariat → préparateurs : uniquement si tout est prêt */
+        /* Secrétariat → préparateurs : uniquement si tout est prêt. Le stock est réservé dès maintenant. */
         case "envoyer": {
           exiger(moi, "admin", "secretariat");
           if (cmd.statut !== "brouillon") throw new ErreurHttp(400, "Seule une commande en brouillon peut être envoyée.");
           const b = blocages(db, cmd);
           if (b.length) throw new ErreurHttp(409, "Commande incomplète : impossible de l'envoyer aux préparateurs.", { blocages: b });
           cmd.statut = "a_preparer"; cmd.etapeIndex = 0;
-          cmd.etapes.forEach((e) => Object.assign(e, { statut: "a_faire", preparateur: "", preparateurId: "", debut: "", fin: "", remarque: "", coches: cmd.lignes.map(() => false) }));
-          cmd.envoyeeLe = new Date().toISOString();
+          cmd.etapes.forEach((e) => reinitEtape(cmd, e));
+          cmd.envoyeeLe = cmd.envoyeeLe || new Date().toISOString();
+          details.stock = mouvementStock(db, cmd, -1, moi, "Stock réservé");
+          cmd.stockReserve = true;
           journal(cmd, moi, `Envoyée en préparation → poste ${nomPoste(db, cmd.etapes[0].posteId)}.`);
           break;
         }
-        /* Secrétariat rappelle une commande pas encore prise */
+        /* Secrétariat rappelle une commande pas encore prise : le stock réservé est libéré */
         case "rappeler": {
           exiger(moi, "admin", "secretariat");
           if (cmd.statut !== "a_preparer" || cmd.etapeIndex !== 0) throw new ErreurHttp(400, "Impossible : la préparation a déjà commencé.");
+          if (cmd.stockReserve) { details.stock = mouvementStock(db, cmd, +1, moi, "Stock libéré"); cmd.stockReserve = false; }
           cmd.statut = "brouillon"; journal(cmd, moi, "Rappelée au secrétariat.");
           break;
         }
@@ -760,16 +925,26 @@ async function api(req, res, route) {
           e.statut = "en_cours"; e.preparateur = moi.nom; e.preparateurId = moi.id; e.debut = new Date().toISOString();
           cmd.statut = "en_preparation";
           journal(cmd, moi, "Prise en charge.", nomPoste(db, e.posteId));
+          details.poste = nomPoste(db, e.posteId);
           break;
         }
-        /* Cocher / décocher une ligne de l'étape courante */
+        /* Cocher / décocher une ligne, saisir lot et DDM/DLC — chaque saisie de traçabilité est historisée */
         case "ligne": {
           exiger(moi, "admin", "preparateur");
           const e = etapePour(db, cmd, moi, true);
           const i = entier(corps.index, 0, cmd.lignes.length - 1);
+          const l = cmd.lignes[i];
+          const lot = "lot" in corps ? texte(corps.lot, 40, false) : l.lot || "";
+          const dlc = "dlc" in corps ? dateIso(corps.dlc) : l.dlc || "";
+          const ancienLot = l.lot || "", ancienneDlc = l.dlc || "";
           e.coches[i] = !!corps.fait;
-          if ("lot" in corps) cmd.lignes[i].lot = texte(corps.lot, 40, false);       // traçabilité : n° de lot
-          if ("dlc" in corps) cmd.lignes[i].dlc = dateIso(corps.dlc);                // DDM (croquettes) ou DLC (frais / surgelé)
+          l.lot = lot; l.dlc = dlc;
+          if (lot !== ancienLot || dlc !== ancienneDlc) {
+            const p = db.produits.find((x) => x.id === l.produitId);
+            const chg = [lot !== ancienLot ? `lot ${ancienLot || "—"} → ${lot || "—"}` : "", dlc !== ancienneDlc ? `DDM/DLC ${ancienneDlc || "—"} → ${dlc || "—"}` : ""].filter(Boolean).join(", ");
+            journal(cmd, moi, `Ligne ${i + 1} (${p ? p.nom : "?"}) : ${chg}.`, nomPoste(db, e.posteId));
+          }
+          details = { index: i, fait: e.coches[i], lot, dlc, ...(lot !== ancienLot ? { ancienLot } : {}), ...(dlc !== ancienneDlc ? { ancienneDlc } : {}) };
           break;
         }
         /* Étape terminée → poste suivant, ou retour secrétariat si c'était la dernière */
@@ -777,13 +952,15 @@ async function api(req, res, route) {
           exiger(moi, "admin", "preparateur");
           const e = etapePour(db, cmd, moi, true);
           if (!e.coches.every(Boolean)) throw new ErreurHttp(409, "Toutes les lignes doivent être cochées avant de terminer.");
+          if (!cmd.etapes.slice(0, cmd.etapeIndex).every((x) => x.statut === "faite")) throw new ErreurHttp(409, "Une étape précédente du circuit n'a pas été faite.");
           e.statut = "faite"; e.fin = new Date().toISOString(); e.remarque = remarque;
           const posteFini = nomPoste(db, e.posteId);
+          details = { poste: posteFini, remarque };
           if (cmd.etapeIndex + 1 < cmd.etapes.length) {
             cmd.etapeIndex++; cmd.statut = "a_preparer";
             journal(cmd, moi, `Étape terminée${remarque ? " — " + remarque : ""}. Transmise au poste ${nomPoste(db, cmd.etapes[cmd.etapeIndex].posteId)}.`, posteFini);
           } else {
-            cmd.lignes.forEach((l) => { const p = db.produits.find((x) => x.id === l.produitId); if (p) p.stock = Math.max(0, p.stock - l.quantite); });
+            if (!cmd.stockReserve) { details.stock = mouvementStock(db, cmd, -1, moi, "Stock sorti"); cmd.stockReserve = true; } // commande antérieure à la réservation
             cmd.statut = "preparee"; cmd.prepareeLe = new Date().toISOString();
             journal(cmd, moi, `Dernière étape terminée${remarque ? " — " + remarque : ""}. Retour au secrétariat.`, posteFini);
           }
@@ -793,44 +970,49 @@ async function api(req, res, route) {
         case "rendre": {
           exiger(moi, "admin", "preparateur");
           const e = etapePour(db, cmd, moi, true);
-          e.statut = "a_faire"; e.coches = cmd.lignes.map(() => false);
           journal(cmd, moi, "Remise dans la file" + (remarque ? " — " + remarque : "."), nomPoste(db, e.posteId));
-          e.preparateur = ""; e.preparateurId = ""; e.debut = "";
+          reinitEtape(cmd, e);
           cmd.statut = "a_preparer";
+          details = { poste: nomPoste(db, e.posteId), remarque };
           break;
         }
-        /* Secrétariat renvoie une commande préparée à un poste (ex. erreur détectée) */
+        /* Secrétariat renvoie la commande à l'étape courante ou à une étape déjà faite (jamais en avant) */
         case "renvoyer": {
           exiger(moi, "admin", "secretariat");
           if (!["preparee", "a_preparer", "en_preparation"].includes(cmd.statut)) throw new ErreurHttp(400, "Cette commande ne peut pas être renvoyée.");
           const idx = entier(corps.etape, 0, cmd.etapes.length - 1);
+          if (idx > cmd.etapeIndex) throw new ErreurHttp(400, "On ne peut renvoyer qu'à l'étape en cours ou à une étape déjà faite : aucun poste ne peut être sauté.");
           if (!remarque) throw new ErreurHttp(400, "Indiquez la raison du renvoi.");
-          for (let i = idx; i < cmd.etapes.length; i++) Object.assign(cmd.etapes[i], { statut: "a_faire", preparateur: "", preparateurId: "", debut: "", fin: "", remarque: "", coches: cmd.lignes.map(() => false) });
-          if (cmd.statut === "preparee") cmd.lignes.forEach((l) => { const p = db.produits.find((x) => x.id === l.produitId); if (p) p.stock += l.quantite; }); // on ré-crédite le stock
-          cmd.etapeIndex = idx; cmd.statut = "a_preparer";
+          for (let i = idx; i < cmd.etapes.length; i++) reinitEtape(cmd, cmd.etapes[i]);
+          cmd.etapeIndex = idx; cmd.statut = "a_preparer"; // le stock reste réservé
           journal(cmd, moi, `Renvoyée au poste ${nomPoste(db, cmd.etapes[idx].posteId)} — ${remarque}`);
+          details = { poste: nomPoste(db, cmd.etapes[idx].posteId), remarque };
           break;
         }
         /* Secrétariat valide l'expédition */
         case "expedier": {
           exiger(moi, "admin", "secretariat");
           if (cmd.statut !== "preparee") throw new ErreurHttp(400, "La commande doit d'abord être préparée.");
-          cmd.statut = "expediee"; cmd.transporteur = texte(corps.transporteur, 80, false); cmd.suivi = texte(corps.suivi, 80, false); cmd.expedieeLe = new Date().toISOString();
-          journal(cmd, moi, "Expédiée" + (cmd.transporteur ? " via " + cmd.transporteur : "") + (cmd.suivi ? " (suivi " + cmd.suivi + ")" : "."));
+          const transporteur = texte(corps.transporteur, 80, false);
+          const suivi = texte(corps.suivi, 80, false);
+          Object.assign(cmd, { statut: "expediee", transporteur, suivi, expedieeLe: new Date().toISOString() });
+          journal(cmd, moi, "Expédiée" + (transporteur ? " via " + transporteur : "") + (suivi ? " (suivi " + suivi + ")" : "."));
+          details = { transporteur, suivi };
           break;
         }
         case "annuler": {
           exiger(moi, "admin", "secretariat");
           if (CLOS.includes(cmd.statut)) throw new ErreurHttp(400, "Commande déjà close.");
-          if (cmd.statut === "preparee") cmd.lignes.forEach((l) => { const p = db.produits.find((x) => x.id === l.produitId); if (p) p.stock += l.quantite; });
+          if (cmd.stockReserve) { details.stock = mouvementStock(db, cmd, +1, moi, "Stock libéré"); cmd.stockReserve = false; }
           cmd.statut = "annulee"; journal(cmd, moi, "Annulée" + (remarque ? " — " + remarque : "."));
+          details.remarque = remarque;
           break;
         }
         default:
           throw new ErreurHttp(404, "Action inconnue.");
       }
-      sauver(); audit(req, moi, "commande." + action, { numero: cmd.numero, statut: cmd.statut });
-      return json(res, 200, cmd);
+      sauver(); audit(req, moi, "commande." + action, { numero: cmd.numero, statut: cmd.statut, ...details });
+      return json(res, 200, moi.role === "preparateur" ? commandePourPreparateur(cmd) : cmd);
     }
   }
 
@@ -841,29 +1023,54 @@ async function api(req, res, route) {
    9. Serveur
    ===================================================================== */
 function gerer(req, res) {
-  entetesSecurite(res);
-  const route = req.url.split("?")[0];
-  if (route.startsWith("/api/")) {
-    api(req, res, route.slice(4)).catch((e) => {
-      if (e instanceof ErreurHttp) return json(res, e.code, { erreur: e.message, ...(e.extra || {}) });
-      console.error(e);
-      json(res, 500, { erreur: "Erreur interne." }); // jamais de détail technique côté client
-    });
-  } else {
-    statique(req, res);
+  try {
+    entetesSecurite(res);
+    const route = req.url.split("?")[0];
+    if (route.startsWith("/api/")) {
+      api(req, res, route.slice(4)).catch((e) => {
+        dbCache = null; // requête refusée : toute modification partielle en mémoire est abandonnée
+        if (res.headersSent) return;
+        if (e instanceof ErreurHttp) return json(res, e.code, { erreur: e.message, ...(e.extra || {}) });
+        console.error(e);
+        json(res, 500, { erreur: "Erreur interne." }); // jamais de détail technique côté client
+      });
+    } else {
+      statique(req, res);
+    }
+  } catch (e) { // filet de sécurité : aucune requête ne doit pouvoir arrêter le serveur
+    console.error(e);
+    if (!res.headersSent) json(res, 400, { erreur: "Requête invalide." });
   }
 }
 
+/* Récupération du compte admin (mot de passe oublié) : ADMIN_RESET_PASSWORD=... node server.js, puis retirer la variable. */
+function reinitialiserAdmin(mdp) {
+  if (!mdpValide(mdp)) { console.error("ADMIN_RESET_PASSWORD : " + MSG_MDP); process.exit(1); }
+  const db = lireDb();
+  let u = db.utilisateurs.find((x) => x.login === "admin");
+  if (!u) { u = { id: id(), login: "admin", nom: "Administrateur", role: "admin", postes: [], creeLe: new Date().toISOString() }; db.utilisateurs.push(u); }
+  Object.assign(u, { role: "admin", actif: true, mdp: hacherMdp(mdp), doitChangerMdp: true });
+  db.derniereMaj = new Date().toISOString();
+  ecrireDb(db);
+  audit({ socket: { remoteAddress: "console" }, headers: {} }, null, "admin.reinitialise", { origine: "ADMIN_RESET_PASSWORD" });
+  console.warn("⚠ Compte « admin » réinitialisé (mot de passe à changer à la connexion). Retirez ADMIN_RESET_PASSWORD de l'environnement.");
+}
+
 if (require.main === module) {
+  if (TRUST_PROXY && !["127.0.0.1", "::1", "localhost"].includes(HOST)) {
+    console.error("TRUST_PROXY=1 exige HOST=127.0.0.1 : sinon un appareil du réseau pourrait contourner le proxy et falsifier son adresse.");
+    process.exit(1);
+  }
+  if (process.env.ADMIN_RESET_PASSWORD) reinitialiserAdmin(process.env.ADMIN_RESET_PASSWORD);
   lireDb();
   const serveur = TLS ? https.createServer(TLS, gerer) : http.createServer(gerer);
   serveur.headersTimeout = 15000;
   serveur.requestTimeout = 30000;
   serveur.listen(PORT, HOST, () => {
-    const proto = TLS ? "https" : "http";
+    const proto = SECURE ? "https" : "http";
     console.log(`NutriLog démarré : ${proto}://localhost:${PORT}`);
     console.log(`Sur les tablettes : ${proto}://<adresse-IP-de-ce-PC>:${PORT}`);
-    if (!TLS) console.warn("⚠ HTTP non chiffré : fournissez TLS_KEY et TLS_CERT pour activer HTTPS (obligatoire en production).");
+    if (!SECURE) console.warn("⚠ HTTP non chiffré : fournissez TLS_KEY et TLS_CERT (ou un reverse proxy HTTPS + TRUST_PROXY=1). Obligatoire en production.");
   });
 }
 
