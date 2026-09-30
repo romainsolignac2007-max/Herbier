@@ -17,9 +17,8 @@
 
    Circuit d'une commande :
      Secrétariat (mail client → saisie)  →  contrôle (fiches, stock)
-       →  Poste 1 (ex. Picking)  →  Poste 2 (ex. Emballage)  →  Poste 3 (ex. Contrôle)
-       →  retour Secrétariat  →  expédition
-   Chaque poste ne voit que ce qui l'attend, avec ses propres instructions.
+       →  Emballage (tablettes)  →  retour Secrétariat  →  expédition
+   L'admin peut ajouter d'autres postes au circuit ; chacun ne voit que ce qui l'attend.
 
    Sécurité intégrée :
      - un compte par personne, mots de passe hachés (scrypt + sel)
@@ -272,11 +271,10 @@ function donneesInitiales() {
   console.log("  (à changer dès la première connexion — il ne sera plus affiché)");
   console.log("==========================================================\n");
 
-  /* Postes de préparation, dans l'ordre du circuit. Modifiables par l'admin. */
-  const picking = { id: id(), nom: "Picking", description: "Aller chercher les produits en rayon / réserve." };
-  const emballage = { id: id(), nom: "Emballage", description: "Conditionner, protéger, fermer les colis." };
-  const controle = { id: id(), nom: "Contrôle", description: "Vérifier le contenu et l'étiquetage avant retour au secrétariat." };
-  db.postes = [picking, emballage, controle];
+  /* Poste de préparation : Emballage (prélever, conditionner, fermer les colis).
+     L'admin peut ajouter d'autres postes plus tard si le circuit s'allonge. */
+  const emballage = { id: id(), nom: "Emballage", description: "Prélever les produits, les conditionner et fermer les colis avant retour au secrétariat." };
+  db.postes = [emballage];
 
   db.produits = [
     {
@@ -286,7 +284,7 @@ function donneesInitiales() {
         conditionnement: "Sac seul filmé, ou 2 sacs max par carton renforcé",
         vigilance: "Lourd (12 kg) : porter à deux au-delà de 2 sacs, ne pas empiler plus de 4.",
         dureeMin: 2,
-        parPoste: { [picking.id]: "Allée A1, palette du bas. Prendre les DDM les plus courtes en premier (FIFO). Noter le n° de lot imprimé au dos du sac.", [emballage.id]: "Film étirable + cornières. Étiquette « lourd ».", [controle.id]: "Compter les sacs, vérifier lot et DDM reportés sur le bon." },
+        parPoste: { [emballage.id]: "Allée A1, palette du bas : DDM les plus courtes en premier (FIFO), noter le n° de lot au dos du sac. Film étirable + cornières, étiquette « lourd »." },
       },
     },
     {
@@ -296,7 +294,7 @@ function donneesInitiales() {
         conditionnement: "Carton d'origine, 6 cartons max par colis",
         vigilance: "Ne pas stocker près des produits d'hygiène (litière parfumée) : odeurs.",
         dureeMin: 2,
-        parPoste: { [picking.id]: "Allée B3, étagère 2. Relever le n° de lot sur le côté du carton.", [emballage.id]: "Colis carton, calage papier, fermeture double bande.", [controle.id]: "Nombre de cartons, lot et DDM sur le bon, colis fermé." },
+        parPoste: { [emballage.id]: "Allée B3, étagère 2 : relever le n° de lot sur le côté du carton. Colis carton, calage papier, fermeture double bande." },
       },
     },
     {
@@ -310,7 +308,7 @@ function donneesInitiales() {
         conditionnement: "Sac seul filmé",
         vigilance: "Lourd et poussiéreux : à placer en bas du colis / de la palette.",
         dureeMin: 1,
-        parPoste: { [picking.id]: "Allée C2, palette.", [emballage.id]: "Film étirable, toujours en dessous des aliments.", [controle.id]: "Compter les sacs." },
+        parPoste: { [emballage.id]: "Allée C2, palette. Film étirable, toujours placée en dessous des aliments." },
       },
     },
   ];

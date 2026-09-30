@@ -36,8 +36,8 @@ const A = await client();
 await A("POST", "/api/connexion", { login: "admin", mdp: "AdminInitial123" });
 await A("POST", "/api/moi/motdepasse", { ancien: "AdminInitial123", nouveau: "AdminSecurise2026" });
 let etat = await A("GET", "/api/etat");
-const [pPick, pEmb, pCtrl] = etat.postes;
-for (const [login, role, postes] of [["sophie", "secretariat", []], ["karim", "preparateur", [pPick.id]], ["lea", "preparateur", [pEmb.id]], ["marc", "preparateur", [pCtrl.id]]]) {
+const [pEmb] = etat.postes; // poste unique : Emballage
+for (const [login, role, postes] of [["sophie", "secretariat", []], ["karim", "preparateur", [pEmb.id]]]) {
   await A("POST", "/api/utilisateurs", { login, nom: login, role, postes, mdp: "Provisoire2026x" });
   const u = await client(); await u("POST", "/api/connexion", { login, mdp: "Provisoire2026x" }); await u("POST", "/api/moi/motdepasse", { ancien: "Provisoire2026x", nouveau: "MonMdpPerso2026" });
 }

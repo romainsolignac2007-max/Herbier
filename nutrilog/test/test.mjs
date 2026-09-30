@@ -80,9 +80,16 @@ const cookieAvant = admin.cookie();
 r = await admin("POST", "/api/moi/motdepasse", { ancien: "AdminInitial123", nouveau: "AdminSecurise2026" }); ok(r.status === 200, "mdp changé");
 ok(admin.cookie() === cookieAvant, "la session courante est conservée (pas de déconnexion surprise)");
 r = await admin("GET", "/api/etat"); ok(r.status === 200 && r.data.utilisateurs, "admin voit l'état complet");
-const [pPick, pEmb, pCtrl] = r.data.postes;
+ok(r.data.postes.map((p) => p.nom).join() === "Emballage", "au démarrage, un seul poste de préparation : Emballage");
 const produits = r.data.produits; const clients = r.data.clients;
 const [croq, pate, barf, litiere] = produits;
+// Le moteur gère un circuit à plusieurs postes : l'admin en ajoute deux pour le tester à fond
+const pEmb = r.data.postes[0];
+const pPick = (await admin("POST", "/api/postes", { nom: "Picking" })).data;
+const pCtrl = (await admin("POST", "/api/postes", { nom: "Contrôle" })).data;
+r = await admin("PUT", "/api/postes/ordre", { ordre: [pPick.id, pEmb.id, pCtrl.id] });
+ok(r.status === 200 && r.data.map((p) => p.nom).join() === "Picking,Emballage,Contrôle", "l'admin peut étendre le circuit (Picking → Emballage → Contrôle)");
+for (const p of [croq, pate, litiere]) await admin("PUT", `/api/produits/${p.id}`, { preparation: { parPoste: { [pPick.id]: "Prélever en rayon", [pCtrl.id]: "Vérifier quantité et lot" } } });
 
 console.log("3. Admin crée les comptes (un identifiant par personne)");
 const creer = async (login, nom, role, ps) => { const x = await admin("POST", "/api/utilisateurs", { login, nom, role, postes: ps, mdp: "Provisoire2026x" }); ok(x.status === 201, `compte ${login} créé`); return x.data; };

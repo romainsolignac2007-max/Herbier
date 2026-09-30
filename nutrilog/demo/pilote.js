@@ -7,9 +7,7 @@
 const MDP_DEMO = "Demo2026demo";
 const COMPTES_DEMO = [
   { login: "sophie", nom: "Sophie Martin", role: "secretariat", poste: null, lib: "Secrétariat" },
-  { login: "karim", nom: "Karim Benali", role: "preparateur", poste: 0, lib: "Picking" },
-  { login: "lea", nom: "Léa Dubois", role: "preparateur", poste: 1, lib: "Emballage" },
-  { login: "marc", nom: "Marc Petit", role: "preparateur", poste: 2, lib: "Contrôle" },
+  { login: "lea", nom: "Léa Dubois", role: "preparateur", poste: 0, lib: "Emballage" },
   { login: "admin", nom: "Administrateur", role: "admin", poste: null, lib: "Administrateur" },
 ];
 
@@ -48,7 +46,7 @@ async function preparerDemo() {
   const etapeComplete = async (login, c) => {
     await en(login, async () => {
       await appelDemo("POST", `/api/commandes/${c.id}/prendre`);
-      for (let i = 0; i < c.lignes.length; i++) await appelDemo("POST", `/api/commandes/${c.id}/ligne`, { index: i, fait: true, ...(login === "karim" ? { lot: "L2409-" + (i + 1), dlc: "2027-03-15" } : {}) });
+      for (let i = 0; i < c.lignes.length; i++) await appelDemo("POST", `/api/commandes/${c.id}/ligne`, { index: i, fait: true, lot: "L2409-" + (i + 1), dlc: "2027-03-15" });
       await appelDemo("POST", `/api/commandes/${c.id}/terminer`);
     });
   };
@@ -60,11 +58,10 @@ async function preparerDemo() {
     await nouvelle("brouillon", 0, [{ produitId: barf.id, quantite: 2 }], { note: "Viande surgelée : fiche de préparation à compléter" });
     for (const k of ["expediee", "urgente", "emballage", "elevage"]) await appelDemo("POST", `/api/commandes/${cmd[k].id}/envoyer`);
   });
-  await etapeComplete("karim", cmd.expediee); await etapeComplete("lea", cmd.expediee); await etapeComplete("marc", cmd.expediee);
+  await etapeComplete("lea", cmd.expediee);
   await en("sophie", () => appelDemo("POST", `/api/commandes/${cmd.expediee.id}/expedier`, { transporteur: "Geodis", suivi: "GE4471203" }));
-  await etapeComplete("karim", cmd.emballage);
   await en("lea", () => appelDemo("POST", `/api/commandes/${cmd.emballage.id}/prendre`));
-  await en("karim", () => appelDemo("POST", `/api/commandes/${cmd.elevage.id}/message`, { texte: "Il reste 18 sacs du lot A, je complète avec 2 sacs du lot B." }));
+  await en("lea", () => appelDemo("POST", `/api/commandes/${cmd.elevage.id}/message`, { texte: "Il reste 18 sacs du lot A, je complète avec 2 sacs du lot B." }));
 }
 
 /* Bandeau : changer de personne en un clic */

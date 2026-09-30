@@ -8,7 +8,7 @@
 "use strict";
 
 const NutriDemo = (() => {
-  const CLE = "nutrilog-demo-fs-v1";
+  const CLE = "nutrilog-demo-fs-v2"; // v2 : circuit Emballage seul
 
   /* ---------- Buffer minimal ---------- */
   class Buf extends Uint8Array {

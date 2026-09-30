@@ -24,7 +24,7 @@ Contrôle automatique avant envoi — la commande est BLOQUÉE tant que :
    │   dès l'envoi, les quantités sont RÉSERVÉES : deux commandes ne peuvent pas se partager le même stock
    │   (rappel au secrétariat ou annulation → stock libéré ; chaque mouvement est historisé)
    ▼
-Poste 1 (ex. Picking)  ──▶  Poste 2 (ex. Emballage)  ──▶  Poste 3 (ex. Contrôle)
+Emballage (tablettes) : prélever, conditionner, fermer les colis
    chaque poste ne voit que ce qui l'attend, avec SES consignes pour chaque produit ;
    il prend la commande, coche les lignes, saisit lot + DDM/DLC (chaque saisie est historisée),
    peut la remettre dans la file, puis la transmet automatiquement au poste suivant ;
@@ -47,7 +47,8 @@ horodaté** (qui, quel poste, quoi) et **journal d'audit** global pour l'adminis
 | **Préparateur** | voir uniquement les commandes qui attendent **son ou ses postes** (ou sur lesquelles il a travaillé), prendre, cocher, saisir lot / DDM, remettre dans la file, terminer l'étape ; écrire dans le fil. La tablette ne reçoit ni l'extrait du mail, ni les coordonnées des clients, ni la liste du personnel. |
 | **Administrateur** | tout ce qui précède + comptes utilisateurs, postes du circuit, journal d'audit |
 
-Les postes (Picking, Emballage, Contrôle par défaut) sont modifiables : on peut en ajouter, les renommer,
+Trois rôles : **administrateur**, **secrétariat** et **préparateur d'emballage**. Le circuit démarre avec
+le seul poste **Emballage** ; si besoin, l'admin peut en ajouter d'autres, les renommer et
 changer leur ordre. Chaque préparateur est affecté à un ou plusieurs postes. Si l'admin retire un
 préparateur d'un poste (ou désactive / supprime son compte) alors qu'il tient une étape, celle-ci est
 automatiquement remise dans la file de son poste, et c'est tracé.
@@ -135,7 +136,7 @@ code. Pour une exploitation réelle en entreprise, il faut au minimum :
 
 ## Tests
 
-- `npm test` : scénario complet par l'API (secrétariat → 3 postes → renvoi → expédition), contrôles de
+- `npm test` : scénario complet par l'API (secrétariat → emballage → expédition, plus un circuit étendu à 3 postes), contrôles de
   sécurité (CSRF, traversée de chemins en requêtes brutes, force brute, verrouillages, fuite de données),
   réservation de stock, reverse proxy, inactivité, base corrompue, récupération admin (~130 vérifications).
 - `npm run test:navigateur` : l'interface dans Chromium (Playwright requis) — réseau coupé pendant la saisie
