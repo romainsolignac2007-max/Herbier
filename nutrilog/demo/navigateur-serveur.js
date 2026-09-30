@@ -8,7 +8,7 @@
 "use strict";
 
 const NutriDemo = (() => {
-  const CLE = "nutrilog-demo-fs-v3"; // v3 : catalogue Solignac Nutrition
+  const CLE = "nutrilog-demo-fs-v4"; // v4 : catalogue Solignac Nutrition, sans gestion du stock
 
   /* ---------- Buffer minimal ---------- */
   class Buf extends Uint8Array {

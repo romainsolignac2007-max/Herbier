@@ -53,13 +53,13 @@ async function preparerDemo() {
     parPoste: { [emb.id]: "Prélever les DDM les plus courtes en premier (FIFO), noter le n° de lot imprimé sur le sac. Filmer, étiqueter le colis au nom du client." },
   } });
 
-  // Stocks et emplacements de quelques références
+  // Emplacements de quelques références
   const ref = (idSite) => etat.produits.find((p) => p.idSite === idSite);
   const stocks = [
     ["croccitanie-eco-actif-chien-20-kg", 40, "A1"], ["msm-podium-adult-lamb-rice-14-kg", 25, "A3"], ["msm-podium-adult-lamb-rice-2-5-kg", 60, "B2"],
     ["cereales-occitanie-ble-20-kg", 80, "E1"], ["cereales-occitanie-super-galinette-20-kg", 50, "E2"], ["ownat-care-dermatologic-chien-3-kg", 12, "C4"],
   ];
-  for (const [idSite, stock, emplacement] of stocks) { const p = ref(idSite); if (p) await appelDemo("PUT", `/api/produits/${p.id}`, { stock, stockAvant: 0, emplacement }); }
+  for (const [idSite, , emplacement] of stocks) { const p = ref(idSite); if (p) await appelDemo("PUT", `/api/produits/${p.id}`, { emplacement }); } // stock : pas encore géré
   etat = await appelDemo("GET", "/api/etat");
   await appelDemo("POST", "/api/deconnexion");
 

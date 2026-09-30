@@ -24,11 +24,11 @@ const S = {
 const LIB_STATUT = { brouillon: "Brouillon", a_preparer: "À préparer", en_preparation: "En préparation", preparee: "Préparée", expediee: "Expédiée", annulee: "Annulée" };
 const LIB_ROLE = { admin: "Administrateur", secretariat: "Secrétariat", preparateur: "Préparateur" };
 const LIB_CONS = { ambiant: "Ambiant", frais: "Frais (0–4 °C)", surgele: "Surgelé (−18 °C)" };
-const LIB_CAT = { chien: "🐕 Chien", chat: "🐈 Chat", cheval: "🐴 Cheval", bassecour: "🐔 Basse-cour", cereales: "🌾 Céréales", rongeur: "🐹 Rongeur", oiseau: "🐦 Oiseau", autre: "Autre" };
+const LIB_CAT = { chien: "Chien", chat: "Chat", cheval: "Cheval", bassecour: "Basse-cour", cereales: "Céréales", rongeur: "Rongeur", oiseau: "Oiseau", autre: "Autre" };
 /* Nom affiché d'une référence : le produit du catalogue + son format (un même produit existe en plusieurs poids) */
 const libelle = (p) => (p ? p.nom + (p.poids ? " — " + p.poids : "") : "?");
 const libelleSaisie = (p) => `${libelle(p)} [${p.reference || p.id}]`; // unique : sert à retrouver le produit tapé
-const badgeCons = (c) => (c && c !== "ambiant" ? `<span class="pastille cons-${h(c)}">${c === "frais" ? "❄ FRAIS" : "🧊 SURGELÉ"}</span>` : "");
+const badgeCons = (c) => (c && c !== "ambiant" ? `<span class="pastille cons-${h(c)}">${c === "frais" ? "FRAIS" : "SURGELÉ"}</span>` : "");
 
 /* ---------- Utilitaires ---------- */
 const $ = (sel) => document.querySelector(sel);
@@ -43,6 +43,7 @@ const etapeCourante = (c) => (c.etapes && c.etapes[c.etapeIndex]) || null;
 const estClos = (c) => c.statut === "expediee" || c.statut === "annulee";
 const aujourdhui = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }; // date LOCALE
 /* Quantité d'un produit réservée par les commandes envoyées en préparation et pas encore expédiées */
+const stockActif = () => !!(S.etat && S.etat.gestionStock); // gestion du stock : désactivée pour l'instant
 const reserve = (pid) => (S.etat.commandes || []).filter((c) => c.stockReserve && ["a_preparer", "en_preparation", "preparee"].includes(c.statut))
   .reduce((t, c) => t + c.lignes.filter((l) => l.produitId === pid).reduce((u, l) => u + l.quantite, 0), 0);
 const pastille = (statut) => `<span class="pastille p-${h(statut)}">${h(LIB_STATUT[statut] || statut)}</span>`;
@@ -220,14 +221,14 @@ function carteCmd(c) {
   const cl = client(c.clientId);
   const e = etapeCourante(c);
   let ou = "";
-  if (c.statut === "a_preparer" && e) ou = `⏳ attend le poste <b>${h(nomPoste(e.posteId))}</b>`;
-  if (c.statut === "en_preparation" && e) ou = `🔧 ${h(nomPoste(e.posteId))} — ${h(e.preparateur)}`;
-  if (c.statut === "preparee") ou = `✅ prête, à expédier`;
+  if (c.statut === "a_preparer" && e) ou = `Attend le poste <b>${h(nomPoste(e.posteId))}</b>`;
+  if (c.statut === "en_preparation" && e) ou = `En cours : ${h(nomPoste(e.posteId))} — ${h(e.preparateur)}`;
+  if (c.statut === "preparee") ou = `Prête, à expédier`;
   return `<div class="cmd${c.priorite === "urgente" ? " urgente" : ""}" data-ouvrir="${c.id}">
     <div class="titre"><span>${h(cl ? cl.nom : "(sans client)")}</span><span class="num">n° ${c.numero}</span></div>
     <div class="meta">${c.lignes.length} ligne${c.lignes.length > 1 ? "s" : ""} · livraison ${fmtJour(c.dateLivraisonSouhaitee)} ${c.priorite === "urgente" ? '<span class="pastille p-urgente">URGENT</span>' : ""}</div>
     ${ou ? `<div class="meta">${ou}</div>` : ""}
-    ${c.messages && c.messages.length ? `<div class="messages-nb">💬 ${c.messages.length} message${c.messages.length > 1 ? "s" : ""}</div>` : ""}
+    ${c.messages && c.messages.length ? `<div class="messages-nb">${c.messages.length} message${c.messages.length > 1 ? "s" : ""}</div>` : ""}
   </div>`;
 }
 
@@ -250,7 +251,7 @@ function vueCommandes() {
   const closes = cs.filter(estClos).sort((a, b) => dateClot(b).localeCompare(dateClot(a)) || b.numero - a.numero).slice(0, 30); // les 30 plus récentes
   return `
     <div class="barre-outils">
-      <button class="btn btn-primaire" data-action="nouvelle-commande">＋ Nouvelle commande (mail reçu)</button>
+      <button class="btn btn-primaire" data-action="nouvelle-commande">Nouvelle commande (mail reçu)</button>
       <input type="search" placeholder="Rechercher n°, client, produit…" value="${h(S.recherche)}" data-recherche />
     </div>
     <div class="colonnes">
@@ -290,24 +291,24 @@ function vueProduits() {
   const opt = (v, lib, cour) => `<option value="${h(v)}" ${v === cour ? "selected" : ""}>${h(lib)}</option>`;
   return `
     <div class="barre-outils">
-      <button class="btn btn-primaire" data-action="nouveau-produit">＋ Nouveau produit</button>
-      <button class="btn btn-secondaire" data-action="importer-catalogue">⇪ Importer / mettre à jour depuis le site</button>
+      <button class="btn btn-primaire" data-action="nouveau-produit">Nouveau produit</button>
+      <button class="btn btn-secondaire" data-action="importer-catalogue">Importer / mettre à jour depuis le site</button>
       <input type="search" placeholder="Rechercher : nom, marque, poids, référence…" value="${h(S.recherche)}" data-recherche />
     </div>
     <div class="barre-outils filtres">
       <select data-filtre="filtreUnivers" aria-label="Univers">${opt("", "Tous les univers", S.filtreUnivers)}${univers.map((u) => opt(u, LIB_CAT[u] || u, S.filtreUnivers)).join("")}</select>
       <select data-filtre="filtreMarque" aria-label="Marque">${opt("", "Toutes les marques", S.filtreMarque)}${marques.map((m) => opt(m, m, S.filtreMarque)).join("")}</select>
-      <select data-filtre="filtreFiche" aria-label="État">${opt("", "Toutes les fiches", S.filtreFiche)}${opt("ko", `Fiche à compléter (${aCompleter})`, S.filtreFiche)}${opt("ok", "Fiche complète", S.filtreFiche)}${opt("sansstock", "Sans stock", S.filtreFiche)}</select>
+      <select data-filtre="filtreFiche" aria-label="État">${opt("", "Toutes les fiches", S.filtreFiche)}${opt("ko", `Fiche à compléter (${aCompleter})`, S.filtreFiche)}${opt("ok", "Fiche complète", S.filtreFiche)}${stockActif() ? opt("sansstock", "Sans stock", S.filtreFiche) : ""}</select>
       <span class="compte">${ps.length} / ${tous.length} références</span>
-      ${ps.length ? `<button class="btn btn-secondaire btn-petit" data-action="fiche-type">✎ Fiche type pour ces ${ps.length} références</button>` : ""}
+      ${ps.length ? `<button class="btn btn-secondaire btn-petit" data-action="fiche-type">Fiche type pour ces ${ps.length} références</button>` : ""}
     </div>
-    <p class="aide">Une commande ne peut partir en préparation que si chaque produit a sa fiche de préparation complète (instructions générales + consigne pour chaque poste du circuit). Le stock affiché est le stock <b>disponible</b> : les quantités des commandes envoyées en préparation sont déjà réservées.</p>
-    <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Marque</th><th>Univers</th><th>Conservation</th><th title="Stock physique moins les commandes en préparation">Stock dispo.</th><th>Réservé</th><th>Empl.</th><th>Fiche générale</th>${postes.map((p) => `<th>${h(p.nom)}</th>`).join("")}</tr></thead><tbody>
+    <p class="aide">Une commande ne peut partir en préparation que si chaque produit a sa fiche de préparation complète (instructions générales + consigne pour chaque poste du circuit).${stockActif() ? " Le stock affiché est le stock <b>disponible</b> : les quantités des commandes envoyées en préparation sont déjà réservées." : ""}</p>
+    <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Marque</th><th>Univers</th><th>Conservation</th>${stockActif() ? `<th title="Stock physique moins les commandes en préparation">Stock dispo.</th><th>Réservé</th>` : ""}<th>Empl.</th><th>Fiche générale</th>${postes.map((p) => `<th>${h(p.nom)}</th>`).join("")}</tr></thead><tbody>
       ${ps.map((p) => `<tr class="cliquable" data-produit="${p.id}">
         <td><b>${h(p.nom)}</b>${p.poids ? ` <span class="poids">${h(p.poids)}</span>` : ""}</td><td>${h(p.marque || "—")}</td><td>${h(LIB_CAT[p.categorie] || "—")}</td><td>${h(LIB_CONS[p.conservation] || "Ambiant")}</td>
-        <td class="${p.stock <= 5 ? "stock-bas" : ""}">${p.stock} ${h(p.unite)}</td><td>${reserve(p.id) || "—"}</td><td>${h(p.emplacement)}</td>
-        <td class="${p.preparation.instructions ? "fiche-ok" : "fiche-ko"}">${p.preparation.instructions ? "✔ complète" : "✘ manquante"}</td>
-        ${postes.map((po) => `<td class="${p.preparation.parPoste?.[po.id] ? "fiche-ok" : "fiche-ko"}">${p.preparation.parPoste?.[po.id] ? "✔" : "✘"}</td>`).join("")}
+        ${stockActif() ? `<td class="${p.stock <= 5 ? "stock-bas" : ""}">${p.stock} ${h(p.unite)}</td><td>${reserve(p.id) || "—"}</td>` : ""}<td>${h(p.emplacement)}</td>
+        <td class="${p.preparation.instructions ? "fiche-ok" : "fiche-ko"}">${p.preparation.instructions ? "complète" : "manquante"}</td>
+        ${postes.map((po) => `<td class="${p.preparation.parPoste?.[po.id] ? "fiche-ok" : "fiche-ko"}">${p.preparation.parPoste?.[po.id] ? "oui" : "à faire"}</td>`).join("")}
       </tr>`).join("") || '<tr><td colspan="12" class="vide">Aucun produit</td></tr>'}
     </tbody></table></div>`;
 }
@@ -317,7 +318,7 @@ function vueClients() {
   const cs = S.etat.clients.filter((c) => !q || c.nom.toLowerCase().includes(q) || (c.email || "").toLowerCase().includes(q));
   return `
     <div class="barre-outils">
-      <button class="btn btn-primaire" data-action="nouveau-client">＋ Nouveau client</button>
+      <button class="btn btn-primaire" data-action="nouveau-client">Nouveau client</button>
       <input type="search" placeholder="Rechercher un client…" value="${h(S.recherche)}" data-recherche />
     </div>
     <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Client</th><th>E-mail</th><th>Téléphone</th><th>Adresse</th><th>Commandes</th></tr></thead><tbody>
@@ -336,7 +337,7 @@ function carteTablette(c) {
     <div class="titre"><span>n° ${c.numero} — ${h(cl ? cl.nom : "")}</span>${c.priorite === "urgente" ? '<span class="pastille p-urgente">URGENT</span>' : ""}</div>
     <div class="meta">Poste : <b>${h(e ? nomPoste(e.posteId) : "—")}</b> · ${c.lignes.length} ligne${c.lignes.length > 1 ? "s" : ""}${dureeTotale ? ` · ≈ ${dureeTotale} min` : ""} · livraison ${fmtJour(c.dateLivraisonSouhaitee)}</div>
     ${e && e.preparateur ? `<div class="meta">Pris par ${h(e.preparateur)}</div>` : ""}
-    ${c.messages && c.messages.length ? `<div class="messages-nb">💬 ${c.messages.length}</div>` : ""}
+    ${c.messages && c.messages.length ? `<div class="messages-nb">${c.messages.length} message${c.messages.length > 1 ? "s" : ""}</div>` : ""}
   </div>`;
 }
 
@@ -345,7 +346,7 @@ function vueAFaire() {
     .sort((a, b) => (b.priorite === "urgente") - (a.priorite === "urgente") || (a.dateLivraisonSouhaitee || "9").localeCompare(b.dateLivraisonSouhaitee || "9") || a.numero - b.numero);
   if (!S.moi.postes.length) return `<div class="alerte">Aucun poste ne vous est affecté. Demandez à l'administrateur.</div>`;
   return `<h2>À faire — poste${S.moi.postes.length > 1 ? "s" : ""} ${h(S.moi.postes.map(nomPoste).join(", "))}</h2>
-    <div class="grille">${l.length ? l.map(carteTablette).join("") : '<div class="vide">Rien en attente pour votre poste. 👍</div>'}</div>`;
+    <div class="grille">${l.length ? l.map(carteTablette).join("") : '<div class="vide">Rien en attente pour votre poste.</div>'}</div>`;
 }
 
 function vueEnCours() {
@@ -370,7 +371,7 @@ function vueTerminees() {
 function vueUtilisateurs() {
   const us = S.etat.utilisateurs || [];
   return `
-    <div class="barre-outils"><button class="btn btn-primaire" data-action="nouvel-utilisateur">＋ Nouvel utilisateur</button></div>
+    <div class="barre-outils"><button class="btn btn-primaire" data-action="nouvel-utilisateur">Nouvel utilisateur</button></div>
     <p class="aide">Un identifiant par personne. Chaque nouvel utilisateur doit changer son mot de passe à sa première connexion.</p>
     <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Nom</th><th>Identifiant</th><th>Rôle</th><th>Postes</th><th>État</th><th></th></tr></thead><tbody>
       ${us.map((u) => `<tr><td><b>${h(u.nom)}</b></td><td>${h(u.login)}</td><td>${h(LIB_ROLE[u.role])}</td><td>${h((u.postes || []).map(nomPoste).join(", "))}</td>
@@ -382,7 +383,7 @@ function vueUtilisateurs() {
 function vuePostes() {
   const ps = S.etat.postes;
   return `
-    <div class="barre-outils"><button class="btn btn-primaire" data-action="nouveau-poste">＋ Nouveau poste</button></div>
+    <div class="barre-outils"><button class="btn btn-primaire" data-action="nouveau-poste">Nouveau poste</button></div>
     <p class="aide">Les postes définissent le circuit de préparation, dans cet ordre. Chaque préparateur est affecté à un ou plusieurs postes ; chaque produit a une consigne par poste.</p>
     <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Ordre</th><th>Poste</th><th>Description</th><th>Préparateurs</th><th></th></tr></thead><tbody>
       ${ps.map((p, i) => `<tr><td>${i + 1}
@@ -403,7 +404,7 @@ function vueAudit() {
     }
     return `<p class="aide">Chargement du journal…</p>`;
   }
-  return `<div class="barre-outils"><button class="btn btn-secondaire" data-action="actualiser-audit">↻ Actualiser</button></div>
+  return `<div class="barre-outils"><button class="btn btn-secondaire" data-action="actualiser-audit">Actualiser</button></div>
     <h2>Journal d'audit (300 dernières actions)</h2>
     <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Date</th><th>Utilisateur</th><th>Rôle</th><th>IP</th><th>Action</th><th>Détails</th></tr></thead><tbody>
     ${S.audit.map((l) => `<tr><td>${fmtDate(l.date)}</td><td>${h(l.utilisateur)}</td><td>${h(l.role)}</td><td>${h(l.ip)}</td><td>${h(l.action)}</td><td>${h(JSON.stringify(l.details))}</td></tr>`).join("") || '<tr><td colspan="6" class="vide">Journal vide</td></tr>'}
@@ -436,7 +437,7 @@ function blocagesClient(c) { // même logique que le serveur, pour afficher en d
   });
   const demande = new Map();
   c.lignes.forEach((l) => demande.set(l.produitId, (demande.get(l.produitId) || 0) + l.quantite));
-  demande.forEach((q, pid) => { const p = produit(pid); if (p && p.stock < q) b.push(`Stock disponible insuffisant pour « ${p.nom} » (${p.stock} disponibles, ${q} demandés).`); });
+  if (stockActif()) demande.forEach((q, pid) => { const p = produit(pid); if (p && p.stock < q) b.push(`Stock disponible insuffisant pour « ${p.nom} » (${p.stock} disponibles, ${q} demandés).`); });
   c.etapes.forEach((e) => { if (!(S.etat.utilisateurs || []).some((u) => u.actif !== false && u.role === "preparateur" && (u.postes || []).includes(e.posteId))) b.push(`Aucun préparateur actif n'est affecté au poste ${nomPoste(e.posteId)}.`); });
   return b;
 }
@@ -454,7 +455,7 @@ function ouvrirCommande(id) {
     /* Circuit */
     const circuit = `<div class="circuit">${c.etapes.map((et, i) => `<div class="etape ${et.statut}${i === c.etapeIndex && !estClos(c) && c.statut !== "brouillon" && c.statut !== "preparee" ? " courante" : ""}${et.preparateurId === S.moi.id ? " moi" : ""}">
         <div class="nom">${i + 1}. ${h(nomPoste(et.posteId))}</div>
-        <div class="qui-etape">${et.statut === "faite" ? "✔ " + h(et.preparateur) + " · " + fmtDate(et.fin) : et.statut === "en_cours" ? "🔧 " + h(et.preparateur) + " depuis " + fmtDate(et.debut) : "en attente"}</div>
+        <div class="qui-etape">${et.statut === "faite" ? "Faite par " + h(et.preparateur) + " · " + fmtDate(et.fin) : et.statut === "en_cours" ? "En cours : " + h(et.preparateur) + " depuis " + fmtDate(et.debut) : "en attente"}</div>
         ${et.remarque ? `<div class="qui-etape">« ${h(et.remarque)} »</div>` : ""}
       </div>`).join("")}</div>`;
 
@@ -474,13 +475,13 @@ function ouvrirCommande(id) {
             <p><span class="cle">Consigne ${h(nomPoste(e.posteId))}</span><br />${h(p.preparation.parPoste?.[e.posteId] || "—")}</p>
             ${p.preparation.instructions ? `<p><span class="cle">Général</span><br />${h(p.preparation.instructions)}</p>` : ""}
             ${p.preparation.conditionnement ? `<p><span class="cle">Conditionnement</span><br />${h(p.preparation.conditionnement)}</p>` : ""}
-            ${p.preparation.vigilance ? `<p class="vigilance">⚠ ${h(p.preparation.vigilance)}</p>` : ""}
+            ${p.preparation.vigilance ? `<p class="vigilance">Attention : ${h(p.preparation.vigilance)}</p>` : ""}
           </div>
         </div>`;
       }).join("");
     } else {
-      lignes = `<div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Qté</th><th>Empl.</th><th>Lot / DDM</th>${secretariat ? "<th>Stock dispo.</th>" : ""}${c.etapes.map((et) => `<th>${h(nomPoste(et.posteId))}</th>`).join("")}</tr></thead><tbody>
-        ${c.lignes.map((l) => { const p = produit(l.produitId) || { nom: "?", preparation: {} }; return `<tr><td><b>${h(libelle(p))}</b> ${badgeCons(p.conservation)}</td><td>${l.quantite} ${h(p.unite || "")}</td><td>${h(p.emplacement || "")}</td><td>${h(l.lot || "—")} / ${fmtJour(l.dlc)}</td>${secretariat ? `<td class="${c.statut === "brouillon" && (p.stock ?? 0) < l.quantite ? "stock-bas" : ""}">${p.stock ?? "?"}</td>` : ""}${c.etapes.map((et) => `<td class="${p.preparation.parPoste?.[et.posteId] ? "" : "fiche-ko"}">${h(p.preparation.parPoste?.[et.posteId] || "✘ manquante")}</td>`).join("")}</tr>`; }).join("")}
+      lignes = `<div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Qté</th><th>Empl.</th><th>Lot / DDM</th>${secretariat && stockActif() ? "<th>Stock dispo.</th>" : ""}${c.etapes.map((et) => `<th>${h(nomPoste(et.posteId))}</th>`).join("")}</tr></thead><tbody>
+        ${c.lignes.map((l) => { const p = produit(l.produitId) || { nom: "?", preparation: {} }; return `<tr><td><b>${h(libelle(p))}</b> ${badgeCons(p.conservation)}</td><td>${l.quantite} ${h(p.unite || "")}</td><td>${h(p.emplacement || "")}</td><td>${h(l.lot || "—")} / ${fmtJour(l.dlc)}</td>${secretariat && stockActif() ? `<td class="${c.statut === "brouillon" && (p.stock ?? 0) < l.quantite ? "stock-bas" : ""}">${p.stock ?? "?"}</td>` : ""}${c.etapes.map((et) => `<td class="${p.preparation.parPoste?.[et.posteId] ? "" : "fiche-ko"}">${h(p.preparation.parPoste?.[et.posteId] || "manquante")}</td>`).join("")}</tr>`; }).join("")}
       </tbody></table></div>`;
     }
 
@@ -489,35 +490,35 @@ function ouvrirCommande(id) {
     if (secretariat) {
       if (c.statut === "brouillon") {
         const b = blocagesClient(c);
-        A.push(`<div class="bloc"><h3>Contrôle avant envoi aux préparateurs</h3>${b.length ? `<ul class="blocages">${b.map((x) => `<li>⛔ ${h(x)}</li>`).join("")}</ul>` : '<div class="ok-envoi">✔ Tout est prêt : la commande peut partir en préparation.</div>'}
+        A.push(`<div class="bloc"><h3>Contrôle avant envoi aux préparateurs</h3>${b.length ? `<ul class="blocages">${b.map((x) => `<li>${h(x)}</li>`).join("")}</ul>` : '<div class="ok-envoi">Tout est prêt : la commande peut partir en préparation.</div>'}
           <div class="ligne-boutons">
             ${c.envoyeeLe ? "" : `<button class="btn btn-danger" data-action="supprimer-commande" data-id="${c.id}">Supprimer</button>`}
             <button class="btn btn-secondaire" data-action="modifier-commande" data-id="${c.id}">Modifier</button>
             <button class="btn btn-primaire" data-action="envoyer" data-id="${c.id}" ${b.length ? "disabled" : ""}>Envoyer au poste ${h(c.etapes[0] ? nomPoste(c.etapes[0].posteId) : "")} →</button>
           </div></div>`);
       }
-      if (c.statut === "a_preparer" && c.etapeIndex === 0) A.push(`<div class="ligne-boutons"><button class="btn btn-secondaire" data-action="rappeler" data-id="${c.id}">↩ Rappeler au secrétariat</button></div>`);
-      if (["a_preparer", "en_preparation", "preparee"].includes(c.statut)) A.push(`<div class="ligne-boutons"><button class="btn btn-secondaire" data-action="renvoyer" data-id="${c.id}">↩ Renvoyer à un poste…</button></div>`);
+      if (c.statut === "a_preparer" && c.etapeIndex === 0) A.push(`<div class="ligne-boutons"><button class="btn btn-secondaire" data-action="rappeler" data-id="${c.id}">Rappeler au secrétariat</button></div>`);
+      if (["a_preparer", "en_preparation", "preparee"].includes(c.statut)) A.push(`<div class="ligne-boutons"><button class="btn btn-secondaire" data-action="renvoyer" data-id="${c.id}">Renvoyer à un poste…</button></div>`);
       if (c.statut === "preparee") A.push(`<div class="bloc"><h3>Expédition</h3>
         <div class="deux-col"><label>Transporteur<input id="exp-transporteur" maxlength="80" placeholder="Geodis, DB Schenker, coursier…" /></label><label>N° de suivi<input id="exp-suivi" maxlength="80" placeholder="numéro seul, pas l'URL" /></label></div>
-        <div class="ligne-boutons"><button class="btn btn-succes" data-action="expedier" data-id="${c.id}">✔ Valider l'expédition</button></div></div>`);
+        <div class="ligne-boutons"><button class="btn btn-succes" data-action="expedier" data-id="${c.id}">Valider l'expédition</button></div></div>`);
       if (!estClos(c)) A.push(`<div class="ligne-boutons"><button class="btn btn-lien" data-action="annuler" data-id="${c.id}">Annuler la commande</button></div>`);
     }
-    if (peutPrendre) A.push(`<div class="ligne-boutons"><button class="btn btn-primaire btn-large" data-action="prendre" data-id="${c.id}">✋ Je prends cette commande (poste ${h(nomPoste(e.posteId))})</button></div>`);
+    if (peutPrendre) A.push(`<div class="ligne-boutons"><button class="btn btn-primaire btn-large" data-action="prendre" data-id="${c.id}">Je prends cette commande (poste ${h(nomPoste(e.posteId))})</button></div>`);
     if (monEtape) {
       const tout = e.coches.every(Boolean);
       A.push(`<div class="bloc"><label>Remarque pour la suite (facultatif)<input id="prep-remarque" placeholder="ex. carton 2 sur 2 plus lourd, lot remplacé…" /></label>
         <div class="ligne-boutons">
           <button class="btn btn-secondaire" data-action="rendre" data-id="${c.id}">Je ne peux pas continuer → remettre dans la file</button>
-          <button class="btn btn-succes btn-large" data-action="terminer" data-id="${c.id}" ${tout ? "" : "disabled"}>${c.etapeIndex + 1 < c.etapes.length ? `✔ Étape terminée → transmettre au poste ${h(nomPoste(c.etapes[c.etapeIndex + 1].posteId))}` : "✔ Terminé → retour au secrétariat"}</button>
+          <button class="btn btn-succes btn-large" data-action="terminer" data-id="${c.id}" ${tout ? "" : "disabled"}>${c.etapeIndex + 1 < c.etapes.length ? `Étape terminée → transmettre au poste ${h(nomPoste(c.etapes[c.etapeIndex + 1].posteId))}` : "Terminé → retour au secrétariat"}</button>
         </div>${tout ? "" : '<p class="aide">Cochez toutes les lignes pour pouvoir terminer.</p>'}</div>`);
     }
 
     /* Messages & historique */
-    const messages = `<div class="bloc"><h3>💬 Messages (secrétariat ↔ préparateurs)</h3>
+    const messages = `<div class="bloc"><h3>Messages (secrétariat ↔ préparateurs)</h3>
       <div class="fil">${(c.messages || []).length ? c.messages.map((m) => `<div class="msg${m.auteurId === S.moi.id ? " moi" : ""}"><div class="entete-msg"><b>${h(m.auteur)}</b> · ${h(LIB_ROLE[m.role] || m.role)} · ${fmtDate(m.date)}</div>${h(m.texte)}</div>`).join("") : '<div class="vide">Aucun message</div>'}</div>
       ${estClos(c) ? '<p class="aide">Commande close : le fil est fermé.</p>' : `<form class="msg-form" data-form="message" data-id="${c.id}"><input name="texte" maxlength="1000" placeholder="Écrire un message visible par tous les intervenants…" required autocomplete="off" /><button class="btn btn-primaire" type="submit">Envoyer</button></form>`}</div>`;
-    const historique = `<div class="bloc"><h3>🕓 Historique</h3><ul class="historique">${c.historique.slice().reverse().map((x) => `<li><span class="date">${fmtDate(x.date)}</span><span>${x.poste ? `<span class="poste-h">[${h(x.poste)}]</span> ` : ""}<b>${h(x.qui)}</b> — ${h(x.texte)}</span></li>`).join("")}</ul></div>`;
+    const historique = `<div class="bloc"><h3>Historique</h3><ul class="historique">${c.historique.slice().reverse().map((x) => `<li><span class="date">${fmtDate(x.date)}</span><span>${x.poste ? `<span class="poste-h">[${h(x.poste)}]</span> ` : ""}<b>${h(x.qui)}</b> — ${h(x.texte)}</span></li>`).join("")}</ul></div>`;
 
     modale(`
       <div class="entete-cmd"><h2>Commande n° ${c.numero} — ${h(cl ? cl.nom : "(sans client)")}</h2><div>${c.priorite === "urgente" ? '<span class="pastille p-urgente">URGENT</span> ' : ""}${pastille(c.statut)}</div></div>
@@ -557,8 +558,8 @@ function formulaireCommande(c) {
         <div class="bloc"><h3>Produits commandés</h3><div class="lignes-edit" id="lignes-edit">
           ${brouillon.lignes.map((l, i) => `<div class="ligne-edit"><input name="p${i}" list="liste-produits" value="${h(saisie(l))}" placeholder="Tapez : marque, nom, poids…" autocomplete="off" required /><input type="number" name="q${i}" min="1" max="1000000" value="${l.quantite}" required aria-label="Quantité" /><button class="btn btn-petit" type="button" data-suppr-ligne="${i}" aria-label="Retirer la ligne">✕</button></div>`).join("")}
         </div>
-        <datalist id="liste-produits">${S.etat.produits.map((p) => `<option value="${h(libelleSaisie(p))}">${h(`${p.stock} ${p.unite} dispo.${ficheComplete(p) ? "" : " · fiche à compléter"}`)}</option>`).join("")}</datalist>
-        <p class="aide">Commencez à taper (ex. « ownat chiot 14 ») puis choisissez le format dans la liste.</p><button class="btn btn-secondaire btn-petit" type="button" data-action="ajouter-ligne">＋ Ajouter un produit</button></div>
+        <datalist id="liste-produits">${S.etat.produits.map((p) => `<option value="${h(libelleSaisie(p))}">${h(`${p.marque || ""}${stockActif() ? ` · ${p.stock} ${p.unite} dispo.` : ""}${ficheComplete(p) ? "" : " · fiche à compléter"}`)}</option>`).join("")}</datalist>
+        <p class="aide">Commencez à taper (ex. « ownat chiot 14 ») puis choisissez le format dans la liste.</p><button class="btn btn-secondaire btn-petit" type="button" data-action="ajouter-ligne">Ajouter un produit</button></div>
         <div class="bloc"><h3>Circuit de préparation (postes, dans l'ordre)</h3><div class="cases">
           ${S.etat.postes.map((p) => `<label><input type="checkbox" name="poste" value="${p.id}" ${postesChoisis.has(p.id) ? "checked" : ""} /> ${h(p.nom)}</label>`).join("")}
         </div><p class="aide">Décochez un poste si cette commande n'a pas besoin d'y passer.</p></div>
@@ -593,8 +594,8 @@ function formulaireProduit(p) {
         <label>Gamme<input name="gamme" maxlength="60" value="${h(p?.gamme)}" /></label>
         <label>Format / poids<input name="poids" maxlength="30" value="${h(p?.poids)}" placeholder="ex. 14 kg" /></label>
         <label>Unité<input name="unite" maxlength="20" value="${h(p?.unite || "unité")}" /></label>
-        <label>Stock disponible<input type="number" name="stock" min="0" value="${p ? p.stock : 0}" /></label>
-        ${p && reserve(p.id) ? `<p class="aide">+ ${reserve(p.id)} ${h(p.unite)} réservés par des commandes en préparation → stock physique attendu : <b>${p.stock + reserve(p.id)}</b>. Après un inventaire, saisissez ici le compté <b>moins</b> ${reserve(p.id)}.</p>` : ""}
+        ${stockActif() ? `<label>Stock disponible<input type="number" name="stock" min="0" value="${p ? p.stock : 0}" /></label>` : ""}
+        ${stockActif() && p && reserve(p.id) ? `<p class="aide">+ ${reserve(p.id)} ${h(p.unite)} réservés par des commandes en préparation → stock physique attendu : <b>${p.stock + reserve(p.id)}</b>. Après un inventaire, saisissez ici le compté <b>moins</b> ${reserve(p.id)}.</p>` : ""}
         <label>Emplacement<input name="emplacement" maxlength="40" value="${h(p?.emplacement)}" placeholder="ex. A1" /></label>
         <label>Durée indicative (min / ligne)<input type="number" name="dureeMin" min="0" max="600" value="${pr.dureeMin || 0}" /></label>
         <label>Univers<select name="categorie">${Object.entries(LIB_CAT).map(([k, v]) => `<option value="${k}" ${(p?.categorie || "autre") === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
@@ -623,7 +624,7 @@ function formulaireImport() {
     <form data-form="import"><div class="bloc">
       <p>Choisissez la page du site (fichier <b>.html</b>, avec la liste des produits) ou un export <b>.json</b>.</p>
       <label>Fichier<input type="file" name="fichier" accept=".html,.htm,.json" required /></label>
-      <p class="aide">Chaque format (ex. 3 kg, 14 kg) devient une référence de stock. Les références existantes sont mises à jour (nom, marque, poids…) ; le <b>stock</b>, l'<b>emplacement</b> et les <b>consignes de préparation</b> déjà saisis ne sont jamais modifiés. Rien n'est supprimé.</p>
+      <p class="aide">Chaque format (ex. 3 kg, 14 kg) devient une référence à part. Les références existantes sont mises à jour (nom, marque, poids…) ; l'<b>emplacement</b> et les <b>consignes de préparation</b> déjà saisis ne sont jamais modifiés. Rien n'est supprimé.</p>
     </div>
     <div class="ligne-boutons"><button class="btn btn-secondaire" type="button" data-action="fermer">Annuler</button><button class="btn btn-primaire" type="submit">Importer</button></div>
     </form>`), true);
@@ -772,7 +773,8 @@ const FORMULAIRES = {
     const parPoste = {}; S.etat.postes.forEach((p) => (parPoste[p.id] = f[`poste_${p.id}`].value));
     const corps = { nom: f.nom.value, reference: f.reference.value, marque: f.marque.value, gamme: f.gamme.value, poids: f.poids.value, unite: f.unite.value, emplacement: f.emplacement.value, categorie: f.categorie.value, conservation: f.conservation.value, dlcJours: Number(f.dlcJours.value), preparation: { instructions: f.instructions.value, conditionnement: f.conditionnement.value, vigilance: f.vigilance.value, dureeMin: Number(f.dureeMin.value), parPoste } };
     // Stock envoyé seulement s'il a été modifié, avec la valeur lue : le serveur refuse s'il a bougé entre-temps
-    if (!id) corps.stock = Number(f.stock.value);
+    if (!f.stock) { /* gestion du stock désactivée : pas de stock envoyé */ }
+    else if (!id) corps.stock = Number(f.stock.value);
     else if (f.stock.value !== f.stock.defaultValue) { corps.stock = Number(f.stock.value); corps.stockAvant = Number(f.stock.defaultValue); }
     await (id ? api("PUT", `/api/produits/${id}`, corps) : api("POST", "/api/produits", corps));
     fermerModale(); return "Produit enregistré";

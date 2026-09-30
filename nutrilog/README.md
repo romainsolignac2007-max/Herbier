@@ -19,7 +19,7 @@ Secrétariat : saisie de la commande (client, produits, quantités, extrait du m
 Contrôle automatique avant envoi — la commande est BLOQUÉE tant que :
    • un produit n'a pas sa fiche de préparation (instructions générales)
    • un produit n'a pas de consigne pour un poste du circuit
-   • le stock DISPONIBLE est insuffisant (quantités cumulées par produit)
+   • (si GESTION_STOCK=1) le stock disponible est insuffisant
    • aucun préparateur actif n'est affecté à un poste du circuit
    │   dès l'envoi, les quantités sont RÉSERVÉES : deux commandes ne peuvent pas se partager le même stock
    │   (rappel au secrétariat ou annulation → stock libéré ; chaque mouvement est historisé)
@@ -98,6 +98,7 @@ Variables d'environnement :
 | `TLS_KEY`, `TLS_CERT` | chemins clé + certificat → active HTTPS | — |
 | `DATA_DIR` | dossier des données | `./data` |
 | `TRUST_PROXY` | `1` uniquement derrière un reverse proxy HTTPS (nginx : `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`, Caddy : par défaut). Active cookie `Secure` + HSTS et lit l'adresse réelle des postes. Exige `HOST=127.0.0.1` (refus de démarrer sinon) ; toute requête sans `X-Forwarded-For` est refusée (proxy mal configuré). | — |
+| `GESTION_STOCK` | `1` pour activer la gestion du stock (stock disponible, réservation à l'envoi, blocage si stock insuffisant). **Désactivée pour l'instant** : aucune quantité n'est suivie ni contrôlée, et rien ne s'affiche. | — |
 | `SESSION_INACTIVITE_MIN` | minutes sans action avant déconnexion (le rafraîchissement automatique des écrans ne compte pas) — ex. `30` pour des tablettes partagées | `480` |
 | `ADMIN_RESET_PASSWORD` | **récupération** du compte `admin` (mot de passe oublié) : réinitialisé au démarrage, à changer à la connexion, tracé dans l'audit. **À retirer ensuite.** | — |
 

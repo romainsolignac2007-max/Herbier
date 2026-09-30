@@ -311,5 +311,24 @@ console.log("11. Démarrage : base corrompue, récupération du compte admin");
   rmSync(dir2, { recursive: true, force: true });
 }
 
+console.log("12. Sans gestion du stock (réglage par défaut)");
+{
+  const dir = mkdtempSync(join(tmpdir(), "nutrilog-ss-"));
+  const srv = await demarrer(3993, { ADMIN_PASSWORD: "AdminInitial123", GESTION_STOCK: "" }, dir);
+  const a = session("http://127.0.0.1:3993");
+  await a("POST", "/api/connexion", { login: "admin", mdp: "AdminInitial123" });
+  await a("POST", "/api/moi/motdepasse", { ancien: "AdminInitial123", nouveau: "AdminSecurise2026" });
+  let e = (await a("GET", "/api/etat")).data;
+  ok(e.gestionStock === false, "l'interface est prévenue que le stock est désactivé");
+  await a("POST", "/api/utilisateurs", { login: "lea", nom: "Léa", role: "preparateur", postes: [e.postes[0].id], mdp: "Provisoire2026x" });
+  const p = e.produits[0];
+  const c = (await a("POST", "/api/commandes", { clientId: e.clients[0].id, lignes: [{ produitId: p.id, quantite: 5000 }] })).data;
+  r = await a("POST", `/api/commandes/${c.id}/envoyer`); ok(r.status === 200, "commande de 5000 envoyée : aucun contrôle de stock");
+  e = (await a("GET", "/api/etat")).data;
+  ok(e.produits[0].stock === p.stock && !e.commandes[0].historique.some((x) => x.texte.includes("Stock")), "stock inchangé, aucun mouvement de stock dans l'historique");
+  srv.p.kill(); await srv.fin;
+  rmSync(dir, { recursive: true, force: true });
+}
+
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT EST OK");
 process.exit(echecs ? 1 : 0);

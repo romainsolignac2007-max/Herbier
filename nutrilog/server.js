@@ -52,6 +52,8 @@ const SECURE = !!TLS || TRUST_PROXY; // HTTPS local ou terminé par le proxy →
 const SESSION_INACTIVITE_MS = (Number(process.env.SESSION_INACTIVITE_MIN) || 8 * 60) * 60 * 1000; // déconnexion après 8 h sans action
 const SESSION_MAX_MS = 24 * 60 * 60 * 1000;         // reconnexion obligatoire toutes les 24 h
 const MDP_MIN = 12;                                  // longueur minimale des mots de passe
+// Gestion du stock (réservation, contrôle de disponibilité) : désactivée pour l'instant, GESTION_STOCK=1 pour l'activer
+const GESTION_STOCK = process.env.GESTION_STOCK === "1";
 const TENTATIVES_MAX = 5;                            // échecs depuis une même adresse avant blocage de l'adresse
 const TENTATIVES_COMPTE_MAX = 20;                    // échecs sur un même compte (toutes adresses) avant blocage du compte
 const BLOCAGE_MS = 15 * 60 * 1000;                   // durée du blocage (et fenêtre de comptage des échecs)
@@ -547,7 +549,7 @@ function blocages(db, cmd) {
   cmd.lignes.forEach((l) => demande.set(l.produitId, (demande.get(l.produitId) || 0) + l.quantite));
   for (const [pid, q] of demande) {
     const p = db.produits.find((x) => x.id === pid);
-    if (p && p.stock < q) b.push(`Stock disponible insuffisant pour « ${p.nom} » (${p.stock} ${p.unite} disponibles, ${q} demandés).`);
+    if (GESTION_STOCK && p && p.stock < q) b.push(`Stock disponible insuffisant pour « ${p.nom} » (${p.stock} ${p.unite} disponibles, ${q} demandés).`);
   }
   (cmd.etapes || []).forEach((e) => {
     const poste = db.postes.find((x) => x.id === e.posteId);
@@ -614,7 +616,7 @@ function commandePourPreparateur(c) {
 
 /* Vue des données adaptée au rôle (on n'envoie jamais plus que nécessaire) */
 function vuePourRole(db, u) {
-  const base = { moi: utilisateurPublic(u), postes: db.postes, produits: db.produits, derniereMaj: db.derniereMaj || null };
+  const base = { moi: utilisateurPublic(u), gestionStock: GESTION_STOCK, postes: db.postes, produits: db.produits, derniereMaj: db.derniereMaj || null };
   if (u.role === "preparateur") {
     const commandes = db.commandes.filter((c) => preparateurImplique(c, u)).map(commandePourPreparateur);
     const clientIds = new Set(commandes.map((c) => c.clientId));
@@ -1038,8 +1040,7 @@ async function api(req, res, route) {
           cmd.statut = "a_preparer"; cmd.etapeIndex = 0;
           cmd.etapes.forEach((e) => reinitEtape(cmd, e));
           cmd.envoyeeLe = cmd.envoyeeLe || new Date().toISOString();
-          details.stock = mouvementStock(db, cmd, -1, moi, "Stock réservé");
-          cmd.stockReserve = true;
+          if (GESTION_STOCK) { details.stock = mouvementStock(db, cmd, -1, moi, "Stock réservé"); cmd.stockReserve = true; }
           journal(cmd, moi, `Envoyée en préparation → poste ${nomPoste(db, cmd.etapes[0].posteId)}.`);
           break;
         }
@@ -1094,10 +1095,10 @@ async function api(req, res, route) {
             cmd.etapeIndex++; cmd.statut = "a_preparer";
             journal(cmd, moi, `Étape terminée${remarque ? " — " + remarque : ""}. Transmise au poste ${nomPoste(db, cmd.etapes[cmd.etapeIndex].posteId)}.`, posteFini);
           } else {
-            if (!cmd.stockReserve) { // commande envoyée avant la réservation de stock (ancienne version)
+            if (GESTION_STOCK && !cmd.stockReserve) { // commande envoyée avant la réservation de stock (ancienne version)
               details.stock = mouvementStock(db, cmd, -1, moi, "Stock sorti");
               cmd.stockReserve = true;
-              db.produits.forEach((p) => { if (p.stock < 0) { journal(cmd, moi, `⚠ Stock de « ${p.nom} » négatif (${p.stock}) : remis à 0, inventaire à vérifier.`); p.stock = 0; } });
+              db.produits.forEach((p) => { if (p.stock < 0) { journal(cmd, moi, `Attention : stock de « ${p.nom} » négatif (${p.stock}) : remis à 0, inventaire à vérifier.`); p.stock = 0; } });
             }
             cmd.statut = "preparee"; cmd.prepareeLe = new Date().toISOString();
             journal(cmd, moi, `Dernière étape terminée${remarque ? " — " + remarque : ""}. Retour au secrétariat.`, posteFini);
