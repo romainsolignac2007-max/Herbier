@@ -20,7 +20,7 @@ catch { try { pw = createRequire(join(process.execPath, "..", "..", "lib", "node
 const { chromium } = pw;
 
 const dir = mkdtempSync(join(tmpdir(), "nutrilog-nav-"));
-const srv = spawn(process.execPath, [join(RACINE, "server.js")], { env: { ...process.env, PORT: String(PORT), HOST: "127.0.0.1", ADMIN_PASSWORD: "AdminInitial123", DATA_DIR: dir }, stdio: "ignore" });
+const srv = spawn(process.execPath, [join(RACINE, "server.js")], { env: { ...process.env, PORT: String(PORT), HOST: "127.0.0.1", ADMIN_PASSWORD: "AdminInitial123", DATA_DIR: dir, NUTRILOG_EXEMPLES: "1" }, stdio: "ignore" });
 for (let i = 0; i < 50; i++) { try { await fetch(BASE + "/"); break; } catch { await attendre(100); } }
 
 /* Préparation par l'API : comptes, fiche BARF, une commande envoyée */

@@ -60,7 +60,8 @@ const ROLES = ["admin", "secretariat", "preparateur"];
 const STATUTS = ["brouillon", "a_preparer", "en_preparation", "preparee", "expediee", "annulee"];
 const CLOS = ["expediee", "annulee"];
 const CONSERVATIONS = ["ambiant", "frais", "surgele"]; // chaîne du froid
-const CATEGORIES = ["chien", "chat", "rongeur", "oiseau", "poisson", "reptile", "cheval", "autre"]; // animal de destination
+const CATEGORIES = ["chien", "chat", "cheval", "bassecour", "cereales", "rongeur", "oiseau", "autre"]; // univers du produit
+const CATALOGUE_INITIAL = process.env.CATALOGUE_INITIAL || path.join(__dirname, "catalogue", "solignac-nutrition.json");
 
 /* =====================================================================
    1. Base de données (fichier JSON, écriture atomique)
@@ -255,7 +256,72 @@ function ipDe(req) {
 }
 
 /* =====================================================================
-   4. Données initiales (1er lancement)
+   4. Catalogue du site Solignac Nutrition
+   ---------------------------------------------------------------------
+   Le site décrit un produit avec plusieurs formats (« 400 g, 1 kg ou 3 kg »).
+   En logistique, chaque format est une référence de stock : on en fait
+   un produit par format. Clé de rapprochement : idSite (id du site + format).
+   ===================================================================== */
+const UNIVERS_SITE = { chien: "chien", chat: "chat", equin: "cheval", bassecour: "bassecour", cereales: "cereales" };
+
+function decouper(v) { return String(v || "").split(/,\s+|\s+ou\s+/).map((x) => x.trim()).filter(Boolean); }
+function slug(v) { return String(v).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
+function enKg(poids) { // pour choisir le conditionnement d'un format (petit format = sachet, grand = sac)
+  const m = String(poids).replace(",", ".").match(/([\d.]+)\s*(kg|g|l|ml)/i);
+  if (!m) return 0;
+  const n = parseFloat(m[1]), u = m[2].toLowerCase();
+  return u === "kg" || u === "l" ? n : n / 1000;
+}
+
+/* Produits du site → références logistiques (un produit par format). Lève une erreur si le fichier n'a pas la bonne forme. */
+function produitsDepuisSite(liste) {
+  if (!Array.isArray(liste) || !liste.length || liste.length > 3000) throw new ErreurHttp(400, "Catalogue invalide : liste de produits attendue.");
+  const refs = [];
+  liste.forEach((x) => {
+    if (!x || typeof x !== "object" || typeof x.id !== "string" || typeof x.nom !== "string") throw new ErreurHttp(400, "Catalogue invalide : chaque produit doit avoir un id et un nom.");
+    const formats = decouper(x.poids);
+    const conds = decouper(x.conditionnement);
+    (formats.length ? formats : [""]).forEach((poids, i, tous) => {
+      let cond = conds.length === tous.length ? conds[i] : conds.length === 1 ? conds[0] : conds.length ? (enKg(poids) <= 1.5 ? conds[0] : conds[conds.length - 1]) : "unité";
+      refs.push({
+        idSite: (x.id + (poids ? "-" + slug(poids) : "")).slice(0, 80),
+        reference: (x.id + (poids ? "-" + slug(poids) : "")).slice(0, 80),
+        nom: String(x.nom).slice(0, 120),
+        marque: String(x.marque || "").slice(0, 60),
+        gamme: String(x.gamme || "").slice(0, 60),
+        poids: String(poids).slice(0, 30),
+        unite: String(cond || "unité").toLowerCase().slice(0, 20),
+        categorie: UNIVERS_SITE[x.cat] || "autre",
+        description: String(x.desc || "").slice(0, 1000),
+      });
+    });
+  });
+  return refs;
+}
+
+/* Crée ou met à jour les produits à partir du catalogue. Ne touche JAMAIS au stock, à l'emplacement
+   ni aux consignes de préparation déjà saisis au dépôt. */
+function appliquerCatalogue(db, refs) {
+  const bilan = { crees: 0, misAJour: 0, inchanges: 0, absentsDuSite: 0 };
+  const vus = new Set();
+  refs.forEach((r) => {
+    if (vus.has(r.idSite)) return; // doublon dans le fichier
+    vus.add(r.idSite);
+    const p = db.produits.find((x) => x.idSite === r.idSite);
+    if (!p) {
+      db.produits.push({ id: id(), ...r, stock: 0, emplacement: "", conservation: "ambiant", dlcJours: 0, preparation: { instructions: "", conditionnement: "", vigilance: "", dureeMin: 0, parPoste: {} } });
+      bilan.crees++;
+      return;
+    }
+    const champs = ["reference", "nom", "marque", "gamme", "poids", "unite", "categorie", "description"];
+    if (champs.some((k) => p[k] !== r[k])) { champs.forEach((k) => (p[k] = r[k])); bilan.misAJour++; } else bilan.inchanges++;
+  });
+  bilan.absentsDuSite = db.produits.filter((p) => p.idSite && !vus.has(p.idSite)).length;
+  return bilan;
+}
+
+/* =====================================================================
+   5. Données initiales (1er lancement)
    ===================================================================== */
 function donneesInitiales() {
   const db = { utilisateurs: [], postes: [], produits: [], clients: [], commandes: [], prochainNumero: 1 };
@@ -312,11 +378,26 @@ function donneesInitiales() {
       },
     },
   ];
-  db.clients = [
+  const exemples = { produits: db.produits, clients: [] };
+  exemples.clients = [
     { id: id(), nom: "Animalerie Les 4 Pattes", email: "commande@les4pattes.fr", adresse: "12 rue des Lilas, 69003 Lyon", telephone: "04 72 00 00 00" },
     { id: id(), nom: "Clinique vétérinaire du Parc", email: "accueil@veto-duparc.fr", adresse: "3 place de la Mairie, 38000 Grenoble", telephone: "04 76 00 00 00" },
     { id: id(), nom: "Élevage canin du Val", email: "contact@elevage-duval.fr", adresse: "Lieu-dit Le Val, 01500 Ambérieu", telephone: "04 74 00 00 00" },
   ];
+
+  if (process.env.NUTRILOG_EXEMPLES === "1") {
+    // Jeu d'exemple (tests, démonstration) : 4 produits aux fiches remplies et 3 clients fictifs
+    Object.assign(db, exemples);
+  } else {
+    // Mise en service réelle : le catalogue du site, sans client fictif ; stocks et consignes à saisir au dépôt
+    db.produits = [];
+    try {
+      const bilan = appliquerCatalogue(db, produitsDepuisSite(JSON.parse(fs.readFileSync(CATALOGUE_INITIAL, "utf8"))));
+      console.log(`Catalogue chargé : ${bilan.crees} références (${CATALOGUE_INITIAL}).`);
+    } catch (e) {
+      console.warn(`Catalogue initial non chargé (${e.message}) : importez-le depuis l'onglet Produits.`);
+    }
+  }
   return db;
 }
 
@@ -371,7 +452,11 @@ function listePostes(db, v) {
 function validerProduit(db, corps, existant) {
   const p = existant ? JSON.parse(JSON.stringify(existant)) : { id: id(), preparation: { parPoste: {} } };
   if ("nom" in corps || !existant) p.nom = texte(corps.nom, 120, true);
-  if ("reference" in corps || !existant) p.reference = texte(corps.reference, 40, false);
+  if ("reference" in corps || !existant) p.reference = texte(corps.reference, 80, false);
+  if ("marque" in corps || !existant) p.marque = texte(corps.marque, 60, false);
+  if ("gamme" in corps || !existant) p.gamme = texte(corps.gamme, 60, false);
+  if ("poids" in corps || !existant) p.poids = texte(corps.poids, 30, false);
+  if ("description" in corps || !existant) p.description = texte(corps.description, 1000, false);
   if ("unite" in corps || !existant) p.unite = texte(corps.unite, 20, false) || "unité";
   if ("stock" in corps || !existant) p.stock = entier(corps.stock ?? 0, 0, 1e7);
   if ("emplacement" in corps || !existant) p.emplacement = texte(corps.emplacement, 40, false);
@@ -569,7 +654,7 @@ function json(res, code, data) {
 function lireCorps(req) {
   return new Promise((resolve, reject) => {
     let s = "";
-    req.on("data", (c) => { s += c; if (s.length > 512 * 1024) { reject(new ErreurHttp(413, "Requête trop volumineuse.")); req.destroy(); } });
+    req.on("data", (c) => { s += c; if (s.length > 2 * 1024 * 1024) { reject(new ErreurHttp(413, "Requête trop volumineuse.")); req.destroy(); } });
     req.on("end", () => {
       if (!s) return resolve({});
       try { const v = JSON.parse(s); resolve(v && typeof v === "object" && !Array.isArray(v) ? v : {}); }
@@ -815,6 +900,29 @@ async function api(req, res, route) {
     if (req.method === "POST" && !idRes) {
       const p = validerProduit(db, corps); db.produits.push(p); sauver();
       audit(req, moi, "produit.cree", { nom: p.nom, stock: p.stock }); return json(res, 201, p);
+    }
+    /* Import / mise à jour du catalogue depuis le site (stocks, emplacements et consignes conservés) */
+    if (req.method === "POST" && idRes === "import") {
+      const bilan = appliquerCatalogue(db, produitsDepuisSite(corps.produits));
+      sauver(); audit(req, moi, "catalogue.importe", { source: texte(corps.source, 200, false), ...bilan });
+      return json(res, 200, bilan);
+    }
+    /* Fiche type : mêmes consignes pour un groupe de produits (ex. tous les sacs de croquettes d'une marque) */
+    if (req.method === "POST" && idRes === "fiche-groupee") {
+      if (!Array.isArray(corps.ids) || !corps.ids.length || corps.ids.length > 5000) throw new ErreurHttp(400, "Sélection de produits invalide.");
+      const cibles = corps.ids.map((x) => { const p = db.produits.find((y) => y.id === x); if (!p) throw new ErreurHttp(400, "Produit inconnu dans la sélection."); return p; });
+      const modele = validerProduit(db, { nom: "modèle", preparation: corps.preparation }).preparation; // même validation qu'une fiche
+      const ecraser = corps.ecraser === true;
+      let modifies = 0;
+      cibles.forEach((p) => {
+        const pr = p.preparation, avant = JSON.stringify(pr);
+        ["instructions", "conditionnement", "vigilance"].forEach((k) => { if (modele[k] && (ecraser || !pr[k])) pr[k] = modele[k]; });
+        if (modele.dureeMin && (ecraser || !pr.dureeMin)) pr.dureeMin = modele.dureeMin;
+        Object.entries(modele.parPoste).forEach(([pid, v]) => { if (v && (ecraser || !pr.parPoste[pid])) pr.parPoste[pid] = v; });
+        if (JSON.stringify(pr) !== avant) modifies++;
+      });
+      sauver(); audit(req, moi, "produit.fiche_groupee", { produits: cibles.length, modifies, ecraser });
+      return json(res, 200, { produits: cibles.length, modifies });
     }
     const p = db.produits.find((x) => x.id === idRes);
     if (!p) throw new ErreurHttp(404, "Produit introuvable.");

@@ -10,6 +10,7 @@ const S = {
   onglet: "",
   recherche: "",
   filtre: "",
+  filtreUnivers: "", filtreMarque: "", filtreFiche: "", // onglet Produits
   modale: null,       // fonction qui (re)dessine la modale ouverte
   modaleFormulaire: false, // true = formulaire de saisie : on ne le redessine jamais automatiquement
   minuteur: null,
@@ -23,7 +24,10 @@ const S = {
 const LIB_STATUT = { brouillon: "Brouillon", a_preparer: "À préparer", en_preparation: "En préparation", preparee: "Préparée", expediee: "Expédiée", annulee: "Annulée" };
 const LIB_ROLE = { admin: "Administrateur", secretariat: "Secrétariat", preparateur: "Préparateur" };
 const LIB_CONS = { ambiant: "Ambiant", frais: "Frais (0–4 °C)", surgele: "Surgelé (−18 °C)" };
-const LIB_CAT = { chien: "🐕 Chien", chat: "🐈 Chat", rongeur: "🐹 Rongeur", oiseau: "🐦 Oiseau", poisson: "🐟 Poisson", reptile: "🦎 Reptile", cheval: "🐴 Cheval", autre: "Autre" };
+const LIB_CAT = { chien: "🐕 Chien", chat: "🐈 Chat", cheval: "🐴 Cheval", bassecour: "🐔 Basse-cour", cereales: "🌾 Céréales", rongeur: "🐹 Rongeur", oiseau: "🐦 Oiseau", autre: "Autre" };
+/* Nom affiché d'une référence : le produit du catalogue + son format (un même produit existe en plusieurs poids) */
+const libelle = (p) => (p ? p.nom + (p.poids ? " — " + p.poids : "") : "?");
+const libelleSaisie = (p) => `${libelle(p)} [${p.reference || p.id}]`; // unique : sert à retrouver le produit tapé
 const badgeCons = (c) => (c && c !== "ambiant" ? `<span class="pastille cons-${h(c)}">${c === "frais" ? "❄ FRAIS" : "🧊 SURGELÉ"}</span>` : "");
 
 /* ---------- Utilitaires ---------- */
@@ -261,19 +265,46 @@ function vueCommandes() {
     </tbody></table></div>`;
 }
 
+const ficheComplete = (p) => !!p.preparation.instructions && S.etat.postes.every((po) => p.preparation.parPoste?.[po.id]);
+
+function produitsFiltres() {
+  const mots = S.recherche.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  return S.etat.produits.filter((p) => {
+    if (S.filtreUnivers && p.categorie !== S.filtreUnivers) return false;
+    if (S.filtreMarque && p.marque !== S.filtreMarque) return false;
+    if (S.filtreFiche === "ko" && ficheComplete(p)) return false;
+    if (S.filtreFiche === "ok" && !ficheComplete(p)) return false;
+    if (S.filtreFiche === "sansstock" && p.stock > 0) return false;
+    const texte = [p.nom, p.poids, p.marque, p.gamme, p.reference, p.emplacement].join(" ").toLowerCase();
+    return mots.every((m) => texte.includes(m)); // « ownat chiot 14 » trouve le bon format
+  });
+}
+
 function vueProduits() {
-  const q = S.recherche.trim().toLowerCase();
-  const ps = S.etat.produits.filter((p) => !q || p.nom.toLowerCase().includes(q) || (p.reference || "").toLowerCase().includes(q));
+  const ps = produitsFiltres();
   const postes = S.etat.postes;
+  const tous = S.etat.produits;
+  const marques = [...new Set(tous.map((p) => p.marque).filter(Boolean))].sort((a, b) => a.localeCompare(b, "fr"));
+  const univers = [...new Set(tous.map((p) => p.categorie))];
+  const aCompleter = tous.filter((p) => !ficheComplete(p)).length;
+  const opt = (v, lib, cour) => `<option value="${h(v)}" ${v === cour ? "selected" : ""}>${h(lib)}</option>`;
   return `
     <div class="barre-outils">
       <button class="btn btn-primaire" data-action="nouveau-produit">＋ Nouveau produit</button>
-      <input type="search" placeholder="Rechercher un produit…" value="${h(S.recherche)}" data-recherche />
+      <button class="btn btn-secondaire" data-action="importer-catalogue">⇪ Importer / mettre à jour depuis le site</button>
+      <input type="search" placeholder="Rechercher : nom, marque, poids, référence…" value="${h(S.recherche)}" data-recherche />
+    </div>
+    <div class="barre-outils filtres">
+      <select data-filtre="filtreUnivers" aria-label="Univers">${opt("", "Tous les univers", S.filtreUnivers)}${univers.map((u) => opt(u, LIB_CAT[u] || u, S.filtreUnivers)).join("")}</select>
+      <select data-filtre="filtreMarque" aria-label="Marque">${opt("", "Toutes les marques", S.filtreMarque)}${marques.map((m) => opt(m, m, S.filtreMarque)).join("")}</select>
+      <select data-filtre="filtreFiche" aria-label="État">${opt("", "Toutes les fiches", S.filtreFiche)}${opt("ko", `Fiche à compléter (${aCompleter})`, S.filtreFiche)}${opt("ok", "Fiche complète", S.filtreFiche)}${opt("sansstock", "Sans stock", S.filtreFiche)}</select>
+      <span class="compte">${ps.length} / ${tous.length} références</span>
+      ${ps.length ? `<button class="btn btn-secondaire btn-petit" data-action="fiche-type">✎ Fiche type pour ces ${ps.length} références</button>` : ""}
     </div>
     <p class="aide">Une commande ne peut partir en préparation que si chaque produit a sa fiche de préparation complète (instructions générales + consigne pour chaque poste du circuit). Le stock affiché est le stock <b>disponible</b> : les quantités des commandes envoyées en préparation sont déjà réservées.</p>
-    <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Réf.</th><th>Animal</th><th>Conservation</th><th title="Stock physique moins les commandes en préparation">Stock dispo.</th><th>Réservé</th><th>Empl.</th><th>Fiche générale</th>${postes.map((p) => `<th>${h(p.nom)}</th>`).join("")}</tr></thead><tbody>
+    <div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Marque</th><th>Univers</th><th>Conservation</th><th title="Stock physique moins les commandes en préparation">Stock dispo.</th><th>Réservé</th><th>Empl.</th><th>Fiche générale</th>${postes.map((p) => `<th>${h(p.nom)}</th>`).join("")}</tr></thead><tbody>
       ${ps.map((p) => `<tr class="cliquable" data-produit="${p.id}">
-        <td><b>${h(p.nom)}</b></td><td>${h(p.reference)}</td><td>${h(LIB_CAT[p.categorie] || "—")}</td><td>${h(LIB_CONS[p.conservation] || "Ambiant")}</td>
+        <td><b>${h(p.nom)}</b>${p.poids ? ` <span class="poids">${h(p.poids)}</span>` : ""}</td><td>${h(p.marque || "—")}</td><td>${h(LIB_CAT[p.categorie] || "—")}</td><td>${h(LIB_CONS[p.conservation] || "Ambiant")}</td>
         <td class="${p.stock <= 5 ? "stock-bas" : ""}">${p.stock} ${h(p.unite)}</td><td>${reserve(p.id) || "—"}</td><td>${h(p.emplacement)}</td>
         <td class="${p.preparation.instructions ? "fiche-ok" : "fiche-ko"}">${p.preparation.instructions ? "✔ complète" : "✘ manquante"}</td>
         ${postes.map((po) => `<td class="${p.preparation.parPoste?.[po.id] ? "fiche-ok" : "fiche-ko"}">${p.preparation.parPoste?.[po.id] ? "✔" : "✘"}</td>`).join("")}
@@ -435,7 +466,7 @@ function ouvrirCommande(id) {
         const fait = e.coches[i];
         return `<div class="ligne-prep${fait ? " faite" : ""}">
           <div class="haut">
-            <label><input type="checkbox" data-coche="${i}" ${fait ? "checked" : ""} /> ${h(p.nom)} ${p.reference ? `<small>(${h(p.reference)})</small>` : ""} ${p.emplacement ? `<span class="emplacement">${h(p.emplacement)}</span>` : ""} ${badgeCons(p.conservation)} ${p.categorie && p.categorie !== "autre" ? `<small>${h(LIB_CAT[p.categorie])}</small>` : ""}</label>
+            <label><input type="checkbox" data-coche="${i}" ${fait ? "checked" : ""} /> ${h(libelle(p))} ${p.marque ? `<small>${h(p.marque)}</small>` : ""} ${p.emplacement ? `<span class="emplacement">${h(p.emplacement)}</span>` : ""} ${badgeCons(p.conservation)} ${p.categorie && p.categorie !== "autre" ? `<small>${h(LIB_CAT[p.categorie])}</small>` : ""}</label>
             <div class="qte">× ${l.quantite} ${h(p.unite)}</div>
           </div>
           <div class="lot-dlc"><label>N° de lot<input data-lot="${i}" maxlength="40" value="${h(l.lot)}" placeholder="lot" /></label><label>DDM / DLC<input type="date" data-dlc="${i}" value="${h(l.dlc)}" /></label></div>
@@ -449,7 +480,7 @@ function ouvrirCommande(id) {
       }).join("");
     } else {
       lignes = `<div class="tableau-scroll"><table class="tableau"><thead><tr><th>Produit</th><th>Qté</th><th>Empl.</th><th>Lot / DDM</th>${secretariat ? "<th>Stock dispo.</th>" : ""}${c.etapes.map((et) => `<th>${h(nomPoste(et.posteId))}</th>`).join("")}</tr></thead><tbody>
-        ${c.lignes.map((l) => { const p = produit(l.produitId) || { nom: "?", preparation: {} }; return `<tr><td><b>${h(p.nom)}</b> ${badgeCons(p.conservation)}</td><td>${l.quantite} ${h(p.unite || "")}</td><td>${h(p.emplacement || "")}</td><td>${h(l.lot || "—")} / ${fmtJour(l.dlc)}</td>${secretariat ? `<td class="${c.statut === "brouillon" && (p.stock ?? 0) < l.quantite ? "stock-bas" : ""}">${p.stock ?? "?"}</td>` : ""}${c.etapes.map((et) => `<td class="${p.preparation.parPoste?.[et.posteId] ? "" : "fiche-ko"}">${h(p.preparation.parPoste?.[et.posteId] || "✘ manquante")}</td>`).join("")}</tr>`; }).join("")}
+        ${c.lignes.map((l) => { const p = produit(l.produitId) || { nom: "?", preparation: {} }; return `<tr><td><b>${h(libelle(p))}</b> ${badgeCons(p.conservation)}</td><td>${l.quantite} ${h(p.unite || "")}</td><td>${h(p.emplacement || "")}</td><td>${h(l.lot || "—")} / ${fmtJour(l.dlc)}</td>${secretariat ? `<td class="${c.statut === "brouillon" && (p.stock ?? 0) < l.quantite ? "stock-bas" : ""}">${p.stock ?? "?"}</td>` : ""}${c.etapes.map((et) => `<td class="${p.preparation.parPoste?.[et.posteId] ? "" : "fiche-ko"}">${h(p.preparation.parPoste?.[et.posteId] || "✘ manquante")}</td>`).join("")}</tr>`; }).join("")}
       </tbody></table></div>`;
     }
 
@@ -512,7 +543,7 @@ function formulaireCommande(c) {
   const brouillon = c ? JSON.parse(JSON.stringify(c)) : { clientId: "", sourceMail: "", dateMail: aujourdhui(), dateLivraisonSouhaitee: "", priorite: "normale", note: "", lignes: [{ produitId: "", quantite: 1 }], etapes: S.etat.postes.map((p) => ({ posteId: p.id })) };
   const postesChoisis = new Set(brouillon.etapes.map((e) => e.posteId));
   ouvrirModale(() => {
-    const optProduits = (sel) => `<option value="">— produit —</option>` + S.etat.produits.map((p) => `<option value="${p.id}" ${p.id === sel ? "selected" : ""}>${h(p.nom)} (${p.stock} ${h(p.unite)}${p.preparation.instructions ? "" : " · fiche manquante"})</option>`).join("");
+    const saisie = (l) => l.saisie ?? (produit(l.produitId) ? libelleSaisie(produit(l.produitId)) : "");
     modale(`<h2>${c ? "Modifier la commande n° " + c.numero : "Nouvelle commande (à partir du mail du client)"}</h2>
       <form data-form="commande" data-id="${c ? c.id : ""}">
         <div class="bloc"><div class="deux-col">
@@ -524,8 +555,10 @@ function formulaireCommande(c) {
         <label>Extrait / copie du mail (traçabilité)<textarea name="sourceMail" maxlength="3000" placeholder="Collez ici l'objet et le contenu utile du mail du client">${h(brouillon.sourceMail)}</textarea></label>
         <label>Note (visible par les préparateurs)<input name="note" maxlength="1000" value="${h(brouillon.note)}" placeholder="ex. livrer avant 10h, prévenir à l'arrivée…" /></label></div>
         <div class="bloc"><h3>Produits commandés</h3><div class="lignes-edit" id="lignes-edit">
-          ${brouillon.lignes.map((l, i) => `<div class="ligne-edit"><select name="p${i}" required>${optProduits(l.produitId)}</select><input type="number" name="q${i}" min="1" max="1000000" value="${l.quantite}" required /><button class="btn btn-petit" type="button" data-suppr-ligne="${i}">✕</button></div>`).join("")}
-        </div><button class="btn btn-secondaire btn-petit" type="button" data-action="ajouter-ligne">＋ Ajouter un produit</button></div>
+          ${brouillon.lignes.map((l, i) => `<div class="ligne-edit"><input name="p${i}" list="liste-produits" value="${h(saisie(l))}" placeholder="Tapez : marque, nom, poids…" autocomplete="off" required /><input type="number" name="q${i}" min="1" max="1000000" value="${l.quantite}" required aria-label="Quantité" /><button class="btn btn-petit" type="button" data-suppr-ligne="${i}" aria-label="Retirer la ligne">✕</button></div>`).join("")}
+        </div>
+        <datalist id="liste-produits">${S.etat.produits.map((p) => `<option value="${h(libelleSaisie(p))}">${h(`${p.stock} ${p.unite} dispo.${ficheComplete(p) ? "" : " · fiche à compléter"}`)}</option>`).join("")}</datalist>
+        <p class="aide">Commencez à taper (ex. « ownat chiot 14 ») puis choisissez le format dans la liste.</p><button class="btn btn-secondaire btn-petit" type="button" data-action="ajouter-ligne">＋ Ajouter un produit</button></div>
         <div class="bloc"><h3>Circuit de préparation (postes, dans l'ordre)</h3><div class="cases">
           ${S.etat.postes.map((p) => `<label><input type="checkbox" name="poste" value="${p.id}" ${postesChoisis.has(p.id) ? "checked" : ""} /> ${h(p.nom)}</label>`).join("")}
         </div><p class="aide">Décochez un poste si cette commande n'a pas besoin d'y passer.</p></div>
@@ -536,11 +569,16 @@ function formulaireCommande(c) {
     $("#modale-contenu").querySelectorAll("[data-suppr-ligne]").forEach((b) => (b.onclick = () => { lireLignes(); brouillon.lignes.splice(Number(b.dataset.supprLigne), 1); S.modale(); }));
     function lireLignes() {
       const f = $("#modale-contenu form");
-      brouillon.lignes = brouillon.lignes.map((_, i) => ({ produitId: f[`p${i}`].value, quantite: Number(f[`q${i}`].value) || 1 }));
+      brouillon.lignes = brouillon.lignes.map((_, i) => { const v = f[`p${i}`].value; const p = produitDepuisSaisie(v); return { produitId: p ? p.id : "", saisie: v, quantite: Number(f[`q${i}`].value) || 1 }; });
       brouillon.clientId = f.clientId.value; brouillon.priorite = f.priorite.value; brouillon.dateMail = f.dateMail.value; brouillon.dateLivraisonSouhaitee = f.dateLivraisonSouhaitee.value; brouillon.sourceMail = f.sourceMail.value; brouillon.note = f.note.value;
       postesChoisis.clear(); f.querySelectorAll("input[name=poste]:checked").forEach((x) => postesChoisis.add(x.value));
     }
   }, true);
+}
+
+function produitDepuisSaisie(v) {
+  v = String(v || "").trim();
+  return S.etat.produits.find((p) => libelleSaisie(p) === v) || S.etat.produits.find((p) => p.reference === v) || null;
 }
 
 /* ---------- Formulaire produit ---------- */
@@ -550,16 +588,20 @@ function formulaireProduit(p) {
     <form data-form="produit" data-id="${p ? p.id : ""}">
       <div class="bloc"><div class="deux-col">
         <label>Nom<input name="nom" required maxlength="120" value="${h(p?.nom)}" /></label>
-        <label>Référence<input name="reference" maxlength="40" value="${h(p?.reference)}" /></label>
+        <label>Référence<input name="reference" maxlength="80" value="${h(p?.reference)}" /></label>
+        <label>Marque<input name="marque" maxlength="60" value="${h(p?.marque)}" /></label>
+        <label>Gamme<input name="gamme" maxlength="60" value="${h(p?.gamme)}" /></label>
+        <label>Format / poids<input name="poids" maxlength="30" value="${h(p?.poids)}" placeholder="ex. 14 kg" /></label>
         <label>Unité<input name="unite" maxlength="20" value="${h(p?.unite || "unité")}" /></label>
         <label>Stock disponible<input type="number" name="stock" min="0" value="${p ? p.stock : 0}" /></label>
         ${p && reserve(p.id) ? `<p class="aide">+ ${reserve(p.id)} ${h(p.unite)} réservés par des commandes en préparation → stock physique attendu : <b>${p.stock + reserve(p.id)}</b>. Après un inventaire, saisissez ici le compté <b>moins</b> ${reserve(p.id)}.</p>` : ""}
         <label>Emplacement<input name="emplacement" maxlength="40" value="${h(p?.emplacement)}" placeholder="ex. A1" /></label>
         <label>Durée indicative (min / ligne)<input type="number" name="dureeMin" min="0" max="600" value="${pr.dureeMin || 0}" /></label>
-        <label>Animal<select name="categorie">${Object.entries(LIB_CAT).map(([k, v]) => `<option value="${k}" ${(p?.categorie || "autre") === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
+        <label>Univers<select name="categorie">${Object.entries(LIB_CAT).map(([k, v]) => `<option value="${k}" ${(p?.categorie || "autre") === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
         <label>Conservation<select name="conservation">${Object.entries(LIB_CONS).map(([k, v]) => `<option value="${k}" ${(p?.conservation || "ambiant") === k ? "selected" : ""}>${v}</option>`).join("")}</select></label>
         <label>DDM / DLC habituelle (jours, 0 = sans date)<input type="number" name="dlcJours" min="0" max="3650" value="${p?.dlcJours || 0}" /></label>
       </div></div>
+      ${p && p.description ? `<div class="bloc"><h3>Description (site)</h3><p class="aide">${h(p.description)}</p></div>` : ""}
       <div class="bloc"><h3>Fiche de préparation</h3>
         <p class="aide">Obligatoire pour qu'une commande contenant ce produit puisse être envoyée aux préparateurs.</p>
         <label>Instructions générales *<textarea name="instructions" maxlength="2000" required>${h(pr.instructions)}</textarea></label>
@@ -573,6 +615,46 @@ function formulaireProduit(p) {
         ${p && S.moi.role === "admin" ? `<button class="btn btn-danger" type="button" data-action="supprimer-produit" data-id="${p.id}">Supprimer</button>` : ""}
         <button class="btn btn-secondaire" type="button" data-action="fermer">Annuler</button><button class="btn btn-primaire" type="submit">Enregistrer</button></div>
     </form>`), true);
+}
+
+/* ---------- Import du catalogue depuis le site ---------- */
+function formulaireImport() {
+  ouvrirModale(() => modale(`<h2>Importer le catalogue du site</h2>
+    <form data-form="import"><div class="bloc">
+      <p>Choisissez la page du site (fichier <b>.html</b>, avec la liste des produits) ou un export <b>.json</b>.</p>
+      <label>Fichier<input type="file" name="fichier" accept=".html,.htm,.json" required /></label>
+      <p class="aide">Chaque format (ex. 3 kg, 14 kg) devient une référence de stock. Les références existantes sont mises à jour (nom, marque, poids…) ; le <b>stock</b>, l'<b>emplacement</b> et les <b>consignes de préparation</b> déjà saisis ne sont jamais modifiés. Rien n'est supprimé.</p>
+    </div>
+    <div class="ligne-boutons"><button class="btn btn-secondaire" type="button" data-action="fermer">Annuler</button><button class="btn btn-primaire" type="submit">Importer</button></div>
+    </form>`), true);
+}
+
+/* Lit la liste des produits dans la page du site (constante PRODUITS_DEFAUT) ou dans un export JSON */
+function extraireProduitsSite(texte) {
+  let liste = null;
+  try { const j = JSON.parse(texte); liste = Array.isArray(j) ? j : j.produits; } catch (e) {
+    const m = texte.match(/PRODUITS_DEFAUT\s*=\s*(\[[\s\S]*?\n\s*\]);/);
+    if (m) { try { liste = JSON.parse(m[1]); } catch (e2) { /* format inattendu */ } }
+  }
+  if (!Array.isArray(liste) || !liste.length) throw new Error("Aucune liste de produits trouvée dans ce fichier.");
+  const champs = ["id", "cat", "marque", "gamme", "nom", "desc", "conditionnement", "poids", "photo"];
+  return liste.map((x) => Object.fromEntries(champs.map((k) => [k, x && x[k] != null ? x[k] : ""])));
+}
+
+/* ---------- Fiche type pour un groupe de produits ---------- */
+function formulaireFicheType(ids) {
+  ouvrirModale(() => modale(`<h2>Fiche type pour ${ids.length} référence${ids.length > 1 ? "s" : ""}</h2>
+    <form data-form="fiche-type"><div class="bloc">
+      <p class="aide">Les consignes saisies ici sont copiées dans les ${ids.length} fiches affichées (filtres de l'onglet Produits). Laissez un champ vide pour ne pas y toucher.</p>
+      <label>Instructions générales<textarea name="instructions" maxlength="2000" placeholder="ex. Vérifier la DDM (au moins 3 mois restants), sac intact."></textarea></label>
+      <label>Conditionnement<input name="conditionnement" maxlength="300" /></label>
+      <label>Point de vigilance<input name="vigilance" maxlength="500" /></label>
+      ${S.etat.postes.map((po) => `<label>Consigne ${h(po.nom)}<textarea name="poste_${po.id}" maxlength="1000"></textarea></label>`).join("")}
+      <label class="case"><input type="checkbox" name="ecraser" /> Remplacer aussi les consignes déjà remplies</label>
+    </div>
+    <div class="ligne-boutons"><button class="btn btn-secondaire" type="button" data-action="fermer">Annuler</button><button class="btn btn-primaire" type="submit">Appliquer</button></div>
+    </form>`), true);
+  S.ficheTypeIds = ids;
 }
 
 /* ---------- Formulaire client ---------- */
@@ -660,6 +742,8 @@ const ACTIONS = {
   "expedier": (id) => agir(() => api("POST", `/api/commandes/${id}/expedier`, { transporteur: $("#exp-transporteur").value, suivi: $("#exp-suivi").value }), "Commande expédiée"),
   "annuler": (id) => { const r = prompt("Raison de l'annulation ?"); if (r !== null) agir(() => api("POST", `/api/commandes/${id}/annuler`, { remarque: r }), "Commande annulée"); },
   "nouveau-produit": () => formulaireProduit(null),
+  "importer-catalogue": () => formulaireImport(),
+  "fiche-type": () => formulaireFicheType(produitsFiltres().map((p) => p.id)),
   "supprimer-produit": (id) => confirm("Supprimer ce produit ?") && agir(() => api("DELETE", `/api/produits/${id}`).then(fermerModale), "Produit supprimé"),
   "nouveau-client": () => formulaireClient(null),
   "supprimer-client": (id) => confirm("Supprimer ce client ?") && agir(() => api("DELETE", `/api/clients/${id}`).then(fermerModale), "Client supprimé"),
@@ -673,7 +757,11 @@ const ACTIONS = {
 const FORMULAIRES = {
   async commande(f, id) {
     const lignes = [];
-    for (let i = 0; f[`p${i}`]; i++) lignes.push({ produitId: f[`p${i}`].value, quantite: Number(f[`q${i}`].value) });
+    for (let i = 0; f[`p${i}`]; i++) {
+      const p = produitDepuisSaisie(f[`p${i}`].value);
+      if (!p) throw new Error(`Ligne ${i + 1} : produit introuvable. Tapez son nom puis choisissez-le dans la liste proposée.`);
+      lignes.push({ produitId: p.id, quantite: Number(f[`q${i}`].value) });
+    }
     const corps = { clientId: f.clientId.value, priorite: f.priorite.value, dateMail: f.dateMail.value, dateLivraisonSouhaitee: f.dateLivraisonSouhaitee.value, sourceMail: f.sourceMail.value, note: f.note.value, lignes, postes: [...f.querySelectorAll("input[name=poste]:checked")].map((x) => x.value) };
     if (!lignes.length) throw new Error("Ajoutez au moins un produit.");
     const c = id ? await api("PUT", `/api/commandes/${id}`, corps) : await api("POST", "/api/commandes", corps);
@@ -682,12 +770,26 @@ const FORMULAIRES = {
   },
   async produit(f, id) {
     const parPoste = {}; S.etat.postes.forEach((p) => (parPoste[p.id] = f[`poste_${p.id}`].value));
-    const corps = { nom: f.nom.value, reference: f.reference.value, unite: f.unite.value, emplacement: f.emplacement.value, categorie: f.categorie.value, conservation: f.conservation.value, dlcJours: Number(f.dlcJours.value), preparation: { instructions: f.instructions.value, conditionnement: f.conditionnement.value, vigilance: f.vigilance.value, dureeMin: Number(f.dureeMin.value), parPoste } };
+    const corps = { nom: f.nom.value, reference: f.reference.value, marque: f.marque.value, gamme: f.gamme.value, poids: f.poids.value, unite: f.unite.value, emplacement: f.emplacement.value, categorie: f.categorie.value, conservation: f.conservation.value, dlcJours: Number(f.dlcJours.value), preparation: { instructions: f.instructions.value, conditionnement: f.conditionnement.value, vigilance: f.vigilance.value, dureeMin: Number(f.dureeMin.value), parPoste } };
     // Stock envoyé seulement s'il a été modifié, avec la valeur lue : le serveur refuse s'il a bougé entre-temps
     if (!id) corps.stock = Number(f.stock.value);
     else if (f.stock.value !== f.stock.defaultValue) { corps.stock = Number(f.stock.value); corps.stockAvant = Number(f.stock.defaultValue); }
     await (id ? api("PUT", `/api/produits/${id}`, corps) : api("POST", "/api/produits", corps));
     fermerModale(); return "Produit enregistré";
+  },
+  async import(f) {
+    const fichier = f.fichier.files[0];
+    if (!fichier) throw new Error("Choisissez un fichier.");
+    const produits = extraireProduitsSite(await fichier.text());
+    const b = await api("POST", "/api/produits/import", { produits, source: fichier.name });
+    fermerModale();
+    return `Catalogue importé : ${b.crees} nouvelle(s) référence(s), ${b.misAJour} mise(s) à jour, ${b.inchanges} inchangée(s)${b.absentsDuSite ? `, ${b.absentsDuSite} absente(s) du site (conservées)` : ""}.`;
+  },
+  async "fiche-type"(f) {
+    const parPoste = {}; S.etat.postes.forEach((p) => (parPoste[p.id] = f[`poste_${p.id}`].value));
+    const r = await api("POST", "/api/produits/fiche-groupee", { ids: S.ficheTypeIds || [], ecraser: f.ecraser.checked, preparation: { instructions: f.instructions.value, conditionnement: f.conditionnement.value, vigilance: f.vigilance.value, parPoste } });
+    fermerModale();
+    return `Fiche type appliquée : ${r.modifies} fiche(s) modifiée(s) sur ${r.produits}.`;
   },
   async client(f, id) {
     const corps = { nom: f.nom.value, email: f.email.value, telephone: f.telephone.value, adresse: f.adresse.value };
@@ -749,6 +851,11 @@ document.addEventListener("click", (ev) => {
     el.dataset.enCours = "1";
     agir(() => api("PUT", "/api/postes/ordre", { ordre: ids }), "Ordre modifié").finally(() => delete el.dataset.enCours);
   }
+});
+
+document.addEventListener("change", (ev) => {
+  const k = ev.target.dataset && ev.target.dataset.filtre;
+  if (k) { S[k] = ev.target.value; dessiner(); }
 });
 
 document.addEventListener("input", (ev) => {

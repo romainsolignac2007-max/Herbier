@@ -206,6 +206,35 @@ r = await secr("PUT", `/api/produits/${croq.id}`, { emplacement: "A2", stock: 80
 r = await secr("PUT", `/api/produits/${croq.id}`, { emplacement: "A2" }); ok(r.status === 200 && r.data.stock === 70 && r.data.emplacement === "A2", "modifier la fiche sans toucher au stock ne l'écrase pas");
 r = await secr("PUT", `/api/produits/${croq.id}`, { stock: 75, stockAvant: 70 }); ok(r.status === 200 && r.data.stock === 75, "correction de stock sur la valeur à jour acceptée");
 
+console.log("7 bis. Catalogue du site : import, formats, fiche type");
+const siteExtrait = [
+  { id: "ownat-chiot", cat: "chien", marque: "Ownat", gamme: "Classic", nom: "Ownat Classic · Chiot", desc: "Croquettes chiot", conditionnement: "Sac", poids: "400 g, 3 kg ou 14 kg" },
+  { id: "ble", cat: "cereales", marque: "Céréales d'Occitanie", gamme: "", nom: "Blé", desc: "", conditionnement: "Sac", poids: "25 kg" },
+  { id: "shampoing", cat: "chien", marque: "Saniterpen", gamme: "", nom: "Shampoing", desc: "", conditionnement: "Flacon ou bidon", poids: "1 L ou 5 L" },
+];
+r = await pick("POST", "/api/produits/import", { produits: siteExtrait }); ok(r.status === 403, "un préparateur ne peut pas importer le catalogue");
+r = await secr("POST", "/api/produits/import", { produits: siteExtrait, source: "site.html" });
+ok(r.status === 200 && r.data.crees === 6, "import : 3 produits du site → 6 références (une par format)");
+r = await secr("GET", "/api/etat");
+const chiot14 = r.data.produits.find((p) => p.idSite === "ownat-chiot-14-kg");
+ok(chiot14 && chiot14.poids === "14 kg" && chiot14.marque === "Ownat" && chiot14.categorie === "chien" && chiot14.stock === 0, "format 14 kg : marque, univers et poids repris, stock à 0");
+ok(r.data.produits.find((p) => p.idSite === "shampoing-5-l").unite === "bidon" && r.data.produits.find((p) => p.idSite === "shampoing-1-l").unite === "flacon", "conditionnement associé à chaque format (flacon 1 L, bidon 5 L)");
+ok(r.data.produits.find((p) => p.idSite === "ble-25-kg").categorie === "cereales", "univers Céréales");
+await secr("PUT", `/api/produits/${chiot14.id}`, { stock: 30, stockAvant: 0, emplacement: "D4", preparation: { instructions: "Sac intact", parPoste: { [pEmb.id]: "Filmer" } } });
+r = await secr("POST", "/api/produits/import", { produits: [{ ...siteExtrait[0], nom: "Ownat Classic · Chiot (nouvelle recette)" }] });
+ok(r.status === 200 && r.data.misAJour === 3 && r.data.crees === 0 && r.data.absentsDuSite === 3, "ré-import : noms mis à jour, rien créé, absents signalés mais conservés");
+r = await secr("GET", "/api/etat");
+const chiot14b = r.data.produits.find((p) => p.id === chiot14.id);
+ok(chiot14b.nom.includes("nouvelle recette") && chiot14b.stock === 30 && chiot14b.emplacement === "D4" && chiot14b.preparation.parPoste[pEmb.id] === "Filmer", "ré-import : stock, emplacement et consignes du dépôt intacts");
+r = await secr("POST", "/api/produits/import", { produits: [{ nom: "sans id" }] }); ok(r.status === 400, "fichier de catalogue invalide → 400");
+const ownat = r.data && (await secr("GET", "/api/etat")).data.produits.filter((p) => p.marque === "Ownat").map((p) => p.id);
+r = await secr("POST", "/api/produits/fiche-groupee", { ids: ownat, preparation: { instructions: "Vérifier la DDM", parPoste: { [pEmb.id]: "Carton renforcé" } } });
+ok(r.status === 200 && r.data.produits === 3 && r.data.modifies === 2, "fiche type sur les 3 formats Ownat : 2 fiches complétées (la 3e était déjà remplie)");
+r = await secr("GET", "/api/etat");
+ok(r.data.produits.find((p) => p.id === chiot14.id).preparation.parPoste[pEmb.id] === "Filmer" && r.data.produits.find((p) => p.idSite === "ownat-chiot-3-kg").preparation.parPoste[pEmb.id] === "Carton renforcé", "la fiche type complète les fiches vides sans écraser une consigne déjà écrite");
+r = await secr("POST", "/api/produits/fiche-groupee", { ids: [chiot14.id], ecraser: true, preparation: { parPoste: { [pEmb.id]: "Nouvelle consigne" } } });
+r = await secr("GET", "/api/etat"); ok(r.data.produits.find((p) => p.id === chiot14.id).preparation.parPoste[pEmb.id] === "Nouvelle consigne", "…sauf si « remplacer » est coché");
+
 console.log("8. Audit, verrouillages");
 r = await secr("GET", "/api/audit"); ok(r.status === 403, "le secrétariat n'a pas accès à l'audit");
 r = await admin("GET", "/api/audit");

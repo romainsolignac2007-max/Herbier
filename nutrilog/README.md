@@ -39,6 +39,24 @@ Retour au secrétariat : validation, transporteur, n° de suivi → Expédiée
 À chaque étape : **fil de messages** sur la commande (secrétariat ↔ préparateurs), **historique
 horodaté** (qui, quel poste, quoi) et **journal d'audit** global pour l'administrateur.
 
+## Catalogue produits (site Solignac Nutrition)
+
+Le catalogue du site est intégré : `catalogue/solignac-nutrition.json` (130 produits : Ownat, Saniterpen,
+Croccitanie, MSM Pet Food, Céréales d'Occitanie, Mytho). Chaque **format** d'un produit (« 400 g, 1 kg ou
+3 kg ») devient une **référence de stock** distincte, soit 239 références, classées par univers (chien,
+chat, cheval, basse-cour, céréales), marque, gamme et poids.
+
+- Au **premier lancement**, ces références sont créées avec un stock à 0 et une fiche de préparation vide :
+  le dépôt saisit ses stocks, emplacements et consignes.
+- **Fiche type** (onglet Produits) : filtrez un groupe (ex. marque MSM, fiches à compléter) puis appliquez
+  les mêmes consignes à toutes les références affichées ; les consignes déjà écrites ne sont remplacées que
+  si on le demande.
+- **Mise à jour depuis le site** : bouton « Importer / mettre à jour depuis le site », en choisissant la page
+  HTML du site (ou un export JSON). Les nouveautés sont ajoutées, les noms / marques / poids mis à jour ;
+  le stock, les emplacements et les consignes du dépôt ne sont jamais modifiés, et rien n'est supprimé.
+- Dans une commande, le produit se choisit en tapant quelques mots (« podium agneau 14 »).
+- Les photos du site ne sont pas reprises (elles sont dans un dossier séparé du site).
+
 ## Rôles (un identifiant par personne)
 
 | Rôle | Ce qu'il peut faire |

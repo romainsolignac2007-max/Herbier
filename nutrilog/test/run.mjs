@@ -6,6 +6,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const racine = join(dirname(fileURLToPath(import.meta.url)), "..");
+process.env.NUTRILOG_EXEMPLES = "1"; // jeu d'exemple (4 produits, 3 clients) : les tests ne dépendent pas du catalogue réel
 const dataDir = mkdtempSync(join(tmpdir(), "nutrilog-test-"));
 const serveur = spawn(process.execPath, [join(racine, "server.js")], {
   env: { ...process.env, PORT: "3999", HOST: "127.0.0.1", ADMIN_PASSWORD: "AdminInitial123", DATA_DIR: dataDir },

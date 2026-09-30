@@ -8,7 +8,7 @@
 "use strict";
 
 const NutriDemo = (() => {
-  const CLE = "nutrilog-demo-fs-v2"; // v2 : circuit Emballage seul
+  const CLE = "nutrilog-demo-fs-v3"; // v3 : catalogue Solignac Nutrition
 
   /* ---------- Buffer minimal ---------- */
   class Buf extends Uint8Array {
@@ -99,5 +99,8 @@ const NutriDemo = (() => {
     });
   }
 
-  return { Buffer, require, process, setIntervalDemo, appeler, effacer() { fichiers = new Map(); try { localStorage.removeItem(CLE); } catch (e) { /* */ } } };
+  // Fichier fourni avec la page (ex. catalogue initial), lu par server.js au premier lancement de la démo
+  const fichierFourni = (p, contenu) => { if (!fichiers.has(p)) fichiers.set(p, contenu); };
+
+  return { Buffer, require, process, setIntervalDemo, appeler, fichierFourni, effacer() { fichiers = new Map(); try { localStorage.removeItem(CLE); } catch (e) { /* */ } } };
 })();

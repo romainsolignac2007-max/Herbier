@@ -48,6 +48,7 @@ ${corpsApp}
 ${scripts[0]}
 </script>
 <script>
+NutriDemo.fichierFourni("/app/catalogue/solignac-nutrition.json", ${JSON.stringify(lire("catalogue/solignac-nutrition.json")).replace(/</g, "\\u003c")});
 const NutriServeur = (function (require, module, process, __dirname, Buffer, setInterval) {
 ${scripts[1]}
 ;lireDb(); demarre = true;
