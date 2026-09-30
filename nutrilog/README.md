@@ -62,7 +62,7 @@ chat, cheval, basse-cour, céréales), marque, gamme et poids.
 | Rôle | Ce qu'il peut faire |
 |---|---|
 | **Secrétariat** | créer / modifier les commandes, les envoyer en préparation, les rappeler ou renvoyer à un poste, expédier, annuler ; gérer produits (fiches) et clients ; écrire dans le fil |
-| **Préparateur** | voir uniquement les commandes qui attendent **son ou ses postes** (ou sur lesquelles il a travaillé), prendre, cocher, saisir lot / DDM, remettre dans la file, terminer l'étape ; écrire dans le fil. La tablette ne reçoit ni l'extrait du mail, ni les coordonnées des clients, ni la liste du personnel. |
+| **Préparateur** | voir uniquement les commandes qui attendent **son ou ses postes**, celle qu'il prépare, et celles qu'il a **terminées aujourd'hui** (liste remise à zéro chaque jour à minuit : plus d'accès aux commandes des jours précédents), prendre, cocher, saisir lot / DDM, remettre dans la file, terminer l'étape ; écrire dans le fil. La tablette ne reçoit ni l'extrait du mail, ni les coordonnées des clients, ni la liste du personnel. |
 | **Administrateur** | tout ce qui précède + comptes utilisateurs, postes du circuit, journal d'audit |
 
 Trois rôles : **administrateur**, **secrétariat** et **préparateur d'emballage**. Le circuit démarre avec
@@ -99,6 +99,7 @@ Variables d'environnement :
 | `DATA_DIR` | dossier des données | `./data` |
 | `TRUST_PROXY` | `1` uniquement derrière un reverse proxy HTTPS (nginx : `proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;`, Caddy : par défaut). Active cookie `Secure` + HSTS et lit l'adresse réelle des postes. Exige `HOST=127.0.0.1` (refus de démarrer sinon) ; toute requête sans `X-Forwarded-For` est refusée (proxy mal configuré). | — |
 | `GESTION_STOCK` | `1` pour activer la gestion du stock (stock disponible, réservation à l'envoi, blocage si stock insuffisant). **Désactivée pour l'instant** : aucune quantité n'est suivie ni contrôlée, et rien ne s'affiche. | — |
+| `FUSEAU` | fuseau horaire du dépôt, pour la remise à zéro quotidienne des tablettes | `Europe/Paris` |
 | `SESSION_INACTIVITE_MIN` | minutes sans action avant déconnexion (le rafraîchissement automatique des écrans ne compte pas) — ex. `30` pour des tablettes partagées | `480` |
 | `ADMIN_RESET_PASSWORD` | **récupération** du compte `admin` (mot de passe oublié) : réinitialisé au démarrage, à changer à la connexion, tracé dans l'audit. **À retirer ensuite.** | — |
 

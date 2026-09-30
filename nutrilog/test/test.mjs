@@ -330,5 +330,43 @@ console.log("12. Sans gestion du stock (réglage par défaut)");
   rmSync(dir, { recursive: true, force: true });
 }
 
+console.log("13. Tablettes : les commandes terminées repartent à zéro chaque jour");
+{
+  const dir = mkdtempSync(join(tmpdir(), "nutrilog-jr-"));
+  let srv = await demarrer(3992, { ADMIN_PASSWORD: "AdminInitial123" }, dir);
+  const a = session("http://127.0.0.1:3992"), lea = session("http://127.0.0.1:3992");
+  await a("POST", "/api/connexion", { login: "admin", mdp: "AdminInitial123" });
+  await a("POST", "/api/moi/motdepasse", { ancien: "AdminInitial123", nouveau: "AdminSecurise2026" });
+  let e = (await a("GET", "/api/etat")).data;
+  await a("POST", "/api/utilisateurs", { login: "lea", nom: "Léa", role: "preparateur", postes: [e.postes[0].id], mdp: "Provisoire2026x" });
+  await lea("POST", "/api/connexion", { login: "lea", mdp: "Provisoire2026x" });
+  await lea("POST", "/api/moi/motdepasse", { ancien: "Provisoire2026x", nouveau: "MonMdpPerso2026" });
+  const faire = async (expedier) => {
+    const c = (await a("POST", "/api/commandes", { clientId: e.clients[0].id, lignes: [{ produitId: e.produits[0].id, quantite: 1 }] })).data;
+    await a("POST", `/api/commandes/${c.id}/envoyer`);
+    await lea("POST", `/api/commandes/${c.id}/prendre`); await lea("POST", `/api/commandes/${c.id}/ligne`, { index: 0, fait: true }); await lea("POST", `/api/commandes/${c.id}/terminer`);
+    if (expedier) await a("POST", `/api/commandes/${c.id}/expedier`, { transporteur: "Tournée" });
+    return c;
+  };
+  const c1 = await faire(false), c2 = await faire(true);
+  r = await lea("GET", "/api/etat"); ok(r.data.commandes.length === 2, "le jour même, la préparatrice voit ses 2 commandes terminées (y compris celle déjà expédiée)");
+  srv.p.kill(); await srv.fin;
+  // On « passe au lendemain » : les étapes ont été terminées hier
+  const db = JSON.parse(readFileSync(join(dir, "db.json"), "utf8"));
+  const hier = new Date(Date.now() - 36 * 3600 * 1000).toISOString();
+  db.commandes.forEach((c) => c.etapes.forEach((x) => { if (x.fin) x.fin = hier; }));
+  writeFileSync(join(dir, "db.json"), JSON.stringify(db));
+  srv = await demarrer(3992, {}, dir);
+  const lea2 = session("http://127.0.0.1:3992");
+  await lea2("POST", "/api/connexion", { login: "lea", mdp: "MonMdpPerso2026" });
+  r = await lea2("GET", "/api/etat"); ok(r.status === 200 && r.data.commandes.length === 0, "le lendemain, plus aucune ancienne commande sur la tablette");
+  r = await lea2("POST", `/api/commandes/${c1.id}/message`, { texte: "x" }); ok(r.status === 404, "…ni accessible directement (404)");
+  const a2 = session("http://127.0.0.1:3992");
+  await a2("POST", "/api/connexion", { login: "admin", mdp: "AdminSecurise2026" });
+  r = await a2("GET", "/api/etat"); ok(r.data.commandes.length === 2 && r.data.commandes.some((c) => c.id === c2.id), "le secrétariat et l'admin gardent tout l'historique");
+  srv.p.kill(); await srv.fin;
+  rmSync(dir, { recursive: true, force: true });
+}
+
 console.log(echecs ? `\n${echecs} ÉCHEC(S)` : "\nTOUT EST OK");
 process.exit(echecs ? 1 : 0);

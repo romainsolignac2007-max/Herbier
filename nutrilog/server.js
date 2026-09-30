@@ -13,6 +13,7 @@
      TRUST_PROXY=1   derrière un reverse proxy (nginx/Caddy) qui termine HTTPS : IP réelle lue dans
                      X-Forwarded-For, cookie Secure + HSTS. Exige HOST=127.0.0.1.
      ADMIN_RESET_PASSWORD  réinitialise le compte « admin » au démarrage (à retirer après usage)
+     FUSEAU          fuseau horaire du dépôt pour la remise à zéro quotidienne (Europe/Paris)
      SESSION_INACTIVITE_MIN  minutes sans action avant déconnexion (480 = 8 h ; ex. 30 pour des tablettes partagées)
 
    Circuit d'une commande :
@@ -601,11 +602,21 @@ function nomPoste(db, posteId) {
 }
 
 /* Un préparateur n'a accès qu'aux commandes qui attendent son poste ou sur lesquelles il a travaillé. */
+/* Un préparateur n'a accès qu'à :
+   - ce qui attend son poste ou qu'il est en train de préparer ;
+   - ce qu'il a terminé AUJOURD'HUI (onglet « Terminées », remis à zéro chaque jour à minuit).
+   Les commandes des jours précédents ne lui sont plus accessibles. */
+const FUSEAU = process.env.FUSEAU || "Europe/Paris";
+const formatJour = new Intl.DateTimeFormat("fr-CA", { timeZone: FUSEAU, year: "numeric", month: "2-digit", day: "2-digit" });
+const jourDe = (iso) => (iso ? formatJour.format(new Date(iso)) : "");
 function preparateurImplique(c, u) {
-  if (CLOS.includes(c.statut) || c.statut === "brouillon") return false;
+  if (c.statut === "brouillon") return false;
   const e = etapeCourante(c);
-  const attendMonPoste = e && ["a_preparer", "en_preparation"].includes(c.statut) && (u.postes || []).includes(e.posteId);
-  return attendMonPoste || (c.etapes || []).some((x) => x.preparateurId === u.id);
+  const attendMonPoste = !CLOS.includes(c.statut) && e && ["a_preparer", "en_preparation"].includes(c.statut) && (u.postes || []).includes(e.posteId);
+  const jeLaPrepare = !CLOS.includes(c.statut) && (c.etapes || []).some((x) => x.preparateurId === u.id && x.statut === "en_cours");
+  const aujourdhui = jourDe(new Date().toISOString());
+  const termineeAujourdhui = (c.etapes || []).some((x) => x.preparateurId === u.id && x.statut === "faite" && jourDe(x.fin) === aujourdhui);
+  return attendMonPoste || jeLaPrepare || termineeAujourdhui;
 }
 
 /* Ce que la tablette reçoit d'une commande : jamais l'extrait du mail client. */

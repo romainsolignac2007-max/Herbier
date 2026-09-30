@@ -41,6 +41,7 @@ const poste = (id) => (S.etat.postes || []).find((p) => p.id === id);
 const nomPoste = (id) => (poste(id) ? poste(id).nom : "?");
 const etapeCourante = (c) => (c.etapes && c.etapes[c.etapeIndex]) || null;
 const estClos = (c) => c.statut === "expediee" || c.statut === "annulee";
+const jourLocal = (iso) => { const d = new Date(iso); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 const aujourdhui = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; }; // date LOCALE
 /* Quantité d'un produit réservée par les commandes envoyées en préparation et pas encore expédiées */
 const stockActif = () => !!(S.etat && S.etat.gestionStock); // gestion du stock : désactivée pour l'instant
@@ -141,7 +142,9 @@ async function rafraichir(force) {
   const etat = await api("GET", "/api/etat");
   if (seq < S.seqApplique) return; // réponse dépassée par une demande plus récente : ignorée
   S.seqApplique = seq;
-  const change = force || !S.etat || etat.derniereMaj !== S.etat.derniereMaj;
+  const signature = (e) => e.commandes.map((c) => c.id).join();
+  const change = force || !S.etat || etat.derniereMaj !== S.etat.derniereMaj || signature(etat) !== signature(S.etat) || jourLocal(new Date()) !== S.jour;
+  S.jour = jourLocal(new Date());
   S.etat = etat; S.moi = etat.moi;
   $("#qui").textContent = `${S.moi.nom} · ${LIB_ROLE[S.moi.role]}${S.moi.role === "preparateur" ? " (" + (S.moi.postes.map(nomPoste).join(", ") || "aucun poste") + ")" : ""}`;
   if (change && !force) { dessiner(); redessinerModale(); }
@@ -358,10 +361,13 @@ function vueEnCours() {
 }
 
 function vueTerminees() {
-  const l = S.etat.commandes.filter((c) => (c.etapes || []).some((e) => e.preparateurId === S.moi.id && e.statut === "faite")).sort((a, b) => b.numero - a.numero);
-  return `<h2>Étapes que j'ai terminées</h2>
+  const auj = aujourdhui();
+  const miennes = (c) => c.etapes.filter((e) => e.preparateurId === S.moi.id && e.statut === "faite" && e.fin && jourLocal(e.fin) === auj);
+  const l = S.etat.commandes.filter((c) => miennes(c).length).sort((a, b) => b.numero - a.numero);
+  return `<h2>Terminées aujourd'hui</h2>
+    <p class="aide">La liste repart à zéro chaque jour à minuit : les commandes des jours précédents ne sont plus accessibles depuis la tablette.</p>
     <div class="tableau-scroll"><table class="tableau"><thead><tr><th>N°</th><th>Client</th><th>Mon poste</th><th>Terminée le</th><th>Statut actuel</th></tr></thead><tbody>
-      ${l.length ? l.flatMap((c) => c.etapes.filter((e) => e.preparateurId === S.moi.id && e.statut === "faite").map((e) => `<tr class="cliquable" data-ouvrir="${c.id}"><td>${c.numero}</td><td>${h(client(c.clientId)?.nom || "")}</td><td>${h(nomPoste(e.posteId))}</td><td>${fmtDate(e.fin)}</td><td>${pastille(c.statut)}</td></tr>`)).join("") : '<tr><td colspan="5" class="vide">Rien pour l\'instant</td></tr>'}
+      ${l.length ? l.flatMap((c) => miennes(c).map((e) => `<tr class="cliquable" data-ouvrir="${c.id}"><td>${c.numero}</td><td>${h(client(c.clientId)?.nom || "")}</td><td>${h(nomPoste(e.posteId))}</td><td>${fmtDate(e.fin)}</td><td>${pastille(c.statut)}</td></tr>`)).join("") : '<tr><td colspan="5" class="vide">Rien terminé aujourd\'hui pour l\'instant</td></tr>'}
     </tbody></table></div>`;
 }
 
