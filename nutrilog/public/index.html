@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>NutriLog — Logistique des commandes (aliments pour animaux)</title>
+  <title>Solignac Nutrition — Logistique des commandes</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -12,8 +12,8 @@
   <!-- ================= CONNEXION ================= -->
   <section class="ecran" id="ecran-connexion">
     <form class="carte carte-connexion" id="form-connexion" autocomplete="on">
-      <div class="logo">NutriLog</div>
-      <p class="sous-titre">Logistique des commandes — dépôt d'aliments pour animaux · accès réservé au personnel</p>
+      <div class="logo"><img src="logo-solignac.png" alt="Solignac Nutrition" width="720" height="273" /></div>
+      <p class="sous-titre">Logistique des commandes · accès réservé au personnel</p>
       <label>Identifiant<input name="login" type="text" autocomplete="username" required autocapitalize="off" spellcheck="false" /></label>
       <label>Mot de passe<input name="mdp" type="password" autocomplete="current-password" required /></label>
       <p class="erreur" id="erreur-connexion" hidden></p>
@@ -24,7 +24,7 @@
   <!-- ================= CHANGEMENT DE MOT DE PASSE (obligatoire à la 1re connexion) ================= -->
   <section class="ecran" id="ecran-mdp" hidden>
     <form class="carte carte-connexion" id="form-mdp" autocomplete="on">
-      <div class="logo">Mot de passe</div>
+      <h2 class="titre-ecran">Mot de passe</h2>
       <p class="sous-titre" id="mdp-explication">Choisissez un mot de passe personnel (12 caractères minimum, lettres et chiffres).</p>
       <label>Mot de passe actuel<input name="ancien" type="password" autocomplete="current-password" required /></label>
       <label>Nouveau mot de passe<input name="nouveau" type="password" autocomplete="new-password" required minlength="12" /></label>
@@ -41,7 +41,7 @@
   <div id="app" hidden>
     <header class="entete">
       <div class="entete-gauche">
-        <span class="logo-petit">NutriLog</span>
+        <button type="button" class="logo-bouton" id="logo-accueil" title="Retour à l'accueil"><img src="logo-solignac.png" alt="Solignac Nutrition — retour à l'accueil" width="720" height="273" /></button>
         <nav class="onglets" id="onglets"></nav>
       </div>
       <div class="entete-droite">

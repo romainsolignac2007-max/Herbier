@@ -906,6 +906,14 @@ document.addEventListener("submit", async (ev) => {
 });
 
 $("#fermer-modale").onclick = fermerModale;
+/* Logo : retour à la première page du profil (Commandes, ou « À faire » sur une tablette) */
+$("#logo-accueil").onclick = () => {
+  if (!S.moi) return;
+  fermerModale();
+  S.onglet = S.moi.role === "preparateur" ? "afaire" : "commandes";
+  S.recherche = ""; S.filtreUnivers = ""; S.filtreMarque = ""; S.filtreFiche = "";
+  dessiner(); window.scrollTo(0, 0);
+};
 $("#voile").addEventListener("click", (ev) => { if (ev.target === $("#voile")) fermerModale(); });
 document.addEventListener("keydown", (ev) => { if (ev.key === "Escape" && S.modale && !$("#voile").hidden) fermerModale(); });
 
