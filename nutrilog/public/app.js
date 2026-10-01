@@ -246,8 +246,8 @@ function filtrerCommandes(liste) {
 
 function vueCommandes() {
   const cs = filtrerCommandes(S.etat.commandes).slice().sort((a, b) => (b.priorite === "urgente") - (a.priorite === "urgente") || a.numero - b.numero);
-  const col = (statut, titre) => {
-    const l = cs.filter((c) => c.statut === statut);
+  const col = (statuts, titre) => {
+    const l = cs.filter((c) => [].concat(statuts).includes(c.statut));
     return `<div class="colonne"><h3><span>${h(titre)}</span><span>${l.length}</span></h3><div class="pile">${l.length ? l.map(carteCmd).join("") : '<div class="vide">Aucune</div>'}</div></div>`;
   };
   const dateClot = (c) => c.expedieeLe || (c.historique[c.historique.length - 1] || {}).date || "";
@@ -259,8 +259,7 @@ function vueCommandes() {
     </div>
     <div class="colonnes">
       ${col("brouillon", "Brouillons (à compléter)")}
-      ${col("a_preparer", "En attente d'un poste")}
-      ${col("en_preparation", "En préparation")}
+      ${col(["a_preparer", "en_preparation"], "En préparation")}
       ${col("preparee", "Préparées → à expédier")}
     </div>
     <h2 class="mt">Commandes closes — les 30 plus récentes</h2>
