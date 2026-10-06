@@ -24,6 +24,7 @@
       --or: #e2b53e;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: clamp(16px, 2.6vmin, 26px); }
     html, body {
       height: 100%;
       overflow: hidden;
@@ -66,7 +67,7 @@
 
     .etoiles { display: flex; justify-content: center; gap: clamp(6px, 2vw, 18px); margin-bottom: 14px; }
     .etoile {
-      font-size: clamp(3rem, 12vw, 5.5rem);
+      font-size: clamp(3rem, 12vw, 6rem);
       line-height: 1;
       background: none;
       border: none;
@@ -167,7 +168,7 @@
     }
     .panneau .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
     .panneau .btn { font-size: 1rem; padding: 12px 22px; background: var(--vert); color: var(--creme); }
-    .panneau .btn.secondaire { color: var(--vert-fonce); border-color: var(--sable); }
+    .panneau .btn.secondaire { background: transparent; color: var(--vert-fonce); border: 1px solid var(--vert-clair); }
     .panneau .btn.danger { background: #a3392f; }
     .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
     .stat { background: #fff; border-radius: 14px; padding: 12px 14px; }
