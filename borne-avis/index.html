@@ -25,7 +25,7 @@
       --or: #e2b53e;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { font-size: clamp(16px, 2.6vmin, 26px); }
+    html { font-size: clamp(15px, 2.2vmin, 24px); }
     html, body {
       height: 100%;
       overflow: hidden;
@@ -37,93 +37,178 @@
       -webkit-tap-highlight-color: transparent;
       touch-action: manipulation;
     }
-    body {
-      font-family: "Inter", system-ui, sans-serif;
-      color: var(--texte);
+    body { font-family: "Inter", system-ui, sans-serif; color: var(--texte); background: #fff; }
+    h1, h2 { font-family: "Fraunces", Georgia, serif; font-weight: 600; line-height: 1.12; }
+
+    /* ---------- Mise en page : panneau marque | zone d'avis ---------- */
+    .cadre { display: grid; grid-template-columns: minmax(300px, 38%) 1fr; height: 100%; }
+
+    .marque {
+      position: relative;
+      overflow: hidden;
+      color: #fff;
       background:
-        radial-gradient(90% 60% at 50% 0%, rgba(49, 180, 75, 0.14), transparent 70%),
-        #fff;
-      border-bottom: 14px solid var(--vert);
+        radial-gradient(120% 80% at 0% 0%, rgba(49, 180, 75, 0.55), transparent 60%),
+        linear-gradient(165deg, #00964f 0%, var(--vert) 45%, var(--vert-fonce) 100%);
       display: flex;
-      align-items: center;
+      flex-direction: column;
       justify-content: center;
-      padding: max(24px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom));
+      padding: max(40px, env(safe-area-inset-top)) clamp(28px, 4vw, 64px) 40px;
     }
-    h1, h2 { font-family: "Fraunces", Georgia, serif; font-weight: 600; line-height: 1.15; }
-
-    .ecran { width: 100%; max-width: 720px; text-align: center; display: none; }
-    .ecran.actif { display: block; animation: apparition .45s ease; }
-    @keyframes apparition { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-
-    .logo { display: block; width: clamp(200px, 42vmin, 360px); height: auto; margin: 0 auto 28px; }
-    h1 { font-size: clamp(2rem, 6vw, 3.4rem); margin-bottom: 12px; color: var(--vert-fonce); }
-    .sous-titre { font-size: clamp(1rem, 2.4vw, 1.25rem); color: var(--texte-doux); margin-bottom: 36px; }
-
-    .etoiles { display: flex; justify-content: center; gap: clamp(6px, 2vw, 18px); margin-bottom: 14px; }
-    .etoile {
-      font-size: clamp(3rem, 12vw, 6rem);
-      line-height: 1;
-      background: none;
-      border: none;
-      color: #d9e4dc;
-      cursor: pointer;
-      transition: transform .15s ease, color .15s ease;
-    }
-    .etoile.on { color: var(--or); }
-    .etoile:active { transform: scale(0.88); }
-    .libelle-note { min-height: 1.6em; font-size: 1.2rem; font-weight: 600; color: var(--vert-fonce); margin-bottom: 26px; }
-
-    .bloc-detail { display: none; }
-    .bloc-detail.visible { display: block; animation: apparition .35s ease; }
-    .question { font-size: 1.1rem; margin-bottom: 14px; color: var(--texte); }
-    .puces { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 22px; }
-    .puce {
-      font: inherit;
-      font-size: 1rem;
-      padding: 12px 18px;
-      border-radius: 999px;
-      border: 2px solid var(--vert);
+    .marque > * { position: relative; z-index: 2; }
+    .carte-logo {
+      align-self: flex-start;
       background: #fff;
-      color: var(--vert);
-      font-weight: 500;
-      cursor: pointer;
+      border-radius: 26px;
+      padding: clamp(14px, 2vmin, 22px) clamp(18px, 2.6vmin, 30px);
+      box-shadow: 0 18px 40px rgba(0, 40, 18, 0.35);
+      margin-bottom: clamp(28px, 5vh, 56px);
     }
-    .puce.on { background: var(--vert); color: #fff; }
+    .carte-logo img { display: block; width: clamp(190px, 24vw, 340px); height: auto; }
+    .marque h2 { font-size: clamp(2rem, 4.2vw, 3.4rem); margin-bottom: 16px; }
+    .marque h2 em { font-style: italic; color: #c9f2b8; }
+    .marque p { font-size: 1.1rem; line-height: 1.55; color: rgba(255, 255, 255, 0.86); max-width: 26ch; }
+    .atouts { list-style: none; margin-top: clamp(24px, 4vh, 44px); display: grid; gap: 12px; }
+    .atouts li { display: flex; align-items: center; gap: 12px; font-size: 1rem; color: rgba(255, 255, 255, 0.92); }
+    .atouts span {
+      display: grid; place-items: center; flex: none;
+      width: 2.3em; height: 2.3em; border-radius: 50%;
+      background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    /* Feuilles décoratives */
+    .feuille { position: absolute; z-index: 1; fill: rgba(255, 255, 255, 0.08); transform-origin: 20% 90%; animation: brise 7s ease-in-out infinite; }
+    .feuille.f1 { width: 62%; right: -18%; top: -10%; transform: rotate(140deg); }
+    .feuille.f2 { width: 48%; left: -14%; bottom: -6%; animation-delay: -3s; fill: rgba(255, 255, 255, 0.06); }
+    .feuille.f3 { width: 26%; right: 6%; bottom: 14%; animation-delay: -5s; fill: rgba(201, 242, 184, 0.14); }
+    @keyframes brise { 0%, 100% { rotate: 0deg; } 50% { rotate: 4deg; } }
+    .herbe { position: absolute; left: 0; right: 0; bottom: -2px; width: 100%; height: 70px; z-index: 1; }
+
+    .scene {
+      position: relative;
+      display: flex;
+      padding: max(32px, env(safe-area-inset-top)) clamp(24px, 4vw, 72px) max(32px, env(safe-area-inset-bottom));
+      background:
+        radial-gradient(70% 50% at 100% 0%, rgba(49, 180, 75, 0.10), transparent 70%),
+        radial-gradient(60% 50% at 0% 100%, rgba(226, 181, 62, 0.08), transparent 70%),
+        #fbfdf9;
+      overflow-y: auto;
+    }
+    .scene::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background-image: radial-gradient(rgba(0, 95, 42, 0.07) 1.2px, transparent 1.2px);
+      background-size: 26px 26px;
+      mask-image: linear-gradient(180deg, #000, transparent 75%);
+      -webkit-mask-image: linear-gradient(180deg, #000, transparent 75%);
+    }
+
+    .ecran { position: relative; width: 100%; max-width: 760px; margin: auto; text-align: center; display: none; }
+    /* Une fois la note choisie : on resserre pour que tout tienne à l'écran */
+    #ecran-note.choisi .surtitre, #ecran-note.choisi .sous-titre { display: none; }
+    #ecran-note.choisi h1 { font-size: clamp(1.8rem, 3.4vw, 2.6rem); margin-bottom: 18px; }
+    #ecran-note.choisi .etoile svg { width: clamp(52px, 7.5vmin, 92px); }
+    #ecran-note.choisi .libelle-note { margin-bottom: 14px; }
+    .ecran.actif { display: block; animation: apparition .5s cubic-bezier(.2, .8, .2, 1); }
+    @keyframes apparition { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+    .surtitre {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 0.85rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--vert); background: rgba(0, 143, 76, 0.08);
+      padding: 8px 16px; border-radius: 999px; margin-bottom: 20px;
+    }
+    h1 { font-size: clamp(2.2rem, 4.6vw, 3.6rem); margin-bottom: 14px; color: var(--vert-fonce); letter-spacing: -0.01em; }
+    .sous-titre { font-size: 1.15rem; color: var(--texte-doux); margin-bottom: clamp(28px, 5vh, 48px); }
+
+    /* ---------- Étoiles ---------- */
+    .etoiles { display: flex; justify-content: center; gap: clamp(6px, 1.6vw, 22px); margin-bottom: 18px; }
+    .etoile {
+      font: inherit; background: none; border: none; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+      color: var(--texte-doux);
+    }
+    .etoile svg { width: clamp(64px, 11.5vmin, 140px); height: auto; overflow: visible; transition: transform .2s cubic-bezier(.3, 1.6, .5, 1); }
+    .etoile .forme { fill: #eef4ef; stroke: #cfdfd3; stroke-width: 7; stroke-linejoin: round; paint-order: stroke; transition: fill .2s, stroke .2s; }
+    .etoile.on .forme { fill: url(#degrade-or); stroke: #d49a17; }
+    .etoile.on svg { filter: drop-shadow(0 8px 14px rgba(212, 154, 23, 0.35)); }
+    .etoile.pop svg { animation: pop .45s cubic-bezier(.3, 1.6, .5, 1); }
+    .etoile:active svg { transform: scale(0.88); }
+    .etoile small { font-size: 0.8rem; font-weight: 500; opacity: 0.75; }
+    @keyframes pop { 0% { transform: scale(0.7); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+    /* Invitation : les étoiles ondulent tant que personne n'a noté */
+    .etoiles.invite .etoile svg { animation: vague 3.2s ease-in-out infinite; }
+    .etoiles.invite .etoile:nth-child(2) svg { animation-delay: .12s; }
+    .etoiles.invite .etoile:nth-child(3) svg { animation-delay: .24s; }
+    .etoiles.invite .etoile:nth-child(4) svg { animation-delay: .36s; }
+    .etoiles.invite .etoile:nth-child(5) svg { animation-delay: .48s; }
+    @keyframes vague { 0%, 70%, 100% { transform: none; } 80% { transform: translateY(-10px) rotate(-6deg); } 90% { transform: translateY(0) rotate(3deg); } }
+    .libelle-note { min-height: 1.6em; font-family: "Fraunces", Georgia, serif; font-size: 1.5rem; font-weight: 600; color: var(--vert-fonce); margin-bottom: 18px; }
+
+    /* ---------- Détails ---------- */
+    .bloc-detail { display: none; background: #fff; border: 1px solid #e3eee6; border-radius: 28px; padding: clamp(18px, 3vmin, 30px); box-shadow: 0 20px 50px rgba(0, 95, 42, 0.08); }
+    .bloc-detail.visible { display: block; animation: apparition .4s cubic-bezier(.2, .8, .2, 1); }
+    .question { font-size: 1.1rem; font-weight: 600; margin-bottom: 14px; color: var(--texte); }
+    .puces { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 20px; }
+    .puce {
+      font: inherit; font-size: 1rem; font-weight: 500;
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 12px 20px; border-radius: 999px;
+      border: 2px solid #cfe3d5; background: #fff; color: var(--vert-fonce);
+      cursor: pointer; transition: background .15s, border-color .15s, color .15s, transform .15s;
+    }
+    .puce::before { content: "+"; font-weight: 600; color: var(--vert); }
+    .puce.on { background: var(--vert); border-color: var(--vert); color: #fff; }
+    .puce.on::before { content: "✓"; color: #fff; }
+    .puce:active { transform: scale(0.95); }
     textarea {
-      width: 100%;
-      min-height: 110px;
-      font: inherit;
-      font-size: 1.05rem;
-      padding: 14px 16px;
-      border-radius: 16px;
-      border: 2px solid #cfe3d5;
-      background: #f7fbf8;
-      color: var(--texte);
-      resize: none;
-      margin-bottom: 22px;
-      -webkit-user-select: text;
-      user-select: text;
+      width: 100%; min-height: 96px;
+      font: inherit; font-size: 1.05rem;
+      padding: 14px 18px; border-radius: 18px;
+      border: 2px solid #e1ece4; background: #f7fbf8; color: var(--texte);
+      resize: none; margin-bottom: 20px;
+      -webkit-user-select: text; user-select: text;
+      transition: border-color .15s, background .15s;
     }
     textarea::placeholder { color: #8a9a8f; }
-    textarea:focus { outline: 2px solid var(--vert-clair); }
+    textarea:focus { outline: none; border-color: var(--vert-clair); background: #fff; }
 
     .btn {
-      font: inherit;
-      font-weight: 600;
-      font-size: 1.15rem;
-      padding: 16px 40px;
-      border-radius: 999px;
-      border: none;
-      background: var(--vert);
-      color: #fff;
-      cursor: pointer;
-      box-shadow: 0 8px 24px rgba(0, 143, 76, 0.35);
+      font: inherit; font-weight: 600; font-size: 1.15rem;
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 17px 40px; border-radius: 999px; border: none;
+      background: linear-gradient(180deg, #11a35a, var(--vert));
+      color: #fff; cursor: pointer;
+      box-shadow: 0 10px 26px rgba(0, 143, 76, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      transition: transform .15s;
     }
     .btn:active { transform: scale(0.97); }
     .btn.secondaire { background: transparent; color: var(--vert); border: 2px solid var(--vert); box-shadow: none; }
 
-    .merci-icone { font-size: 5rem; margin-bottom: 12px; }
-    .compte-a-rebours { margin-top: 26px; font-size: 0.95rem; color: var(--texte-doux); }
+    /* ---------- Merci ---------- */
+    .coche { width: clamp(110px, 16vmin, 170px); margin: 0 auto 22px; display: block; }
+    .coche circle { fill: none; stroke: var(--vert); stroke-width: 6; stroke-dasharray: 300; stroke-dashoffset: 300; }
+    .coche path { fill: none; stroke: var(--vert); stroke-width: 7; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 80; stroke-dashoffset: 80; }
+    .coche .fond { fill: rgba(0, 143, 76, 0.08); stroke: none; stroke-dasharray: none; stroke-dashoffset: 0; transform-origin: center; }
+    #ecran-merci.actif .coche circle:not(.fond) { animation: trace .7s ease forwards; }
+    #ecran-merci.actif .coche path { animation: trace .45s .55s ease forwards; }
+    #ecran-merci.actif .coche .fond { animation: pop .6s cubic-bezier(.3, 1.6, .5, 1); }
+    @keyframes trace { to { stroke-dashoffset: 0; } }
+    .barre-temps { width: min(320px, 70%); height: 6px; margin: 30px auto 10px; border-radius: 99px; background: #e3eee6; overflow: hidden; }
+    .barre-temps i { display: block; height: 100%; width: 100%; background: var(--vert-clair); border-radius: inherit; transform-origin: left; }
+    #ecran-merci.actif .barre-temps i { animation: vider var(--duree, 6s) linear forwards; }
+    @keyframes vider { to { transform: scaleX(0); } }
+    .compte-a-rebours { font-size: 0.95rem; color: var(--texte-doux); }
+    .confetti { position: fixed; top: -40px; z-index: 5; pointer-events: none; width: 22px; animation: tombe linear forwards; }
+    @keyframes tombe { to { transform: translate(var(--dx), 110vh) rotate(var(--rot)); opacity: 0.9; } }
+
+    /* ---------- Tablette en portrait / petits écrans ---------- */
+    @media (max-aspect-ratio: 1/1), (max-width: 820px) {
+      .cadre { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+      .marque { flex-direction: row; align-items: center; justify-content: space-between; gap: 24px; padding: max(22px, env(safe-area-inset-top)) 28px 30px; }
+      .carte-logo { align-self: center; margin-bottom: 0; }
+      .carte-logo img { width: clamp(170px, 32vw, 280px); }
+      .marque h2 { font-size: clamp(1.5rem, 4vw, 2.2rem); margin-bottom: 6px; text-align: right; }
+      .marque p, .atouts, .herbe { display: none; }
+    }
 
     /* Zone secrète (coin haut-gauche) pour ouvrir le panneau gérant */
     #zone-secrete {
@@ -177,43 +262,96 @@
 
   <div id="zone-secrete" aria-hidden="true"></div>
 
-  <!-- 1. Note -->
-  <section class="ecran actif" id="ecran-note">
-    <img class="logo" src="logo.png" alt="Jardinerie & Animalerie Solignac" draggable="false" />
-    <h1>Comment s'est passée votre visite ?</h1>
-    <p class="sous-titre">Touchez une étoile — cela prend 10 secondes.</p>
-    <div class="etoiles" id="etoiles">
-      <button class="etoile" data-note="1" aria-label="1 étoile">★</button>
-      <button class="etoile" data-note="2" aria-label="2 étoiles">★</button>
-      <button class="etoile" data-note="3" aria-label="3 étoiles">★</button>
-      <button class="etoile" data-note="4" aria-label="4 étoiles">★</button>
-      <button class="etoile" data-note="5" aria-label="5 étoiles">★</button>
-    </div>
-    <p class="libelle-note" id="libelle-note"></p>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="degrade-or" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#ffd86b" />
+        <stop offset="1" stop-color="#e8a91c" />
+      </linearGradient>
+      <path id="feuille" d="M100 0C40 20 0 70 10 140c4 30 20 50 40 60 6-40 20-80 50-110-26 34-38 70-42 112 70 0 120-50 120-120C178 30 140 4 100 0z" />
+    </defs>
+  </svg>
 
-    <div class="bloc-detail" id="bloc-detail">
-      <p class="question" id="question-puces">Qu'avez-vous apprécié ?</p>
-      <div class="puces" id="puces"></div>
-      <textarea id="commentaire" maxlength="500" placeholder="Un mot à nous laisser ? (facultatif)"></textarea>
-      <button class="btn" id="btn-envoyer">Envoyer mon avis</button>
-    </div>
-  </section>
+  <div class="cadre">
+    <aside class="marque">
+      <svg class="feuille f1" viewBox="0 0 180 205" aria-hidden="true"><use href="#feuille" /></svg>
+      <svg class="feuille f2" viewBox="0 0 180 205" aria-hidden="true"><use href="#feuille" /></svg>
+      <svg class="feuille f3" viewBox="0 0 180 205" aria-hidden="true"><use href="#feuille" /></svg>
+      <div class="carte-logo"><img src="logo.png" alt="Jardinerie & Animalerie Solignac" draggable="false" /></div>
+      <div>
+        <h2>Votre avis <em>nous fait grandir</em></h2>
+        <p>Merci d'avoir choisi votre jardinerie et animalerie. Dites-nous en un geste ce que vous avez pensé de votre visite.</p>
+        <ul class="atouts">
+          <li><span>🌿</span>Plantes & jardin</li>
+          <li><span>🐾</span>Animalerie</li>
+          <li><span>💬</span>Conseils de l'équipe</li>
+        </ul>
+      </div>
+      <svg class="herbe" viewBox="0 0 400 70" preserveAspectRatio="none" aria-hidden="true">
+        <path fill="rgba(0,60,25,0.35)" d="M0 70V40c20-6 30 6 46-4s22-24 40-14 20 20 40 12 30-26 50-16 18 22 40 14 28-20 46-10 22 18 42 10 26-16 46-8 30 12 50 6v40z" />
+        <path fill="rgba(0,50,20,0.5)" d="M0 70V54c24-4 40 8 62 0s34-16 58-6 34 12 58 4 36-14 60-4 36 12 60 4 30-8 42-4v22z" />
+      </svg>
+    </aside>
 
-  <!-- 2. Merci -->
-  <section class="ecran" id="ecran-arret">
-    <img class="logo" src="logo.png" alt="Jardinerie & Animalerie Solignac" draggable="false" />
-    <h1>Borne en pause</h1>
-    <p class="sous-titre">Le mode borne est désactivé.<br />Rechargez la page pour la relancer.</p>
-    <button class="btn" id="btn-relancer">Relancer la borne</button>
-  </section>
+    <main class="scene">
+      <!-- 1. Note -->
+      <section class="ecran actif" id="ecran-note">
+        <span class="surtitre">★ Votre avis compte</span>
+        <h1>Comment s'est passée votre visite&nbsp;?</h1>
+        <p class="sous-titre">Touchez une étoile — cela prend 10 secondes.</p>
+        <div class="etoiles invite" id="etoiles">
+      <button class="etoile" data-note="1" aria-label="1 étoile">
+        <svg viewBox="0 0 100 96" aria-hidden="true"><polygon class="forme" points="50.0,9.0 60.9,38.0 91.8,39.4 67.6,58.7 75.9,88.6 50.0,71.5 24.1,88.6 32.4,58.7 8.2,39.4 39.1,38.0"/></svg>
+        <small>Décevant</small>
+      </button>
+      <button class="etoile" data-note="2" aria-label="2 étoiles">
+        <svg viewBox="0 0 100 96" aria-hidden="true"><polygon class="forme" points="50.0,9.0 60.9,38.0 91.8,39.4 67.6,58.7 75.9,88.6 50.0,71.5 24.1,88.6 32.4,58.7 8.2,39.4 39.1,38.0"/></svg>
+        <small>Moyen</small>
+      </button>
+      <button class="etoile" data-note="3" aria-label="3 étoiles">
+        <svg viewBox="0 0 100 96" aria-hidden="true"><polygon class="forme" points="50.0,9.0 60.9,38.0 91.8,39.4 67.6,58.7 75.9,88.6 50.0,71.5 24.1,88.6 32.4,58.7 8.2,39.4 39.1,38.0"/></svg>
+        <small>Bien</small>
+      </button>
+      <button class="etoile" data-note="4" aria-label="4 étoiles">
+        <svg viewBox="0 0 100 96" aria-hidden="true"><polygon class="forme" points="50.0,9.0 60.9,38.0 91.8,39.4 67.6,58.7 75.9,88.6 50.0,71.5 24.1,88.6 32.4,58.7 8.2,39.4 39.1,38.0"/></svg>
+        <small>Très bien</small>
+      </button>
+      <button class="etoile" data-note="5" aria-label="5 étoiles">
+        <svg viewBox="0 0 100 96" aria-hidden="true"><polygon class="forme" points="50.0,9.0 60.9,38.0 91.8,39.4 67.6,58.7 75.9,88.6 50.0,71.5 24.1,88.6 32.4,58.7 8.2,39.4 39.1,38.0"/></svg>
+        <small>Excellent</small>
+      </button>
+        </div>
+        <p class="libelle-note" id="libelle-note"></p>
 
-  <section class="ecran" id="ecran-merci">
-    <img class="logo" src="logo.png" alt="Jardinerie & Animalerie Solignac" draggable="false" />
-    <div class="merci-icone">🌱</div>
-    <h1>Merci beaucoup !</h1>
-    <p class="sous-titre">Votre avis nous aide à faire grandir la jardinerie.<br />À bientôt !</p>
-    <p class="compte-a-rebours" id="compte-a-rebours"></p>
-  </section>
+        <div class="bloc-detail" id="bloc-detail">
+          <p class="question" id="question-puces">Qu'avez-vous apprécié ?</p>
+          <div class="puces" id="puces"></div>
+          <textarea id="commentaire" maxlength="500" placeholder="Un mot à nous laisser ? (facultatif)"></textarea>
+          <button class="btn" id="btn-envoyer">Envoyer mon avis <span aria-hidden="true">→</span></button>
+        </div>
+      </section>
+
+      <!-- 2. Merci -->
+      <section class="ecran" id="ecran-merci">
+        <svg class="coche" viewBox="0 0 110 110" aria-hidden="true">
+          <circle class="fond" cx="55" cy="55" r="50" />
+          <circle cx="55" cy="55" r="47" />
+          <path d="M33 57l15 15 30-32" />
+        </svg>
+        <h1>Merci beaucoup !</h1>
+        <p class="sous-titre">Votre avis nous aide à faire grandir la jardinerie.<br />À très bientôt !</p>
+        <div class="barre-temps"><i></i></div>
+        <p class="compte-a-rebours" id="compte-a-rebours"></p>
+      </section>
+
+      <!-- Borne en pause -->
+      <section class="ecran" id="ecran-arret">
+        <h1>Borne en pause</h1>
+        <p class="sous-titre">Le mode borne est désactivé.<br />Rechargez la page pour la relancer.</p>
+        <button class="btn" id="btn-relancer">Relancer la borne</button>
+      </section>
+    </main>
+  </div>
 
   <!-- Panneau gérant (code PIN) -->
   <div class="voile" id="voile-pin">
@@ -260,6 +398,7 @@
   const DELAI_INACTIVITE = 45;  // secondes sans toucher → on remet à zéro
 
   const LIBELLES = ["", "Décevant 😕", "Moyen 😐", "Bien 🙂", "Très bien 😊", "Excellent ! 🤩"];
+  const COULEURS_CONFETTI = ["#31b44b", "#008f4c", "#9ad66f", "#e8a91c", "#ffd86b"];
   const PUCES_POSITIVES = ["Accueil", "Conseils", "Choix de plantes", "Qualité", "Prix", "Ambiance"];
   const PUCES_NEGATIVES = ["Attente", "Conseils", "Choix", "Prix", "Propreté", "Qualité"];
 
@@ -288,7 +427,14 @@
 
   function choisirNote(n) {
     note = n;
-    document.querySelectorAll(".etoile").forEach((b) => b.classList.toggle("on", +b.dataset.note <= n));
+    $("etoiles").classList.remove("invite");
+    $("ecran-note").classList.add("choisi");
+    document.querySelectorAll(".etoile").forEach((b) => {
+      const on = +b.dataset.note <= n;
+      b.classList.toggle("on", on);
+      b.classList.remove("pop");
+      if (on) { void b.offsetWidth; b.style.animationDelay = ""; b.classList.add("pop"); }
+    });
     $("libelle-note").textContent = LIBELLES[n];
     const positif = n >= 4;
     $("question-puces").textContent = positif ? "Qu'avez-vous apprécié ?" : "Que pouvons-nous améliorer ?";
@@ -318,7 +464,9 @@
     });
     ecrireAvis(liste);
     $("commentaire").blur();
+    $("ecran-merci").style.setProperty("--duree", DELAI_MERCI + "s");
     afficher("ecran-merci");
+    if (note >= 4) confettis();
     let reste = DELAI_MERCI;
     $("compte-a-rebours").textContent = `Retour à l'accueil dans ${reste} s`;
     clearInterval(minuterieMerci);
@@ -329,11 +477,33 @@
     }, 1000);
   }
 
+  // Petites feuilles qui tombent pour les bonnes notes
+  function confettis() {
+    for (let i = 0; i < 26; i++) {
+      const f = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+      f.setAttribute("viewBox", "0 0 180 205");
+      f.setAttribute("class", "confetti");
+      f.innerHTML = '<use href="#feuille" />';
+      f.style.fill = COULEURS_CONFETTI[i % COULEURS_CONFETTI.length];
+      f.style.left = Math.random() * 100 + "vw";
+      f.style.width = 14 + Math.random() * 18 + "px";
+      f.style.setProperty("--dx", (Math.random() * 160 - 80) + "px");
+      f.style.setProperty("--rot", (Math.random() * 720 - 360) + "deg");
+      f.style.animationDuration = 2.6 + Math.random() * 2.2 + "s";
+      f.style.animationDelay = Math.random() * 0.8 + "s";
+      document.body.appendChild(f);
+      setTimeout(() => f.remove(), 6000);
+    }
+  }
+
   function reinitialiser() {
     clearInterval(minuterieMerci);
     note = 0;
     puces = new Set();
-    document.querySelectorAll(".etoile").forEach((b) => b.classList.remove("on"));
+    document.querySelectorAll(".etoile").forEach((b) => b.classList.remove("on", "pop"));
+    $("etoiles").classList.add("invite");
+    $("ecran-note").classList.remove("choisi");
+    document.querySelectorAll(".confetti").forEach((c) => c.remove());
     $("libelle-note").textContent = "";
     $("commentaire").value = "";
     $("bloc-detail").classList.remove("visible");
