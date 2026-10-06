@@ -177,11 +177,12 @@
     #ecran-merci.avec-google .coche { width: clamp(64px, 9vmin, 96px); margin-bottom: 12px; }
     #ecran-merci.avec-google h1 { font-size: clamp(1.9rem, 3.6vw, 2.8rem); margin-bottom: 6px; }
     #ecran-merci.avec-google .sous-titre { display: none; }
+    #ecran-merci.avec-google { max-width: 1100px; }
     #ecran-merci.avec-google .barre-temps { margin-top: 22px; }
     .bloc-google {
       position: relative; z-index: 6;
       align-items: center; gap: clamp(18px, 3vw, 36px); text-align: left;
-      margin: 20px auto 0; max-width: 680px;
+      margin: 20px auto 0; max-width: 1040px; width: 100%;
       background: #fff; border: 1px solid #e3eee6; border-radius: 30px;
       padding: clamp(18px, 3vmin, 30px);
       box-shadow: 0 24px 60px rgba(0, 95, 42, 0.12);
@@ -192,8 +193,9 @@
       border: 3px solid var(--vert);
       box-shadow: 0 0 0 6px rgba(0, 143, 76, 0.12);
     }
-    .qr svg, .qr img { display: block; width: clamp(150px, 24vmin, 260px); height: auto; }
+    .qr svg, .qr img { display: block; width: clamp(160px, 30vmin, 330px); height: auto; }
     .google-texte .etoiles-or { color: #e8a91c; font-size: 1.6rem; letter-spacing: 3px; line-height: 1; margin-bottom: 8px; }
+    .google-texte { flex: 1; min-width: 0; }
     .google-texte h2 { font-size: clamp(1.4rem, 2.6vw, 2rem); color: var(--vert-fonce); margin-bottom: 10px; }
     .google-texte p { color: var(--texte-doux); font-size: 1.05rem; margin-bottom: 14px; }
     .etape { display: flex; align-items: center; gap: 10px; font-size: 0.98rem; color: var(--texte); margin-bottom: 6px; }
@@ -326,7 +328,7 @@
           <div class="google-texte">
             <div class="etoiles-or" aria-hidden="true">★★★★★</div>
             <h2>Vous avez aimé ? Dites-le sur Google !</h2>
-            <p>Votre avis aide d'autres jardiniers à nous trouver.</p>
+            <p>Votre avis aide d'autres personnes à nous trouver.</p>
             <div class="etape"><b>1</b>Ouvrez l'appareil photo de votre téléphone</div>
             <div class="etape"><b>2</b>Visez le QR code</div>
             <div class="etape"><b>3</b>Laissez vos étoiles sur Google</div>
