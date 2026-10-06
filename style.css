@@ -1,14 +1,14 @@
 /* ===== Base & couleurs ===== */
 :root {
-  --vert-fonce: #1f3d2b;
-  --vert: #2f6b46;
-  --vert-clair: #5a9d6e;
+  --vert-fonce: #005f2a;
+  --vert: #008f4c;
+  --vert-clair: #31b44b;
   --creme: #f6f4ec;
   --creme-fonce: #ece8da;
   --sable: #e9e3d3;
-  --texte: #233028;
+  --texte: #1c2e22;
   --texte-doux: #5d6b62;
-  --ombre: 0 8px 30px rgba(31, 61, 43, 0.12);
+  --ombre: 0 8px 30px rgba(0, 95, 42, 0.12);
   --radius: 18px;
   --nav-h: 68px;
 }
@@ -31,7 +31,7 @@ h1, h2, h3, .nom-plante {
 /* ===== En-tête ===== */
 .hero {
   background:
-    radial-gradient(120% 120% at 80% -10%, rgba(90, 157, 110, 0.35), transparent 60%),
+    radial-gradient(120% 120% at 80% -10%, rgba(49, 180, 75, 0.35), transparent 60%),
     linear-gradient(160deg, var(--vert-fonce), var(--vert));
   color: var(--creme);
   padding: 64px 24px 56px;
@@ -156,7 +156,7 @@ h1, h2, h3, .nom-plante {
 }
 .carte:hover {
   transform: translateY(-5px);
-  box-shadow: 0 16px 40px rgba(31, 61, 43, 0.18);
+  box-shadow: 0 16px 40px rgba(0, 95, 42, 0.18);
 }
 .carte-image {
   height: 168px;
@@ -191,7 +191,7 @@ h1, h2, h3, .nom-plante {
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(31, 61, 43, 0.55);
+  background: rgba(0, 95, 42, 0.55);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
   display: flex;
@@ -351,7 +351,7 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .apropos {
   margin: 40px 0 20px; background: var(--vert-fonce); color: var(--creme);
   border-radius: 22px; padding: 34px 30px;
-  background-image: radial-gradient(110% 110% at 90% -10%, rgba(90,157,110,0.35), transparent 55%);
+  background-image: radial-gradient(110% 110% at 90% -10%, rgba(49, 180, 75,0.35), transparent 55%);
 }
 .apropos-badge {
   display: inline-block; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25);
@@ -373,7 +373,7 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .barre-nav {
   position: fixed; left: 0; right: 0; bottom: 0; height: var(--nav-h);
   background: #fff; border-top: 1px solid var(--creme-fonce);
-  box-shadow: 0 -4px 20px rgba(31, 61, 43, 0.08);
+  box-shadow: 0 -4px 20px rgba(0, 95, 42, 0.08);
   display: flex; justify-content: space-around; align-items: center;
   z-index: 50; padding-bottom: env(safe-area-inset-bottom);
 }
@@ -395,7 +395,7 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
   background: linear-gradient(150deg, var(--vert-clair), var(--vert));
   color: #fff; width: 56px; height: 56px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  margin-top: -26px; box-shadow: 0 8px 20px rgba(47, 107, 70, 0.45);
+  margin-top: -26px; box-shadow: 0 8px 20px rgba(0, 143, 76, 0.45);
   font-size: 1.5rem; filter: none;
 }
 .nav-centre.actif .nav-ico { transform: scale(1.05); }
@@ -428,7 +428,7 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
   touch-action: pan-y; overscroll-behavior: contain;
   padding: 22px 26px 30px; background: var(--creme);
   border-radius: 26px 26px 0 0; margin-top: -26px; position: relative; z-index: 2;
-  box-shadow: 0 -10px 30px rgba(31,61,43,0.18);
+  box-shadow: 0 -10px 30px rgba(0, 95, 42,0.18);
 }
 .swipe-info h2 { font-size: 2.8rem; line-height: 1.02; margin-bottom: 4px; }
 .swipe-info .latin { font-style: italic; color: var(--texte-doux); font-size: 1.2rem; margin-bottom: 18px; }
@@ -472,7 +472,7 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
   border-radius: 16px; padding: 16px 16px; font-family: inherit; color: var(--texte);
   box-shadow: var(--ombre); transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
-.quizz-carte:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(31,61,43,0.16); }
+.quizz-carte:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(0, 95, 42,0.16); }
 .qc-emoji {
   flex: 0 0 48px; height: 48px; display: flex; align-items: center; justify-content: center;
   font-size: 1.7rem; background: color-mix(in srgb, var(--c) 16%, #fff); border-radius: 12px;
@@ -723,9 +723,9 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .acc-btn {
   background: var(--vert-clair); color: var(--vert-fonce); font-weight: 600; font-family: inherit;
   font-size: 1.05rem; border: none; border-radius: 999px; padding: 14px 30px; cursor: pointer;
-  box-shadow: 0 8px 30px rgba(90,157,110,0.35); transition: transform 0.2s ease, box-shadow 0.3s ease;
+  box-shadow: 0 8px 30px rgba(49, 180, 75,0.35); transition: transform 0.2s ease, box-shadow 0.3s ease;
 }
-.acc-btn:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(90,157,110,0.55); }
+.acc-btn:hover { transform: translateY(-3px); box-shadow: 0 14px 40px rgba(49, 180, 75,0.55); }
 .acc-btn-2 {
   background: rgba(255,255,255,0.12); color: #fff; border: 1px solid rgba(255,255,255,0.3);
   font-family: inherit; font-size: 1rem; border-radius: 999px; padding: 12px 26px; cursor: pointer; transition: background 0.2s ease;
@@ -806,6 +806,7 @@ body.swipe-actif { padding-bottom: 0; overflow: hidden; }
 .nw-hero-bg { position: absolute; top: -12%; left: 0; right: 0; bottom: -12%; background-size: cover; background-position: center; transform: scale(1.12); will-change: transform; }
 .nw-hero-veil { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,24,18,0.55), rgba(8,24,18,0.40) 50%, rgba(8,24,18,0.82)); }
 .nw-hero-inner { position: relative; z-index: 2; max-width: 1000px; }
+.nw-logo { display: block; width: clamp(170px, 26vw, 260px); height: auto; background: #fff; border-radius: 18px; padding: 10px 16px; margin-bottom: 26px; box-shadow: 0 10px 30px rgba(0,0,0,0.25); }
 .nw-eyebrow { display: inline-block; font-size: 0.8rem; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 600; opacity: 0.85; margin-bottom: 22px; }
 .nw-h1 { font-family: "Fraunces", serif; font-weight: 600; font-size: clamp(2.6rem, 9vw, 7rem); line-height: 0.98; letter-spacing: -0.015em; margin-bottom: 22px; }
 .nw-lead { font-size: clamp(1.1rem, 2.4vw, 1.5rem); max-width: 620px; color: rgba(255,255,255,0.88); margin-bottom: 34px; }

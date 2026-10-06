@@ -3,23 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Votre avis — Herbier</title>
-  <meta name="theme-color" content="#1f3d2b" />
+  <title>Votre avis — Jardinerie Solignac</title>
+  <meta name="theme-color" content="#008f4c" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <link rel="manifest" href="avis.webmanifest" />
+  <link rel="apple-touch-icon" href="images/icone-solignac.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --vert-fonce: #1f3d2b;
-      --vert: #2f6b46;
-      --vert-clair: #5a9d6e;
+      --vert-fonce: #005f2a;
+      --vert: #008f4c;
+      --vert-clair: #31b44b;
       --creme: #f6f4ec;
       --sable: #e9e3d3;
-      --texte: #233028;
+      --texte: #1c2e22;
       --texte-doux: #5d6b62;
       --or: #e2b53e;
     }
@@ -38,10 +39,11 @@
     }
     body {
       font-family: "Inter", system-ui, sans-serif;
-      color: var(--creme);
+      color: var(--texte);
       background:
-        radial-gradient(120% 120% at 80% -10%, rgba(90, 157, 110, 0.35), transparent 60%),
-        linear-gradient(160deg, var(--vert-fonce), var(--vert));
+        radial-gradient(90% 60% at 50% 0%, rgba(49, 180, 75, 0.14), transparent 70%),
+        #fff;
+      border-bottom: 14px solid var(--vert);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -53,17 +55,9 @@
     .ecran.actif { display: block; animation: apparition .45s ease; }
     @keyframes apparition { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 
-    .badge {
-      display: inline-block;
-      background: rgba(255, 255, 255, 0.15);
-      border: 1px solid rgba(255, 255, 255, 0.25);
-      padding: 6px 16px;
-      border-radius: 999px;
-      font-size: 0.95rem;
-      margin-bottom: 22px;
-    }
-    h1 { font-size: clamp(2rem, 6vw, 3.4rem); margin-bottom: 12px; }
-    .sous-titre { font-size: clamp(1rem, 2.4vw, 1.25rem); color: rgba(246, 244, 236, 0.85); margin-bottom: 36px; }
+    .logo { display: block; width: clamp(200px, 42vmin, 360px); height: auto; margin: 0 auto 28px; }
+    h1 { font-size: clamp(2rem, 6vw, 3.4rem); margin-bottom: 12px; color: var(--vert-fonce); }
+    .sous-titre { font-size: clamp(1rem, 2.4vw, 1.25rem); color: var(--texte-doux); margin-bottom: 36px; }
 
     .etoiles { display: flex; justify-content: center; gap: clamp(6px, 2vw, 18px); margin-bottom: 14px; }
     .etoile {
@@ -71,29 +65,30 @@
       line-height: 1;
       background: none;
       border: none;
-      color: rgba(255, 255, 255, 0.28);
+      color: #d9e4dc;
       cursor: pointer;
       transition: transform .15s ease, color .15s ease;
     }
     .etoile.on { color: var(--or); }
     .etoile:active { transform: scale(0.88); }
-    .libelle-note { min-height: 1.6em; font-size: 1.2rem; color: rgba(246, 244, 236, 0.9); margin-bottom: 26px; }
+    .libelle-note { min-height: 1.6em; font-size: 1.2rem; font-weight: 600; color: var(--vert-fonce); margin-bottom: 26px; }
 
     .bloc-detail { display: none; }
     .bloc-detail.visible { display: block; animation: apparition .35s ease; }
-    .question { font-size: 1.1rem; margin-bottom: 14px; color: rgba(246, 244, 236, 0.9); }
+    .question { font-size: 1.1rem; margin-bottom: 14px; color: var(--texte); }
     .puces { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 22px; }
     .puce {
       font: inherit;
       font-size: 1rem;
       padding: 12px 18px;
       border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--creme);
+      border: 2px solid var(--vert);
+      background: #fff;
+      color: var(--vert);
+      font-weight: 500;
       cursor: pointer;
     }
-    .puce.on { background: var(--creme); color: var(--vert-fonce); border-color: var(--creme); }
+    .puce.on { background: var(--vert); color: #fff; }
     textarea {
       width: 100%;
       min-height: 110px;
@@ -101,15 +96,15 @@
       font-size: 1.05rem;
       padding: 14px 16px;
       border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      background: rgba(255, 255, 255, 0.1);
-      color: var(--creme);
+      border: 2px solid #cfe3d5;
+      background: #f7fbf8;
+      color: var(--texte);
       resize: none;
       margin-bottom: 22px;
       -webkit-user-select: text;
       user-select: text;
     }
-    textarea::placeholder { color: rgba(246, 244, 236, 0.6); }
+    textarea::placeholder { color: #8a9a8f; }
     textarea:focus { outline: 2px solid var(--vert-clair); }
 
     .btn {
@@ -119,16 +114,16 @@
       padding: 16px 40px;
       border-radius: 999px;
       border: none;
-      background: var(--creme);
-      color: var(--vert-fonce);
+      background: var(--vert);
+      color: #fff;
       cursor: pointer;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+      box-shadow: 0 8px 24px rgba(0, 143, 76, 0.35);
     }
     .btn:active { transform: scale(0.97); }
-    .btn.secondaire { background: transparent; color: var(--creme); border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: none; }
+    .btn.secondaire { background: transparent; color: var(--vert); border: 2px solid var(--vert); box-shadow: none; }
 
     .merci-icone { font-size: 5rem; margin-bottom: 12px; }
-    .compte-a-rebours { margin-top: 26px; font-size: 0.95rem; color: rgba(246, 244, 236, 0.65); }
+    .compte-a-rebours { margin-top: 26px; font-size: 0.95rem; color: var(--texte-doux); }
 
     /* Zone secrète (coin haut-gauche) pour ouvrir le panneau gérant */
     #zone-secrete {
@@ -184,7 +179,7 @@
 
   <!-- 1. Note -->
   <section class="ecran actif" id="ecran-note">
-    <span class="badge">🌿 Herbier</span>
+    <img class="logo" src="images/logo-solignac.png" alt="Jardinerie & Animalerie Solignac" draggable="false" />
     <h1>Comment s'est passée votre visite ?</h1>
     <p class="sous-titre">Touchez une étoile — cela prend 10 secondes.</p>
     <div class="etoiles" id="etoiles">
@@ -206,9 +201,10 @@
 
   <!-- 2. Merci -->
   <section class="ecran" id="ecran-merci">
+    <img class="logo" src="images/logo-solignac.png" alt="Jardinerie & Animalerie Solignac" draggable="false" />
     <div class="merci-icone">🌱</div>
     <h1>Merci beaucoup !</h1>
-    <p class="sous-titre">Votre avis nous aide à faire grandir l'Herbier.<br />À bientôt !</p>
+    <p class="sous-titre">Votre avis nous aide à faire grandir la jardinerie.<br />À bientôt !</p>
     <p class="compte-a-rebours" id="compte-a-rebours"></p>
   </section>
 
@@ -467,7 +463,7 @@
     const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
-    a.download = `avis-herbier-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `avis-solignac-${new Date().toISOString().slice(0, 10)}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
