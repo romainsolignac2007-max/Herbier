@@ -488,7 +488,7 @@
     $("ecran-merci").classList.toggle("avec-google", google);
     $("ecran-merci").style.setProperty("--duree", delai + "s");
     afficher("ecran-merci");
-    if (note >= 4) confettis();
+    if (note >= 3) confettis(note);
     let reste = delai;
     $("compte-a-rebours").textContent = `Retour à l'accueil dans ${reste} s`;
     clearInterval(minuterieMerci);
@@ -499,9 +499,11 @@
     }, 1000);
   }
 
-  // Petites feuilles qui tombent pour les bonnes notes
-  function confettis() {
-    for (let i = 0; i < 26; i++) {
+  // Pluie de feuilles pour 3, 4 et 5 étoiles : plus la note est haute, plus il en tombe
+  const NB_FEUILLES = { 3: 50, 4: 80, 5: 120 };
+  function confettis(n) {
+    const total = NB_FEUILLES[n] || 0;
+    for (let i = 0; i < total; i++) {
       const f = document.createElementNS("http://www.w3.org/2000/svg", "svg");
       f.setAttribute("viewBox", "0 0 180 205");
       f.setAttribute("class", "confetti");
@@ -512,9 +514,9 @@
       f.style.setProperty("--dx", (Math.random() * 160 - 80) + "px");
       f.style.setProperty("--rot", (Math.random() * 720 - 360) + "deg");
       f.style.animationDuration = 2.6 + Math.random() * 2.2 + "s";
-      f.style.animationDelay = Math.random() * 0.8 + "s";
+      f.style.animationDelay = Math.random() * 2.5 + "s";
       document.body.appendChild(f);
-      setTimeout(() => f.remove(), 6000);
+      setTimeout(() => f.remove(), 8000);
     }
   }
 
