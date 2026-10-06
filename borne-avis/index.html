@@ -197,6 +197,40 @@
     #ecran-merci.actif .barre-temps i { animation: vider var(--duree, 6s) linear forwards; }
     @keyframes vider { to { transform: scaleX(0); } }
     .compte-a-rebours { font-size: 0.95rem; color: var(--texte-doux); }
+
+    /* ---------- QR code avis Google (4 et 5 étoiles) ---------- */
+    .bloc-google { display: none; }
+    #ecran-merci.avec-google .bloc-google { display: flex; }
+    #ecran-merci.avec-google .coche { width: clamp(64px, 9vmin, 96px); margin-bottom: 12px; }
+    #ecran-merci.avec-google h1 { font-size: clamp(1.9rem, 3.6vw, 2.8rem); margin-bottom: 6px; }
+    #ecran-merci.avec-google .sous-titre { display: none; }
+    #ecran-merci.avec-google .barre-temps { margin-top: 22px; }
+    .bloc-google {
+      position: relative; z-index: 6;
+      align-items: center; gap: clamp(18px, 3vw, 36px); text-align: left;
+      margin: 20px auto 0; max-width: 680px;
+      background: #fff; border: 1px solid #e3eee6; border-radius: 30px;
+      padding: clamp(18px, 3vmin, 30px);
+      box-shadow: 0 24px 60px rgba(0, 95, 42, 0.12);
+      animation: apparition .6s .5s cubic-bezier(.2, .8, .2, 1) both;
+    }
+    .qr {
+      flex: none; background: #fff; border-radius: 20px; padding: 12px;
+      border: 3px solid var(--vert);
+      box-shadow: 0 0 0 6px rgba(0, 143, 76, 0.12);
+    }
+    .qr svg, .qr img { display: block; width: clamp(150px, 24vmin, 260px); height: auto; }
+    .google-texte .etoiles-or { color: #e8a91c; font-size: 1.6rem; letter-spacing: 3px; line-height: 1; margin-bottom: 8px; }
+    .google-texte h2 { font-size: clamp(1.4rem, 2.6vw, 2rem); color: var(--vert-fonce); margin-bottom: 10px; }
+    .google-texte p { color: var(--texte-doux); font-size: 1.05rem; margin-bottom: 14px; }
+    .etape { display: flex; align-items: center; gap: 10px; font-size: 0.98rem; color: var(--texte); margin-bottom: 6px; }
+    .etape b { flex: none; display: grid; place-items: center; width: 1.8em; height: 1.8em; border-radius: 50%; background: var(--vert); color: #fff; font-size: 0.85rem; }
+    .btn-terminer { margin-top: 18px; font-size: 1rem; padding: 12px 28px; }
+    @media (max-aspect-ratio: 1/1), (max-width: 820px) {
+      .bloc-google { flex-direction: column; text-align: center; }
+      .etape { justify-content: center; }
+    }
+    .panneau .champ-lien { font-size: 0.95rem; letter-spacing: normal; text-align: left; margin-bottom: 8px; }
     .confetti { position: fixed; top: -40px; z-index: 5; pointer-events: none; width: 22px; animation: tombe linear forwards; }
     @keyframes tombe { to { transform: translate(var(--dx), 110vh) rotate(var(--rot)); opacity: 0.9; } }
 
@@ -340,6 +374,18 @@
         </svg>
         <h1>Merci beaucoup !</h1>
         <p class="sous-titre">Votre avis nous aide à faire grandir la jardinerie.<br />À très bientôt !</p>
+        <div class="bloc-google">
+          <div class="qr" id="qr-google"></div>
+          <div class="google-texte">
+            <div class="etoiles-or" aria-hidden="true">★★★★★</div>
+            <h2>Vous avez aimé ? Dites-le sur Google !</h2>
+            <p>Votre avis aide d'autres jardiniers à nous trouver.</p>
+            <div class="etape"><b>1</b>Ouvrez l'appareil photo de votre téléphone</div>
+            <div class="etape"><b>2</b>Visez le QR code</div>
+            <div class="etape"><b>3</b>Laissez vos étoiles sur Google</div>
+            <button class="btn btn-terminer" id="btn-terminer">C'est fait, merci !</button>
+          </div>
+        </div>
         <div class="barre-temps"><i></i></div>
         <p class="compte-a-rebours" id="compte-a-rebours"></p>
       </section>
@@ -377,6 +423,12 @@
       <p><strong>Derniers avis</strong></p>
       <ul class="derniers" id="derniers"></ul>
       <p>Les avis sont stockés sur cet appareil. Exportez-les régulièrement.</p>
+      <p><strong>Lien des avis Google</strong> (QR code affiché après 4 ou 5 étoiles)</p>
+      <input type="url" class="champ-lien" id="champ-google" placeholder="https://g.page/r/…/review" autocomplete="off" />
+      <div class="actions">
+        <button class="btn" id="btn-google">Enregistrer le lien</button>
+        <button class="btn secondaire" id="btn-google-defaut">Lien par défaut</button>
+      </div>
       <div class="actions">
         <button class="btn" id="btn-export">Exporter (CSV)</button>
         <button class="btn secondaire" id="btn-pin">Changer le code</button>
@@ -389,12 +441,18 @@
     </div>
   </div>
 
+<script src="qrcode.js"></script>
 <script>
 (() => {
   const CLE_AVIS = "solignac-avis-borne";
   const CLE_PIN = "solignac-avis-pin";
   const PIN_DEFAUT = "1234";
   const DELAI_MERCI = 6;        // secondes avant retour à l'accueil
+  const DELAI_GOOGLE = 30;      // secondes quand le QR code Google est affiché
+  const CLE_GOOGLE = "solignac-avis-google";
+  // Lien par défaut : fiche Google Maps de la jardinerie (à remplacer par le lien direct « Écrire un avis »)
+  const GOOGLE_DEFAUT = "https://www.google.com/maps/search/?api=1&query=" +
+    encodeURIComponent("Jardinerie Solignac, 657 route de Montauban, 31660 Bessières");
   const DELAI_INACTIVITE = 45;  // secondes sans toucher → on remet à zéro
 
   const LIBELLES = ["", "Décevant 😕", "Moyen 😐", "Bien 🙂", "Très bien 😊", "Excellent ! 🤩"];
@@ -416,6 +474,20 @@
   function ecrireAvis(liste) {
     try { localStorage.setItem(CLE_AVIS, JSON.stringify(liste)); } catch {}
   }
+  function lireLienGoogle() {
+    try { return localStorage.getItem(CLE_GOOGLE) || GOOGLE_DEFAUT; } catch { return GOOGLE_DEFAUT; }
+  }
+  function dessinerQr() {
+    const lien = lireLienGoogle();
+    if (!window.qrcode) { $("qr-google").innerHTML = ""; return false; }
+    const qr = qrcode(0, "M");
+    qr.addData(lien);
+    qr.make();
+    $("qr-google").innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+    $("qr-google").dataset.lien = lien;
+    return true;
+  }
+
   function lirePin() {
     try { return localStorage.getItem(CLE_PIN) || PIN_DEFAUT; } catch { return PIN_DEFAUT; }
   }
@@ -464,10 +536,13 @@
     });
     ecrireAvis(liste);
     $("commentaire").blur();
-    $("ecran-merci").style.setProperty("--duree", DELAI_MERCI + "s");
+    const google = note >= 4 && dessinerQr();
+    const delai = google ? DELAI_GOOGLE : DELAI_MERCI;
+    $("ecran-merci").classList.toggle("avec-google", google);
+    $("ecran-merci").style.setProperty("--duree", delai + "s");
     afficher("ecran-merci");
     if (note >= 4) confettis();
-    let reste = DELAI_MERCI;
+    let reste = delai;
     $("compte-a-rebours").textContent = `Retour à l'accueil dans ${reste} s`;
     clearInterval(minuterieMerci);
     minuterieMerci = setInterval(() => {
@@ -521,7 +596,11 @@
     b.addEventListener("click", () => choisirNote(+b.dataset.note))
   );
   $("btn-envoyer").addEventListener("click", envoyer);
-  $("ecran-merci").addEventListener("click", reinitialiser);
+  // Un toucher termine le remerciement, sauf quand le QR code est affiché (bouton dédié)
+  $("ecran-merci").addEventListener("click", () => {
+    if (!$("ecran-merci").classList.contains("avec-google")) reinitialiser();
+  });
+  $("btn-terminer").addEventListener("click", reinitialiser);
   ["pointerdown", "keydown"].forEach((ev) => document.addEventListener(ev, relancerInactivite, true));
 
   /* ---------- Verrouillage de la page ---------- */
@@ -620,6 +699,7 @@
       const extra = [a.points.join(", "), a.commentaire].filter(Boolean).join(" — ");
       return `<li>${"★".repeat(a.note)}${"☆".repeat(5 - a.note)} · ${d}${extra ? "<br>" + echapper(extra) : ""}</li>`;
     }).join("") || "<li>Aucun avis pour l'instant.</li>";
+    $("champ-google").value = lireLienGoogle();
     $("voile-admin").classList.add("visible");
   }
 
@@ -630,6 +710,16 @@
   }
 
   $("btn-fermer").addEventListener("click", fermerAdmin);
+
+  $("btn-google").addEventListener("click", () => {
+    const lien = $("champ-google").value.trim();
+    if (!/^https:\/\/\S+$/.test(lien)) { alert("Collez un lien complet commençant par https://"); return; }
+    try { localStorage.setItem(CLE_GOOGLE, lien); alert("Lien enregistré."); } catch {}
+  });
+  $("btn-google-defaut").addEventListener("click", () => {
+    try { localStorage.removeItem(CLE_GOOGLE); } catch {}
+    $("champ-google").value = lireLienGoogle();
+  });
 
   $("btn-export").addEventListener("click", () => {
     const liste = lireAvis();
