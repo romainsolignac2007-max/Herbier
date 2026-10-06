@@ -8,8 +8,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <link rel="manifest" href="avis.webmanifest" />
-  <link rel="apple-touch-icon" href="images/icone-solignac.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icone.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -179,7 +179,7 @@
 
   <!-- 1. Note -->
   <section class="ecran actif" id="ecran-note">
-    <img class="logo" src="images/logo-solignac.png" alt="Jardinerie & Animalerie Solignac" draggable="false" />
+    <img class="logo" src="logo.png" alt="Jardinerie & Animalerie Solignac" draggable="false" />
     <h1>Comment s'est passée votre visite ?</h1>
     <p class="sous-titre">Touchez une étoile — cela prend 10 secondes.</p>
     <div class="etoiles" id="etoiles">
@@ -200,8 +200,15 @@
   </section>
 
   <!-- 2. Merci -->
+  <section class="ecran" id="ecran-arret">
+    <img class="logo" src="logo.png" alt="Jardinerie & Animalerie Solignac" draggable="false" />
+    <h1>Borne en pause</h1>
+    <p class="sous-titre">Le mode borne est désactivé.<br />Rechargez la page pour la relancer.</p>
+    <button class="btn" id="btn-relancer">Relancer la borne</button>
+  </section>
+
   <section class="ecran" id="ecran-merci">
-    <img class="logo" src="images/logo-solignac.png" alt="Jardinerie & Animalerie Solignac" draggable="false" />
+    <img class="logo" src="logo.png" alt="Jardinerie & Animalerie Solignac" draggable="false" />
     <div class="merci-icone">🌱</div>
     <h1>Merci beaucoup !</h1>
     <p class="sous-titre">Votre avis nous aide à faire grandir la jardinerie.<br />À bientôt !</p>
@@ -246,8 +253,8 @@
 
 <script>
 (() => {
-  const CLE_AVIS = "herbier-avis-borne";
-  const CLE_PIN = "herbier-avis-pin";
+  const CLE_AVIS = "solignac-avis-borne";
+  const CLE_PIN = "solignac-avis-pin";
   const PIN_DEFAUT = "1234";
   const DELAI_MERCI = 6;        // secondes avant retour à l'accueil
   const DELAI_INACTIVITE = 45;  // secondes sans toucher → on remet à zéro
@@ -487,8 +494,10 @@
   $("btn-quitter").addEventListener("click", () => {
     adminOuvert = true; // désactive tous les verrous
     if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
-    location.href = "index.html";
+    $("voile-admin").classList.remove("visible");
+    afficher("ecran-arret");
   });
+  $("btn-relancer").addEventListener("click", () => location.reload());
 })();
 </script>
 </body>

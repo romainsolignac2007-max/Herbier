@@ -573,7 +573,7 @@ const QUIZZ_THEMES = [
     champ: "terreau",  options: TERREAUX,                                 question: p => `Quel terreau convient le mieux à « ${p.nom} » ?` },
   { id: "floraison", emoji: "🌸", titre: "Floraison",            sous: "À quelle saison ça fleurit ?",      couleur: "#d96e98",
     champ: "floraison",options: FLORAISONS,                               question: p => `À quelle saison fleurit « ${p.nom} » ?` },
-  { id: "lieu",      emoji: "🏡", titre: "Intérieur / extérieur",sous: "Où la cultiver ?",                  couleur: "#008f4c",
+  { id: "lieu",      emoji: "🏡", titre: "Intérieur / extérieur",sous: "Où la cultiver ?",                  couleur: "#2f6b46",
     champ: "lieu",     options: ["Intérieur", "Extérieur", "Les deux"],   question: p => `Où cultive-t-on plutôt « ${p.nom} » ?` },
   { id: "gel",       emoji: "❄️", titre: "Résistance au froid",  sous: "Jusqu'à quelle température ?",       couleur: "#4a90c2",
     champ: "gel",      options: GEL,                                      question: p => `Jusqu'à quel froid « ${p.nom} » résiste-t-elle ?` },
@@ -588,7 +588,7 @@ const QUIZZ_THEMES = [
   { id: "photo",     emoji: "📸", titre: "Reconnaître la photo", sous: "Quelle est cette plante ?",         couleur: "#d9694a",
     champ: "nom",      poolFrom: "nom", photoSeule: true,                 question: () => `Quelle est cette plante ?` },
   { id: "adaptatif", emoji: "🎯", titre: "Quizz adaptatif",      sous: "Revois tes erreurs, tous thèmes",   couleur: "#c0573e", adaptatif: true },
-  { id: "mix",       emoji: "🎲", titre: "Quizz mêlé",           sous: "Toutes les catégories mélangées",   couleur: "#005f2a", mix: true },
+  { id: "mix",       emoji: "🎲", titre: "Quizz mêlé",           sous: "Toutes les catégories mélangées",   couleur: "#1f3d2b", mix: true },
 ];
 
 function distracteurs(bonne, pool, n = 3) {

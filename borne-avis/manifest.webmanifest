@@ -1,7 +1,7 @@
 {
   "name": "Jardinerie Solignac — Votre avis",
   "short_name": "Avis Solignac",
-  "start_url": "avis.html",
+  "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
   "orientation": "any",
@@ -9,7 +9,7 @@
   "theme_color": "#008f4c",
   "icons": [
     {
-      "src": "images/icone-solignac.png",
+      "src": "icone.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
