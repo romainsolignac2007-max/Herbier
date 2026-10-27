@@ -56,7 +56,7 @@ function srcImage(p) { return chemin(p.photo); }
 function srcImageGrande(p) { return chemin(p.photoGrande) || chemin(p.photo); }
 function imageHTML(p, classe) {
   const src = srcImage(p);
-  if (src) return `<div class="${classe}"><img src="${src}" alt="${p.nom}" onerror="this.parentNode.textContent='${p.emoji || "🌿"}'"></div>`;
+  if (src) return `<div class="${classe}"><img src="${src}" alt="${p.nom}" loading="lazy" decoding="async" onerror="this.parentNode.textContent='${p.emoji || "🌿"}'"></div>`;
   return `<div class="${classe}">${p.emoji || "🌿"}</div>`;
 }
 
